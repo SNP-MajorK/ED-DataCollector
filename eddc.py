@@ -357,7 +357,7 @@ def main():
     system.pack(padx=20)
 
     version_but = Button(root,
-                         text='Version 0.0.2.5',
+                         text='Version 0.0.2.6',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
