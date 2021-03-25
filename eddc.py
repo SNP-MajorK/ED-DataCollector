@@ -1,7 +1,7 @@
 import glob
 import json
 import os
-import sys
+# import sys
 import threading
 import time
 from datetime import date
@@ -17,6 +17,8 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
+
+root = ''
 log_var = 0
 tick = True
 tick_time = []
@@ -27,12 +29,12 @@ influence_list = []
 Starsystem_list = []
 SystemAddress_list = []
 index_of_list = []
-# path = 'C:\\Users\\jiyon\\Saved Games\\Frontier Developments\\'
 with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
     value = QueryValueEx(key, '{4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4}')
 path = value[0] + '\\Frontier Developments\\Elite Dangerous\\'
 
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
+
 
 def last_tick():
     response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks")
@@ -80,7 +82,7 @@ def extract_data(journal_file, data, faction_list, influence_list, index_of_list
         if p['Faction'] != '':
             if log_var > 2:
                 print(p['Influence'])
-            if p['Influence'] == []:
+            if not p['Influence']:
                 if log_var > 2:
                     print(p['Influence'])
                 missionid = data['MissionID']
@@ -137,6 +139,13 @@ def starsystem():
 
 
 def dateien_einlesen(journal_file, system_list, faction_list, influence_list, index_of_list, tick):
+    print('dateien_einlesen')
+    tick_hour = hour.get('1.0', '2.0')
+    tick_minute = minute.get('1.0', '2.0')
+    tick_time[3] = tick_hour[0:2]
+    tick_time[4] = tick_minute[0:2]
+    if log_var > 1:
+        print(tick_time)
     datei = open(journal_file, 'r', encoding='UTF8')
     for zeile in datei:
         search_string = "MissionCompleted"
@@ -145,12 +154,12 @@ def dateien_einlesen(journal_file, system_list, faction_list, influence_list, in
             date = str(data['timestamp'])
             log_date(date)
             if tick is True:
-                if str(tick_time[3]) <= str(log_time[3]):
+                if str(tick_time[3]) < str(log_time[3]):
                     extract_data(journal_file, data, faction_list, influence_list, index_of_list)
                 if (str(tick_time[3]) == str(log_time[3])) and (str(tick_time[4]) < str(log_time[4])):
                     extract_data(journal_file, data, faction_list, influence_list, index_of_list)
             else:
-                if str(tick_time[3]) >= str(log_time[3]):
+                if str(tick_time[3]) > str(log_time[3]):
                     extract_data(journal_file, data, faction_list, influence_list, index_of_list)
                 if (str(tick_time[3]) == str(log_time[3])) and (str(tick_time[4]) > str(log_time[4])):
                     extract_data(journal_file, data, faction_list, influence_list, index_of_list)
@@ -176,6 +185,7 @@ def tickFalse():
     global tick
     tick = False
 
+
 today = date.today()
 # print(today)
 today = str(today)
@@ -186,16 +196,16 @@ Day = (today[8:10])
 last_tick()
 
 
-
 def auswertung():
     if log_var > 0:
         print('auswertung')
     system.delete(1.0, END)
+
     global system_list, faction_list, influence_list, index_of_list, Starsystem_list, SystemAddress_list
     Tag2 = Tag.get()
     Monat2 = Monat.get()
-
-    Date = str(Year + Monat2 + Tag2)
+    Jahr2 = Jahr.get()
+    Date = str(Jahr2 + Monat2 + Tag2)
     filenames = glob.glob(path + "\\Journal." + Date + "*.log")
     if log_var > 2:
         print(filenames)
@@ -211,8 +221,8 @@ def auswertung():
         lauf = 0
 
         while lauf < len(faction_list):
-            system.insert(END, str(system_list[lauf]) + '\t ' + str(faction_list[lauf]) + '\t' + str(
-                influence_list[lauf]) + '\n')
+            system.insert(END, str((system_list[lauf])) + '\t \t ' + str((faction_list[lauf])[0:28]) +
+                          '\t \t \t' + str(influence_list[lauf]) + '\n')
             bgs.add_row([system_list[lauf], faction_list[lauf], influence_list[lauf]])
             lauf += 1
         faction_list = []
@@ -237,7 +247,6 @@ def autorefresh():
             refreshing()
 
 
-
 def refreshing():
     print('refreshing')
     system.delete(1.0, END)
@@ -253,9 +262,9 @@ def refreshing():
     auswertung()
 
 
-def threding_auto():
+def threading_auto():
     if log_var > 0:
-        print('threding_auto')
+        print('threading_auto')
     if check_var.get() != 0:
         threading.Thread(target=autorefresh).start()
     else:
@@ -267,6 +276,7 @@ def logging():
     log_var += 1
     print(log_var)
 
+
 # ===========================  GUI erstellung  ==============================
 
 def cp_to_clipboard():
@@ -276,10 +286,10 @@ def cp_to_clipboard():
 
 
 def main():
-    global system, root, Tag, Monat, Jahr
+    global system, root, Tag, Monat, Jahr, hour, minute
     root = Tk()
     root.title('Elite Dangerous Data Collector')
-    root.iconbitmap('eddc.ico')
+    root.iconbitmap(resource_path('eddc.ico'))
     root.configure(background='black')
     root.minsize(380, 460)
     root.maxsize(380, 460)
@@ -288,7 +298,7 @@ def main():
     my_top_logo = Label(root, image=bg, bg='black')
     my_top_logo.pack()
     my_bottom_logo = Label(root, image=bg2, bg='black')
-    my_bottom_logo.place(x=0,y=80)
+    my_bottom_logo.place(x=0, y=80)
     my_text_box = Label(root, bg='black')
     my_text_box.pack()
     my_time = Frame(my_text_box, bg='black')
@@ -325,6 +335,8 @@ def main():
 
     hour = Text(my_tick, height=1, width=2)
     hour.insert(INSERT, (str(t_hour)))
+    hour.get(1.0, END)
+    hour.delete(3.0)
     hour.grid(column=0, row=0)
     Label(my_tick,
           text=""":""", bg='black', fg='white', font=("Helvetica", 12),
@@ -335,14 +347,14 @@ def main():
 
     check_var = IntVar()
 
-    check_but = Checkbutton(my_time, text="Autorefresh   "
+    check_but = Checkbutton(my_time, text="Autorefresh    "
                             , variable=check_var
                             , bg='black'
                             , fg='white'
                             , selectcolor='black'
                             , activebackground='black'
                             , activeforeground='white'
-                            , command=threding_auto
+                            , command=threading_auto
                             , font=("Helvetica", 10))
     check_but.grid(column=1, row=0)
 
@@ -376,12 +388,12 @@ def main():
     folder.insert(END, path)
     folder.grid(column=0, row=0, pady=10)
 
-    system = Text(root, height=11, width=50, bg='black', fg='white', font=("Helvetica", 12))
+    system = Text(root, height=11, width=50, bg='black', fg='white', font=("Helvetica", 10))
 
     system.pack(padx=20)
 
     version_but = Button(root,
-                         text='Version 0.0.3.0',
+                         text='Version 0.0.3.2',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
@@ -391,15 +403,14 @@ def main():
     version_but.place(x=20, y=430)
 
     clipboard = Button(root,
-                         text='Copy to Clipboard',
-                         activebackground='#000050',
-                         activeforeground='white',
-                         bg='black',
-                         fg='white',
-                         command=cp_to_clipboard,
-                         font=("Helvetica", 10))
+                       text='Copy to Clipboard',
+                       activebackground='#000050',
+                       activeforeground='white',
+                       bg='black',
+                       fg='white',
+                       command=cp_to_clipboard,
+                       font=("Helvetica", 10))
     clipboard.place(x=150, y=430)
-
 
     ok_but = Button(root,
                     # width=4,
@@ -408,12 +419,12 @@ def main():
                     text='OK',
                     bg='black',
                     fg='white',
-                    command=threding_auto,
+                    command=threading_auto,
                     font=("Helvetica", 10))
     ok_but.place(x=325, y=430)
 
     def callback(event):
-        threding_auto()
+        threading_auto()
 
     root.bind('<Return>', callback)
 
