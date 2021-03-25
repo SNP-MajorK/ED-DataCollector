@@ -17,6 +17,7 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
+log_var = 0
 tick = True
 tick_time = []
 log_time = []
@@ -77,18 +78,22 @@ def log_date(date):
 def extract_data(journal_file, data, faction_list, influence_list, index_of_list):
     for p in data["FactionEffects"]:
         if p['Faction'] != '':
-            # print(p['Influence'])
+            if log_var > 2:
+                print(p['Influence'])
             if p['Influence'] == []:
-                # print(p['Influence'])
+                if log_var > 2:
+                    print(p['Influence'])
                 missionid = data['MissionID']
                 getmissiondata(missionid, journal_file)
-                # print(inf_data)
+                if log_var > 4:
+                    print(inf_data)
                 p['Influence'] = [{'SystemAddress': 1234567891234, 'Trend': 'UpGood', 'Influence': inf_data}]
             for xx in p['Influence']:
                 for i in p["Influence"]:
                     if i['Trend'] == 'UpGood':
                         if (p['Faction'], xx['SystemAddress']) not in index_of_list:
-                            # print(p['Faction'], xx['SystemAddress'])
+                            if log_var > 2:
+                                print(p['Faction'], xx['SystemAddress'], len(i['Influence']))
                             faction_list.append(p['Faction'])
                             system_list.append(xx['SystemAddress'])
                             influence_list.append(len(i['Influence']))
@@ -165,13 +170,11 @@ def dateien_einlesen(journal_file, system_list, faction_list, influence_list, in
 def tickTrue():
     global tick
     tick = True
-    # print(tick)
 
 
 def tickFalse():
     global tick
     tick = False
-    # print(tick)
 
 today = date.today()
 # print(today)
@@ -183,25 +186,19 @@ Day = (today[8:10])
 last_tick()
 
 
-# ===========================  GUI erstellung  ==============================
-
-
-def clear():
-    system.delete(1.0, END)
-    time.sleep(1.0)
-    bgs.clear_rows()
-    auswertung()
-
 
 def auswertung():
-    # print(path)
+    if log_var > 0:
+        print('auswertung')
+    system.delete(1.0, END)
     global system_list, faction_list, influence_list, index_of_list, Starsystem_list, SystemAddress_list
     Tag2 = Tag.get()
     Monat2 = Monat.get()
 
     Date = str(Year + Monat2 + Tag2)
     filenames = glob.glob(path + "\\Journal." + Date + "*.log")
-    # print(filenames)
+    if log_var > 2:
+        print(filenames)
     auto_refresh = False
     lauf_r = 0
     if auto_refresh is True:
@@ -221,49 +218,76 @@ def auswertung():
         faction_list = []
         system_list = []
         influence_list = []
-        # Starsystem = []
-        # SystemAddress_list = []
         index_of_list = []
-        print(bgs.get_string(sortby="System"))
-        # root.clipboard_append(bgs.get_string(sortby="System"))
-        # root.update()
     if not filenames:
         system.insert(END, 'Keine Daten für den Tag vorhanden')
+    print(bgs.get_string(sortby="System"))
 
 
 starsystem()
 
 
 def autorefresh():
-    # print(check_var.get())
+    print('autorefresh')
     while check_var.get() != 0:
-        # print('TEST')
-        time.sleep(5.0)
-        system.delete(1.0, END)
-        bgs.clear_rows()
-        auswertung()
+        print('while autorefresh')
+        if check_var.get() != 0:
+            print(check_var.get())
+            time.sleep(15.0)
+            refreshing()
 
 
-def test():
-    # print('Test')
-    threading.Thread(target=autorefresh).start()
+
+def refreshing():
+    print('refreshing')
+    system.delete(1.0, END)
+    system.insert(INSERT, 'Auswertung läuft ')
+    i = 0
+    while i < 4:
+        time.sleep(0.4)
+        system.insert(INSERT, '.')
+        i += 1
+    if log_var > 1:
+        print('Checkbox an oder aus ' + str(check_var.get()))
+    bgs.clear_rows()
+    auswertung()
+
+
+def threding_auto():
+    if log_var > 0:
+        print('threding_auto')
+    if check_var.get() != 0:
+        threading.Thread(target=autorefresh).start()
+    else:
+        threading.Thread(target=refreshing).start()
+
+
+def logging():
+    global log_var
+    log_var += 1
+    print(log_var)
+
+# ===========================  GUI erstellung  ==============================
+
+def cp_to_clipboard():
+    root.clipboard_clear()
+    root.clipboard_append(bgs.get_string(sortby="System"))
+    root.update()
 
 
 def main():
     global system, root, Tag, Monat, Jahr
     root = Tk()
     root.title('Elite Dangerous Data Collector')
-    # root.iconbitmap('eddc.ico')
+    root.iconbitmap('eddc.ico')
     root.configure(background='black')
     root.minsize(380, 460)
     root.maxsize(380, 460)
     bg = PhotoImage(file=(resource_path("SNPX.png")))
     bg2 = PhotoImage(file=(resource_path("Horizon.png")))
     my_top_logo = Label(root, image=bg, bg='black')
-    # my_top_logo = Label(root, bg='black')
     my_top_logo.pack()
     my_bottom_logo = Label(root, image=bg2, bg='black')
-    # my_bottom_logo = Label(root, bg='black')
     my_bottom_logo.place(x=0,y=80)
     my_text_box = Label(root, bg='black')
     my_text_box.pack()
@@ -318,7 +342,7 @@ def main():
                             , selectcolor='black'
                             , activebackground='black'
                             , activeforeground='white'
-                            , command=test
+                            , command=threding_auto
                             , font=("Helvetica", 10))
     check_but.grid(column=1, row=0)
 
@@ -357,24 +381,41 @@ def main():
     system.pack(padx=20)
 
     version_but = Button(root,
-                         text='Version 0.0.2.6',
+                         text='Version 0.0.3.0',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
                          fg='white',
+                         command=logging,
                          font=("Helvetica", 10))
     version_but.place(x=20, y=430)
 
+    clipboard = Button(root,
+                         text='Copy to Clipboard',
+                         activebackground='#000050',
+                         activeforeground='white',
+                         bg='black',
+                         fg='white',
+                         command=cp_to_clipboard,
+                         font=("Helvetica", 10))
+    clipboard.place(x=150, y=430)
+
+
     ok_but = Button(root,
-                    width=4,
+                    # width=4,
                     activebackground='#000050',
                     activeforeground='white',
                     text='OK',
                     bg='black',
                     fg='white',
-                    command=clear,
-                    font=("Helvetica", 12))
-    ok_but.place(x=315, y=425)
+                    command=threding_auto,
+                    font=("Helvetica", 10))
+    ok_but.place(x=325, y=430)
+
+    def callback(event):
+        threding_auto()
+
+    root.bind('<Return>', callback)
 
     root.mainloop()
 
