@@ -1,3 +1,5 @@
+#Created by MajorK https://github.com/SNP-MajorK/ED-DataCollector
+
 import glob
 import json
 import os
@@ -17,7 +19,8 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
-
+BGS = 1
+MATS = 0
 root = ''
 log_var = 0
 tick = True
@@ -138,7 +141,7 @@ def starsystem():
     # print(SystemAddress_list)
 
 
-def dateien_einlesen(journal_file, system_list, faction_list, influence_list, index_of_list, tick):
+def einfluss_auslesen(journal_file, system_list, faction_list, influence_list, index_of_list, tick):
     print('dateien_einlesen')
     tick_hour = hour.get('1.0', '2.0')
     tick_minute = minute.get('1.0', '2.0')
@@ -176,12 +179,12 @@ def dateien_einlesen(journal_file, system_list, faction_list, influence_list, in
     # =========================================== End of dateien_einlesen()
 
 
-def tickTrue():
+def ticktrue():
     global tick
     tick = True
 
 
-def tickFalse():
+def tickfalse():
     global tick
     tick = False
 
@@ -216,22 +219,28 @@ def auswertung():
         while lauf_r < auto:
             del filenames[lauf_r]
             lauf_r += 1
-    for filename in filenames:
-        dateien_einlesen(filename, system_list, faction_list, influence_list, index_of_list, tick)
-        lauf = 0
+    if BGS == 1:
+        for filename in filenames:
+            einfluss_auslesen(filename, system_list, faction_list, influence_list, index_of_list, tick)
+            lauf = 0
 
-        while lauf < len(faction_list):
-            system.insert(END, str((system_list[lauf])) + '\t \t ' + str((faction_list[lauf])[0:28]) +
-                          '\t \t \t' + str(influence_list[lauf]) + '\n')
-            bgs.add_row([system_list[lauf], faction_list[lauf], influence_list[lauf]])
-            lauf += 1
-        faction_list = []
-        system_list = []
-        influence_list = []
-        index_of_list = []
+            while lauf < len(faction_list):
+                system.insert(END, str((system_list[lauf])) + '\t \t ' + str((faction_list[lauf])[0:28]) +
+                              '\t \t \t' + str(influence_list[lauf]) + '\n')
+                bgs.add_row([system_list[lauf], faction_list[lauf], influence_list[lauf]])
+                lauf += 1
+            faction_list = []
+            system_list = []
+            influence_list = []
+            index_of_list = []
+    elif MATS == 1:
+        for filename in filenames:
+            mats_auslesen(filename)
+            # system.insert(END, 'MATS')
     if not filenames:
         system.insert(END, 'Keine Daten für den Tag vorhanden')
-    print(bgs.get_string(sortby="System"))
+    if BGS == 1:
+        print(bgs.get_string(sortby="System"))
 
 
 starsystem()
@@ -258,7 +267,10 @@ def refreshing():
         i += 1
     if log_var > 1:
         print('Checkbox an oder aus ' + str(check_var.get()))
-    bgs.clear_rows()
+    try:
+        bgs.clear_rows()
+    except AttributeError:
+        print('NoData in bgs.row')
     auswertung()
 
 
@@ -277,7 +289,47 @@ def logging():
     print(log_var)
 
 
-# ===========================  GUI erstellung  ==============================
+def mats_auslesen(journal_file):
+    print('mats_auslesen')
+    global name_list, count_list
+    name_list = []
+    count_list = []
+    datei = open(journal_file, 'r', encoding='UTF8')
+    for zeile in datei:
+        search_string = 'MaterialCollected'
+        if (zeile.find(search_string)) > -1:
+            data = json.loads(zeile)
+            try:
+                if data['Name_Localised'] not in name_list:
+                    name_list.append(str(data['Name_Localised']))
+                    count_list.append(data['Count'])
+                else:
+                    temp = data['Name_Localised']
+                    index = name_list.index(temp)
+                    count_list[index] += data['Count']
+            except KeyError:
+                if log_var > 3:
+                    print(data['Name'], end=' ')
+                    print(data['Count'])
+                if data['Name'] not in name_list:
+                    name_list.append(str(data['Name']))
+                    count_list.append(data['Count'])
+                else:
+                    temp = data['Name']
+                    index = name_list.index(temp)
+                    count_list[index] += data['Count']
+    lauf = 0
+    while lauf < len(name_list):
+        if log_var > 3:
+            print(name_list, end=' ')
+            print(count_list)
+        system.insert(END, str((name_list[lauf] + '\t \t')))
+        system.insert(END, count_list[lauf])
+        system.insert(END, '\n')
+        lauf += 1
+
+    # ===========================  GUI erstellung  ==============================
+
 
 def cp_to_clipboard():
     root.clipboard_clear()
@@ -285,8 +337,27 @@ def cp_to_clipboard():
     root.update()
 
 
+def mats():
+    global BGS, MATS
+    BGS = 0
+    MATS = 1
+    vortick.config(state=DISABLED)
+    nachtick.config(state=DISABLED)
+    auswertung()
+
+
+def bgs_menu():
+    global BGS, MATS
+    BGS = 1
+    MATS = 0
+    vortick.config(state=NORMAL)
+    nachtick.config(state=NORMAL)
+    threading_auto()
+
+
+
 def main():
-    global system, root, Tag, Monat, Jahr, hour, minute
+    global system, root, Tag, Monat, Jahr, hour, minute, BGS, MATS, vortick, nachtick
     root = Tk()
     root.title('Elite Dangerous Data Collector')
     root.iconbitmap(resource_path('eddc.ico'))
@@ -295,6 +366,18 @@ def main():
     root.maxsize(380, 460)
     bg = PhotoImage(file=(resource_path("SNPX.png")))
     bg2 = PhotoImage(file=(resource_path("Horizon.png")))
+
+    my_menu = Menu(root)
+    root.config(menu=my_menu)
+
+    # file_menu = Menu(my_menu)
+    file_menu = Menu(my_menu, tearoff=False)
+    my_menu.add_cascade(label="Datei", menu=file_menu)
+    file_menu.add_command(label="BGS", command=bgs_menu)
+    file_menu.add_command(label="MATS", command=mats)
+    file_menu.add_command(label="Exit", command=root.quit)
+
+
     my_top_logo = Label(root, image=bg, bg='black')
     my_top_logo.pack()
     my_bottom_logo = Label(root, image=bg2, bg='black')
@@ -367,7 +450,7 @@ def main():
                           activebackground='black', activeforeground='white',
                           padx=10,
                           variable=v,
-                          value=1, command=tickFalse)
+                          value=1, command=tickfalse)
     vortick.grid(column=0, row=0, sticky=W)
 
     nachtick = Radiobutton(my_boxes,
@@ -375,7 +458,7 @@ def main():
                            activebackground='black', activeforeground='white',
                            padx=10,
                            variable=v,
-                           value=2, command=tickTrue)
+                           value=2, command=ticktrue)
     nachtick.grid(column=0, row=1)
     nachtick.select()
 
@@ -393,14 +476,14 @@ def main():
     system.pack(padx=20)
 
     version_but = Button(root,
-                         text='Version 0.0.3.2',
+                         text='Version 0.0.4.1',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
                          fg='white',
                          command=logging,
                          font=("Helvetica", 10))
-    version_but.place(x=20, y=430)
+    version_but.place(x=20, y=415)
 
     clipboard = Button(root,
                        text='Copy to Clipboard',
@@ -410,7 +493,7 @@ def main():
                        fg='white',
                        command=cp_to_clipboard,
                        font=("Helvetica", 10))
-    clipboard.place(x=150, y=430)
+    clipboard.place(x=150, y=415)
 
     ok_but = Button(root,
                     # width=4,
@@ -421,7 +504,7 @@ def main():
                     fg='white',
                     command=threading_auto,
                     font=("Helvetica", 10))
-    ok_but.place(x=325, y=430)
+    ok_but.place(x=325, y=415)
 
     def callback(event):
         threading_auto()

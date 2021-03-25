@@ -1,12 +1,14 @@
 # Elite Dangerous DataCollector
 Collects the Data from Elite Dangerous out of your Log Files and Displays them.
 
-Latest version: 0.0.3.2 (March 25, 2021)
+Latest version: 0.0.4.1 (March 25, 2021)
 
-Extracts Influence Data from your Log-Files and Displays them.
+Extracts Data from your Log-Files and Displays them.
 
 The influence points before or after the tick are added up and displayed for each faction in the system.
 Negative points are also counted.
+
+Now we also count all the materials you collect in a day.
 
 Also, with Auto Refresh, you can let the program run in the background, so that the points are added together during the session.
 
@@ -22,6 +24,8 @@ Extrahiert die Einflusspunkte aus Ihren Log-Dateien und zeigt sie an.
 
 Die Einflusspunkte vor oder nach dem Ticken werden addiert und für jede Fraktion im System angezeigt.
 Negative Punkte werden ebenfalls gezählt.
+
+Jetzt zählen wir auch alle Materialien, die du an einem Tag sammelst.
 
 Mit Auto Refresh können Sie das Programm auch im Hintergrund laufen lassen, so dass die Punkte während der Sitzung aufaddiert werden.
 
