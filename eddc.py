@@ -381,7 +381,7 @@ def main():
     my_top_logo = Label(root, image=bg, bg='black')
     my_top_logo.pack()
     my_bottom_logo = Label(root, image=bg2, bg='black')
-    my_bottom_logo.place(x=0, y=80)
+    my_bottom_logo.place(x=0, y=100)
     my_text_box = Label(root, bg='black')
     my_text_box.pack()
     my_time = Frame(my_text_box, bg='black')
@@ -476,7 +476,7 @@ def main():
     system.pack(padx=20)
 
     version_but = Button(root,
-                         text='Version 0.0.4.1',
+                         text='Version 0.0.4.2',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
