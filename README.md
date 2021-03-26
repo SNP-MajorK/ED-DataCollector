@@ -3,6 +3,8 @@ Collects the Data from Elite Dangerous out of your Log Files and Displays them.
 
 Latest version: 0.0.4.1 (March 25, 2021)
 
+[<img src="https://i.imgur.com/NgODU8M.png">]
+
 Extracts Data from your Log-Files and Displays them.
 
 The influence points before or after the tick are added up and displayed for each faction in the system.
