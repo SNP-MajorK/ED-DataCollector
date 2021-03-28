@@ -5,32 +5,20 @@ Latest version: 0.0.4.2 (March 26, 2021)
 
 <img src="https://i.imgur.com/kjsyOgz.png" height="200px">
 
-Extracts Data from your Log-Files and Displays them.
+EDDC - Elite:Dangerous DataCollector
 
-The influence points before or after the tick are added up and displayed for each faction in the system.
-Negative points are also counted.
+This tool takes the faction influence points as well as the number and type of collected raw materials from the local log files of Elite:Dangerous. 
+These values are clearly sorted by system or material and can be easily copied to other applications via "Copy to Clipboard".
 
-Now we also count all the materials you collect in a day.
+In the "BGS" mode, the date on which the data was collected can be set if desired. Then you can choose whether the data should be evaluated before or after the daily update of the game servers (the so-called "tick"). The time of the "tick" can be adjusted in the corresponding field. The data can be displayed live via the "Auto Refresh" function. 
 
-Also, with Auto Refresh, you can let the program run in the background, so that the points are added together during the session.
-
-Unfortunately, some missions do not have the location and the number of influence points in the log. 
-There I pull the info from the mission acceptance.
-If the program does not find them either, a None is displayed.
-
+Translated with www.DeepL.com/Translator (free version)
 
 
 German
 
-Extrahiert die Einflusspunkte aus Ihren Log-Dateien und zeigt sie an.
+EDDC – Der Elite:Dangerous DataCollector
 
-Die Einflusspunkte vor oder nach dem Ticken werden addiert und für jede Fraktion im System angezeigt.
-Negative Punkte werden ebenfalls gezählt.
+Dieses Tool übernimmt aus den lokalen Log-Dateien von Elite:Dangerous die Fraktions-Einflusspunkten sowie die Anzahl und Art der gesammelten Roh-Materialien. Diese Werte werden übersichtlich nach System bzw. Material sortiert dargestellt und lassen sich per „Copy to Clipboard“ bequem in andere Anwendungen kopieren.
 
-Jetzt zählen wir auch alle Materialien, die du an einem Tag sammelst.
-
-Mit Auto Refresh können Sie das Programm auch im Hintergrund laufen lassen, so dass die Punkte während der Sitzung aufaddiert werden.
-
-Leider stehen bei manchen Missionen der Standort und die Anzahl der Einflusspunkte nicht im Protokoll. 
-Da ziehe ich die Infos aus der Missionsannahme.
-Findet das Programm auch diese nicht, wird eine None angezeigt.
+Im „BGS“ Modus lässt sich auf Wunsch das Datum, an dem die Daten erhoben wurden einstellen. Anschließend hat man die Wahl, ob die Daten vor oder nach der täglichen Aktualisierung der Game-Server (dem sogenannten „Tick“) ausgewertet werden sollen. Die Uhrzeit des „Ticks“ lässt sich im entsprechenden Feld anpassen. Über die „Auto Refresh“ Funktion können die Daten live angezeigt werden. 
