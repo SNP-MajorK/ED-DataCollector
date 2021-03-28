@@ -12,9 +12,6 @@ These values are clearly sorted by system or material and can be easily copied t
 
 In the "BGS" mode, the date on which the data was collected can be set if desired. Then you can choose whether the data should be evaluated before or after the daily update of the game servers (the so-called "tick"). The time of the "tick" can be adjusted in the corresponding field. The data can be displayed live via the "Auto Refresh" function. 
 
-Translated with www.DeepL.com/Translator (free version)
-
-
 German
 
 EDDC – Der Elite:Dangerous DataCollector
