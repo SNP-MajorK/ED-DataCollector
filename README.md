@@ -4,11 +4,12 @@ Collects the Data from Elite Dangerous out of your Log Files and Displays them.
 Latest version: 0.0.4.2 (March 26, 2021)
 
 <img src="https://i.imgur.com/kjsyOgz.png" height="200px">
+<img src="https://i.imgur.com/gDmfuS9.png" height="200px">
 
 EDDC - Elite:Dangerous DataCollector
 
 This tool takes the faction influence points as well as the number and type of collected raw materials from the local log files of Elite:Dangerous. 
-These values are clearly sorted by system or material and can be easily copied to other applications via "Copy to Clipboard".
+These values are listed by system or material and can be easily copied.
 
 In the "BGS" mode, the date on which the data was collected can be set if desired. Then you can choose whether the data should be evaluated before or after the daily update of the game servers (the so-called "tick"). The time of the "tick" can be adjusted in the corresponding field. The data can be displayed live via the "Auto Refresh" function. 
 
