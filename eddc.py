@@ -2,8 +2,8 @@
 
 import glob
 import json
-import os
-import sys
+# import os
+# import sys
 import threading
 import time
 from datetime import date
@@ -15,12 +15,12 @@ from prettytable import PrettyTable
 
 
 #Generate resource file directory access path
-def resource_path(relative_path):
-    if getattr(sys, 'frozen', False):
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+# def resource_path(relative_path):
+#     if getattr(sys, 'frozen', False):
+#         base_path = sys._MEIPASS
+#     else:
+#         base_path = os.path.abspath(".")
+#     return os.path.join(base_path, relative_path)
 
 # def resource_path(relative_path):
 #     if hasattr(sys, '_MEIPASS'):
@@ -387,8 +387,8 @@ def auswertung():
     if not filenames:
         system.insert(END, 'Keine Daten für den Tag vorhanden')
 
-
-starsystem()
+threading.Thread(target=starsystem).start()
+# starsystem()
 
 
 def autorefresh():
@@ -517,15 +517,18 @@ def main():
     root = Tk()
     root.title('Elite Dangerous Data Collector')
     try:
-        img = resource_path("eddc.ico")
+        # img = resource_path("eddc.ico")
+        img = ("eddc.ico")
         root.iconbitmap(img)
     except TclError:
         print('Icon not found)')
     root.configure(background='black')
     root.minsize(380, 460)
     root.maxsize(380, 460)
-    bg = PhotoImage(file=(resource_path("SNPX.png")))
-    bg2 = PhotoImage(file=(resource_path("Horizon.png")))
+    bg = PhotoImage(file=("SNPX.png"))
+    # bg = PhotoImage(file=(resource_path("SNPX.png")))
+    # bg2 = PhotoImage(file=(resource_path("Horizon.png")))
+    bg2 = PhotoImage(file=("Horizon.png"))
 
     my_menu = Menu(root)
     root.config(menu=my_menu)
