@@ -3,13 +3,13 @@ Collects the Data from Elite Dangerous out of your Log Files and Displays them.
 
 Latest version: 0.2.2.0 (August 06, 2021)
 
-<img src="https://i.imgur.com/y6LZuzG.png" height="200px">
-<img src="https://i.imgur.com/WA544LK.png" height="200px">
-<img src="https://i.imgur.com/gDmfuS9.png" height="200px">
+<img src="https://i.imgur.com/y6LZuzG.png" height="200px"> <img src="https://i.imgur.com/WA544LK.png" height="200px"> <img src="https://i.imgur.com/gDmfuS9.png" height="200px">
 
 EDDC - Elite:Dangerous DataCollector
 
 This tool shows you the following data cumulatively from the local log files of Elite:Dangerous: 
+
+[Download Link](https://github.com/SNP-MajorK/ED-DataCollector/raw/master/exe/eddc.zip)
 
 Faction Influence Points
 Amount of Credits earned by Trade (not Profit)
