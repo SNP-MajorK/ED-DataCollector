@@ -2,10 +2,10 @@
 
 import glob
 import json
-# import os
-# import sys
 import threading
 import time
+import sqlite3
+from builtins import print
 from datetime import date
 from tkinter import *
 from winreg import *
@@ -13,25 +13,11 @@ from winreg import *
 import requests
 from prettytable import PrettyTable
 
-
-#Generate resource file directory access path
-# def resource_path(relative_path):
-#     if getattr(sys, 'frozen', False):
-#         base_path = sys._MEIPASS
-#     else:
-#         base_path = os.path.abspath(".")
-#     return os.path.join(base_path, relative_path)
-
-# def resource_path(relative_path):
-#     if hasattr(sys, '_MEIPASS'):
-#         return os.path.join(sys._MEIPASS, relative_path)
-#     return os.path.join(os.path.abspath("."), relative_path)
-
-
-filter_name = 'Stellanebula Project'
-# filter_name = ''
+# filter_name = 'Stellanebula Project'
+filter_name = ''
 BGS = 1
 MATS = 0
+ODYS = 0
 root = ''
 log_var = 0
 tick = True
@@ -43,18 +29,25 @@ influence_list = []
 Starsystem_list = []
 SystemAddress_list = []
 index_of_list = []
+today = date.today()
+today = str(today)
+Year = (today[2:4])
+Month = (today[5:7])
+Day = (today[8:10])
 with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
     value = QueryValueEx(key, '{4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4}')
 path = value[0] + '\\Frontier Developments\\Elite Dangerous\\'
 # path = value[0] + '\\Frontier Developments\\'
 
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
+voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
 mats_table = PrettyTable(['Materials', 'Count'])
 
 
 def last_tick():
     response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks")
     todos = json.loads(response.text)
+
     global tick_time
     global t_hour
     global t_minute
@@ -68,27 +61,36 @@ def last_tick():
         tick_time = [t_year, t_month, t_day, t_hour, t_minute]
 
 
+def file_names():
+    print('Get File of GUI Date')
+    Tag2 = Tag.get()
+    Monat2 = Monat.get()
+    Jahr2 = Jahr.get()
+    Date = str(Jahr2 + Monat2 + Tag2)
+    filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+    print(filenames)
+    return filenames
+
+
 def date_for_ma(missionid, gmd_faction, x):
-    print('date_for_MA')
+    if log_var > 1:
+        print('date_for_MA')
     mission_found = False
     while x < 7:
-        print('In While Schleife')
         Tag2 = str(int(Tag.get()) - x)
-        print(str(Tag2).zfill(2))
         Monat2 = Monat.get()
         Jahr2 = Jahr.get()
         Date = str(Jahr2 + Monat2 + str(Tag2).zfill(2))
         filenames = glob.glob(path + "\\Journal." + Date + "*.log")
         for filename in filenames:
-            print(filename)
-            if get_mission_data(missionid, filename, gmd_faction, mission_found):
+            # print(filename)
+            if get_mission_data(missionid, filename, gmd_faction):
                 mission_found = True
                 return mission_found
         x += 1
 
 
-def get_mission_data(missionid, journal_file, gmd_faction, mission_found):
-    print('get_mission_data')
+def get_mission_data(missionid, journal_file, gmd_faction):
     if log_var > 1:
         print('get_mission_data ' + journal_file)
     global inf_data, docked
@@ -97,7 +99,7 @@ def get_mission_data(missionid, journal_file, gmd_faction, mission_found):
     MA_ZEILE = 0
     D_ZEILE = 0
     D_system = []
-    print(journal_file)
+    # print(journal_file)
     datei = open(journal_file, 'r', encoding='UTF8')
     D_datei = open(journal_file, 'r', encoding='UTF8')
     for MA_zeile in datei:
@@ -105,11 +107,12 @@ def get_mission_data(missionid, journal_file, gmd_faction, mission_found):
         gmd_mission_id = str(missionid)
         gmd_search_string = 'MissionAccepted'
         if (MA_zeile.find(gmd_search_string)) > -1:
-            print('suche nach Mission ID ' + gmd_mission_id)
+            # print('suche nach Mission ID ' + gmd_mission_id)
             if (MA_zeile.find(gmd_mission_id)) > -1:
                 mission_found = True
-                print('gefunden ' + gmd_mission_id)
+                # print('gefunden ' + gmd_mission_id)
                 data = json.loads(MA_zeile)
+                # print(data)
                 if str(data['Faction']) == str(gmd_faction):
                     inf_data = (data['Influence'])
                     if log_var > 2:
@@ -125,18 +128,35 @@ def get_mission_data(missionid, journal_file, gmd_faction, mission_found):
                                 if D_ZEILE < MA_ZEILE:
                                     D_system.append(docked_data)
                         docked = D_system[-1]
+                        datei.close()
                         return docked
                 else:
-                    print(str(data['Faction']) + ' ' + str(gmd_faction))
-                    # print('not Found ' + gmd_mission_id)
+                    # print(data)
+                    if log_var > 1:
+                        print('gmd - else : ' + str(data['Faction']) + ' ' + str(gmd_faction))
                     docked = ''
+                    datei.close()
                     return docked
             else:
-                # print('nicht gefunden ' + gmd_mission_id)
                 mission_found = False
-    if not mission_found:
-        print('mission_found false ' + gmd_mission_id)
-        # return mission_found
+    datei.close()
+
+
+def get_faction_for(system_address):
+    # print(system_address)
+    filenames = file_names()
+    # print(filenames)
+    for filename in filenames:
+        datei = open(filename, 'r', encoding='UTF8')
+        line = 0
+        for zeile in datei:
+            line += 1
+            search_string = "FSDJump"
+            if (zeile.find(search_string)) > -1:
+                    data = json.loads(zeile)
+                    faction = (data['SystemFaction']['Name'])
+                    datei.close()
+                    return faction
 
 
 def log_date(timestamp):
@@ -147,14 +167,12 @@ def log_date(timestamp):
     log_hour = (timestamp[11:13])
     log_minute = (timestamp[14:16])
     log_time = [log_year, log_month, log_day, log_hour, log_minute]
+    return log_time
 
 
-def extract_data(journal_file, data, ed_faction_list, ed_influence_list, ed_index_of_list):
-    print('Odyssey Missions has FactionEffects missing')
-
+def extract_data(data):
     if log_var > 1:
         print('extract_data')
-        print(data['MissionID'])
     try:
         for p in data["FactionEffects"]:
             if log_var == 3:
@@ -164,148 +182,369 @@ def extract_data(journal_file, data, ed_faction_list, ed_influence_list, ed_inde
                     print('MissionID ' + str(data['MissionID']))
                 ed_faction = (p['Faction'])
                 missionid = data['MissionID']
-                try:
-                    if str(data['Faction']) == str(data['TargetFaction']):
-                        if log_var == 7:
-                            print('Fraktion ist gleich bei Mission ' + str(missionid))
-                            print(data)
-                        mission_found = False
-                        date_for_ma(missionid, ed_faction, 0)
-                        # get_mission_data(missionid, journal_file, ed_faction, mission_found)
-                        p['Influence'] = [{'SystemAddress': docked, 'Trend': 'UpGood', 'Influence': inf_data}]
-                        print(p['Influence'])
-                        if log_var == 3:
-                            print(p['Influence'])
-                except KeyError:
-                    print('No TargetFaction in JSON')
                 if not p['Influence']:
-                    if log_var == 3:
+                    print("extract_data no Data in p['Influence']")
+                    # print(p)
+                    if log_var > 3:
                         print(p['Influence'])
                     mission_found = False
                     date_for_ma(missionid, ed_faction, 0)
-                    # get_mission_data(missionid, journal_file, ed_faction, mission_found)
-                    if log_var == 3:
-                        print('In extraxt data ' + inf_data)
-                        print('In extraxt data ' + str(docked))
-                        print('In extraxt data ' + str(missionid))
                     if docked:
                         p['Influence'] = [{'SystemAddress': docked, 'Trend': 'UpGood', 'Influence': inf_data}]
                     else:
                         p['Influence'] = [{'SystemAddress': docked, 'Trend': 'UpGood', 'Influence': ''}]
-                    if log_var == 3:
-                        print(p['Influence'])
-                extract_influence(p, ed_faction_list, ed_influence_list, ed_index_of_list)
+                extract_influence(p)
+            else:
+                print('else')
+                print(p['Influence'])
+                # for xx in p['Influence']:
+                #     print(xx['SystemAddress'])
+                #     # get_faction_for(xx['SystemAddress'])
+                #     p['Faction'] = get_faction_for(xx['SystemAddress'])
+                #     extract_influence(p)
+
     except KeyError:
+        print('extract_data  - exception')
         ed_faction = (data['Faction'])
         missionid = data['MissionID']
         date_for_ma(missionid, ed_faction, 0)
-        # get_mission_data(missionid, journal_file, ed_faction, mission_found)
         data['Influence'] = [{'SystemAddress': docked, 'Trend': 'UpGood', 'Influence': inf_data}]
         if log_var == 3:
             print(data['Influence'])
-        extract_influence(data, ed_faction_list, ed_influence_list, ed_index_of_list)
-        # print(data)
-
+        extract_influence(data)
     # ================================ End of extract_data
 
 
-def extract_influence(data, ei_faction_list, ei_influence_list, ei_index_of_list):
+def extract_influence(data):
     if log_var > 1:
-        print('extract_influence')
+        print('\nextract_influence\n')
     for xx in data['Influence']:
-        for i in data["Influence"]:
-            if i['Trend'] == 'UpGood':
-                if (data['Faction'], xx['SystemAddress']) not in ei_index_of_list:
-                    if log_var == 3:
-                        print(data['Faction'], xx['SystemAddress'], len(i['Influence']))
-                    ei_faction_list.append(data['Faction'])
-                    system_list.append(xx['SystemAddress'])
-                    ei_influence_list.append(len(i['Influence']))
-                    temp = data['Faction'], xx['SystemAddress']
-                    ei_index_of_list.append(temp)
-                else:
-                    temp = data['Faction'], xx['SystemAddress']
-                    index = ei_index_of_list.index(temp)
-                    ei_influence_list[index] += len(i['Influence'])
-            if i['Trend'] == 'DownBad':
-                if (data['Faction'], xx['SystemAddress']) not in ei_index_of_list:
-                    ei_faction_list.append(data['Faction'])
-                    system_list.append(xx['SystemAddress'])
-                    ei_influence_list.append(len(i['Influence']) * (-1))
-                    temp = data['Faction'], xx['SystemAddress']
-                    ei_index_of_list.append(temp)
-                else:
-                    temp = data['Faction'], xx['SystemAddress']
-                    index = ei_index_of_list.index(temp)
-                    ei_influence_list[index] += len(i['Influence'] * (-1))
+        if xx['Trend'] == 'UpGood':
+            if not read_influence_db(xx['SystemAddress'], data['Faction']):
+                influence_db(xx['SystemAddress'], data['Faction'], len(xx['Influence']))
+            else:
+                update_influence_db(xx['SystemAddress'], data['Faction'], len(xx['Influence']))
+        if xx['Trend'] == 'DownBad':
+            if not read_influence_db(xx['SystemAddress'], data['Faction']):
+                influence_db(xx['SystemAddress'], data['Faction'], (len(xx['Influence']) * (-1)))
+            else:
+                update_influence_db(xx['SystemAddress'], data['Faction'], (len(xx['Influence']) * (-1)))
 
 
-def starsystem():
-    if log_var > 1:
+def starsystem(time):
+    if log_var > 0:
         print('starsystem')
     global starsytems_data, SystemAddress_list
     files = glob.glob(path + "\\Journal.*.log")
     filenames = []
-    # es werden die letzen 30 Logfiles eingelesen um eine DB der zuletzt besuchten Sternensysteme zu erstellen
-    start = ((len(files)) - 180)
+    if (len(files)) < time:
+        start = len(files)
+    else:
+        start = ((len(files)) - int(time))
     while start < len(files):
         filenames.append(files[start])
         start += 1
+    star_systems_db(filenames)
+
+
+def star_systems_db(filenames):
     for filename in filenames:
         datei = open(filename, 'r', encoding='UTF8')
         for zeile2 in datei:
             search_string2 = "FSDJump"
             if (zeile2.find(search_string2)) > -1:
-                starsytems_data = json.loads(zeile2)
-                # print(starsytems_data)
-                if starsytems_data['StarSystem'] not in Starsystem_list:
-                    Starsystem_list.append(starsytems_data['StarSystem'])
-                    SystemAddress_list.append(starsytems_data['SystemAddress'])
+                star_systems_data = json.loads(zeile2)
+                # print(star_systems_data)
+                starchart_db(star_systems_data['SystemAddress'], star_systems_data['StarSystem'])
         datei.close()
-    print(Starsystem_list)
-    print(SystemAddress_list)
 
 
-def einfluss_auslesen(journal_file, ea_system_list, ea_faction_list, ea_influence_list, ea_index_of_list, ea_tick):
+def influence_db(ID, Faction, Influence):
+    if ID == '':
+        # print('NULL')
+        ID = 'NONE'
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    cursor.execute("CREATE table IF NOT EXISTS influence (SystemName TEXT, Faction TEXT, Influence INTEGER)")
+    SystemName = cursor.execute("SELECT SystemName FROM starchart WHERE SystemID= ?", (ID,)).fetchall()
+    if not ID == 'NONE':
+        SystemName = SystemName[0][0]
+        cursor.execute("SELECT SystemName, Faction, Influence FROM influence WHERE SystemName= ? and Faction = ?", (SystemName, Faction,))
+        result = cursor.fetchall()
+        if not result:
+            if log_var > 0:
+                print('DB Else')
+            cursor.execute("INSERT INTO influence VALUES (?, ?, ?)", (SystemName, Faction, Influence))
+            connection.commit()
+    connection.close()
+
+
+def update_influence_db(ID, Faction, Influence):
+    if ID == '':
+        # print('NULL')
+        ID = 'NONE'
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    cursor.execute("CREATE table IF NOT EXISTS influence (SystemName TEXT, Faction TEXT, Influence INTEGER)")
+    SystemName = cursor.execute("SELECT SystemName FROM starchart WHERE SystemID= ?", (ID,)).fetchall()
+    if not ID == 'NONE':
+        SystemName = SystemName[0][0]
+        cursor.execute("SELECT Influence FROM influence WHERE SystemName= ? and Faction = ?", (SystemName, Faction,))
+        result = cursor.fetchall()
+        new_influence = (int(result[0][0])) + int(Influence)
+        cursor.execute("UPDATE influence SET Influence = ? WHERE  SystemName= ? and Faction = ?",
+                       (new_influence, SystemName, Faction))
+        connection.commit()
+        # imperial = cursor.execute(
+        #     "SELECT SystemName, Influence FROM influence WHERE Faction = 'Mainani Empire Party'",
+        #     ).fetchall()
+        # print(imperial)
+    connection.close()
+
+
+def read_influence_db(ID, faction):
+    if isinstance(ID, int):
+        connection = sqlite3.connect("eddc.db")
+        cursor = connection.cursor()
+        cursor.execute("CREATE table IF NOT EXISTS influence (SystemName TEXT, Faction TEXT, Influence INTEGER)")
+        SystemName = cursor.execute("SELECT SystemName FROM starchart WHERE SystemID= ?", (ID,)).fetchall()
+        # print(SystemName)
+        try:
+            SystemName = SystemName[0][0]
+        except IndexError:
+            filenames = file_names()
+            star_systems_db(filenames)
+            SystemName = cursor.execute("SELECT SystemName FROM starchart WHERE SystemID= ?", (ID,)).fetchall()
+            SystemName = SystemName[0][0]
+        result = cursor.execute("SELECT Faction FROM influence WHERE SystemName = ? and Faction = ?",
+                                (SystemName, faction)).fetchall()
+        connection.close()
+        try:
+            # print(result[0][0])
+            return result[0][0]
+        except IndexError:
+            if log_var > 1:
+                print('read_inf_db ' + str(ID) + '  ' + str(faction))
+                print('not yet in DB')
+
+
+def print_influence_db(filter_b):
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    filter_b = '%' + filter_b + '%'
+    cursor.execute("CREATE table IF NOT EXISTS influence (SystemName TEXT, Faction TEXT, Influence INTEGER)")
+    DATA = cursor.execute("SELECT * FROM influence WHERE SystemName LIKE ? OR Faction LIKE ? GROUP BY 1, 2, 3",
+                          (filter_b, filter_b)).fetchall()
+    connection.close()
+    return DATA
+
+
+def starchart_db(ID, SystemName):
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    cursor.execute("CREATE table IF NOT EXISTS starchart (SystemID INTEGER, SystemName TEXT)")
+    cursor.execute("SELECT SystemID FROM starchart WHERE SystemID= ?", (ID,))
+    result = cursor.fetchall()
+    if not result:
+        if log_var > 0:
+            print('DB Else')
+        cursor.execute("INSERT INTO starchart VALUES (?, ?)", (ID, SystemName,))
+        connection.commit()
+    connection.close()
+
+
+def read_starchart_table(ID):
+    if isinstance(ID, int):
+        connection = sqlite3.connect("eddc.db")
+        cursor = connection.cursor()
+        cursor.execute("CREATE table IF NOT EXISTS starchart (SystemID INTEGER, SystemName TEXT)")
+        SystemName = cursor.execute("SELECT SystemName FROM starchart WHERE SystemID = ?", (ID,)).fetchall()
+        try:
+            connection.close()
+            return SystemName[0][0]
+        except IndexError:
+            print('SystemAdresss =  ' + str(ID))
+            connection.close()
+
+
+def einfluss_auslesen(journal_file):
     if log_var > 1:
         print('dateien_einlesen')
-    tick_hour = hour.get('1.0', '2.0')
-    tick_minute = minute.get('1.0', '2.0')
+    tick_hour = hour.get()
+    tick_minute = minute.get()
     tick_time[3] = tick_hour[0:2]
     tick_time[4] = tick_minute[0:2]
     if log_var == 5:
         print(tick_time)
+    print(journal_file)
     datei = open(journal_file, 'r', encoding='UTF8')
     for zeile in datei:
         search_string = "MissionCompleted"
         if (zeile.find(search_string)) > -1:
             data = json.loads(zeile)
-            timestamp = str(data['timestamp'])
-            log_date(timestamp)
-            if ea_tick is True:
-                if str(tick_time[3]) < str(log_time[3]):
-                    extract_data(journal_file, data, ea_faction_list, ea_influence_list, ea_index_of_list)
-                if (str(tick_time[3]) == str(log_time[3])) and (str(tick_time[4]) < str(log_time[4])):
-                    extract_data(journal_file, data, ea_faction_list, ea_influence_list, ea_index_of_list)
-            else:
-                if str(tick_time[3]) > str(log_time[3]):
-                    extract_data(journal_file, data, ea_faction_list, ea_influence_list, ea_index_of_list)
-                if (str(tick_time[3]) == str(log_time[3])) and (str(tick_time[4]) > str(log_time[4])):
-                    extract_data(journal_file, data, ea_faction_list, ea_influence_list, ea_index_of_list)
+            if check_tick_time(zeile, tick):
+                # print(data)
+                extract_data(data)
+
+
     datei.close()
-    lauf = 0
-    while lauf < len(ea_system_list):
-        if ea_system_list[lauf] in SystemAddress_list:
-            index = SystemAddress_list.index(ea_system_list[lauf])
-            ea_system_list[lauf] = (Starsystem_list[index])
-            lauf += 1
-        else:
-            if ea_system_list:
-                lauf += 1
-            else:
-                ea_system_list[lauf] = 'None'
-                lauf += 1
+    # Starchart aktualisieren!
+    starsystem(3)
     # =========================================== End of dateien_einlesen()
+
+
+def check_tick_time(zeile, ea_tick):
+    data = json.loads(zeile)
+    timestamp = str(data['timestamp'])
+    log_time = log_date(timestamp)
+    tick_okay = False
+    # print(ea_tick)
+    if ea_tick is True:
+        if str(tick_time[3]) < str(log_time[3]):
+            tick_okay = True
+        if (str(tick_time[3]) == str(log_time[3])) and (str(tick_time[4]) < str(log_time[4])):
+            tick_okay = True
+    else:
+        if str(tick_time[3]) > str(log_time[3]):
+            tick_okay = True
+        if (str(tick_time[3]) == str(log_time[3])) and (str(tick_time[4]) > str(log_time[4])):
+            tick_okay = True
+    return tick_okay
+
+
+def multi_sell_exploration_data(journal_file):
+    datei = open(journal_file, 'r', encoding='UTF8')
+    line = 0
+    for zeile in datei:
+        line += 1
+        search_string = "MultiSellExplorationData"
+        if (zeile.find(search_string)) > -1:
+            if check_tick_time(zeile, tick):
+                data_found = line
+                data = find_last_docked(journal_file, data_found)
+                # print(data)
+                faction = data[0]
+                system_name = data[1]
+                data = json.loads(zeile)
+                # print('Sell ExplorationData ' + faction + ' ' + str(data["TotalEarnings"]))
+                vouchers_db('ExplorationData', system_name, str(faction), int(data["TotalEarnings"]))
+    datei.close()
+
+
+def market_sell(journal_file):
+    datei = open(journal_file, 'r', encoding='UTF8')
+    line = 0
+    for zeile in datei:
+        line += 1
+        search_string = "MarketSell"
+        if (zeile.find(search_string)) > -1:
+            if check_tick_time(zeile, tick):
+                data_found = line
+                data = find_last_docked(journal_file, data_found)
+                # print(data)
+                faction = data[0]
+                system_name = data[1]
+                data = json.loads(zeile)
+                try:
+                    if (data["BlackMarket"]):
+                        vouchers_db('BlackMarket', system_name, str(faction), int(data["TotalSale"]))
+                except KeyError:
+                    vouchers_db('MarketSell', system_name, str(faction), int(data["TotalSale"]))
+    datei.close()
+
+
+def find_last_docked(journal_file, data_found):
+    datei = open(journal_file, 'r', encoding='UTF8')
+    line = 0
+    factions = ['test']
+    star_systems = ['test']
+    faction = ''
+    star_system = ''
+    for zeile in datei:
+        line += 1
+        search_string = 'Docked'
+        if (zeile.find(search_string)) > -1:
+            data = json.loads(zeile)
+            try:
+                docked_data = ((data['StationFaction'])['Name'])
+                if line < data_found:
+                    factions.append(docked_data)
+                faction = factions[-1]
+                # print(factions)
+            except KeyError:
+                print('Faction in Docked not found')
+            star_system = (data['StarSystem'])
+            if line < data_found:
+                star_systems.append(star_system)
+            star_system = star_systems[-1]
+            # print(star_systems)
+    datei.close()
+    return faction, star_system
+
+
+def redeem_voucher(journal_file):
+    datei = open(journal_file, 'r', encoding='UTF8')
+    line = 0
+    for zeile in datei:
+        line += 1
+        search_string = "RedeemVoucher"
+        if (zeile.find(search_string)) > -1:
+            if check_tick_time(zeile, tick):
+                data_found = line
+                last_docked = find_last_docked(journal_file, data_found)
+                system_name = last_docked[1]
+                faction = last_docked[0]
+                data = json.loads(zeile)
+                try:
+                    if data['BrokerPercentage']:
+                        print('Ignoring Interstellar Factor')
+                except KeyError:
+                    try:
+                        for p in data["Factions"]:
+                            if not p['Faction'] == '':
+                                vouchers_db('Bounty ', system_name, faction, int(p['Amount']))
+                    except KeyError:
+                        try:
+                            if data['Faction'] == 'PilotsFederation':
+                                print('InterstellarFactor')
+                            elif not data['Faction'] == '':
+                                vouchers_db('CombatBonds', system_name, faction, int(data['Amount']))
+                        except KeyError:
+                            print('No Faction Event')
+
+
+def vouchers_db(vouchers, systemname, faction, amount):
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    cursor.execute("CREATE table IF NOT EXISTS vouchers (Vouchers TEXT, SystemName Text, Faction TEXT, Amount INTEGER)")
+    Item = cursor.execute("SELECT Faction FROM vouchers WHERE Faction = ? and Vouchers = ?",
+                          (faction, vouchers)).fetchall()
+
+    if not Item:
+        cursor.execute("INSERT INTO vouchers VALUES (?, ?, ?, ?)", (vouchers, systemname, faction, amount))
+        connection.commit()
+    else:
+        Item = cursor.execute("SELECT Amount FROM vouchers WHERE SystemName = ? and Faction = ? and Vouchers = ?",
+                              (systemname, faction, vouchers)).fetchone()
+        amount += int(Item[0])
+        cursor.execute("UPDATE vouchers SET Amount = ? where SystemName = ? and Faction = ? and Vouchers = ?",
+                       (amount, systemname, faction, vouchers))
+        connection.commit()
+    connection.close()
+
+
+def print_vouchers_db(filter_b):
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    filter_b = '%' + filter_b + '%'
+    cursor.execute("CREATE table IF NOT EXISTS vouchers (Vouchers TEXT, SystemName Text, Faction TEXT, Amount INTEGER)")
+    DATA = cursor.execute("""SELECT * FROM vouchers 
+                                WHERE SystemName = ? 
+                                OR Faction LIKE ? 
+                                OR Vouchers LIKE ? GROUP BY 1, 2, 3""",
+                          (filter_b, filter_b, filter_b)).fetchall()
+    connection.close()
+    return DATA
 
 
 def ticktrue():
@@ -318,77 +557,8 @@ def tickfalse():
     tick = False
 
 
-today = date.today()
-# print(today)
-today = str(today)
-Year = (today[2:4])
-Month = (today[5:7])
-Day = (today[8:10])
-
-last_tick()
-
-
-def file_names():
-    Tag2 = Tag.get()
-    Monat2 = Monat.get()
-    Jahr2 = Jahr.get()
-    Date = str(Jahr2 + Monat2 + Tag2)
-    return (Date)
-
-
-def auswertung():
-    if log_var > 1:
-        print('auswertung')
-    system.delete(.0, END)
-    global system_list, faction_list, influence_list, index_of_list, Starsystem_list, SystemAddress_list
-    Tag2 = Tag.get()
-    Monat2 = Monat.get()
-    Jahr2 = Jahr.get()
-    Date = str(Jahr2 + Monat2 + Tag2)
-    filenames = glob.glob(path + "\\Journal." + Date + "*.log")
-    if log_var == 2:
-        print(filenames)
-    auto_refresh = False
-    lauf_r = 0
-    if auto_refresh is True:
-        auto = len(filenames) - 1
-        while lauf_r < auto:
-            del filenames[lauf_r]
-            lauf_r += 1
-    if BGS == 1:
-        for filename in filenames:
-            einfluss_auslesen(filename, system_list, faction_list, influence_list, index_of_list, tick)
-        lauf = 0
-        if log_var == 4:
-            print(faction_list)
-        while lauf < len(faction_list):
-            a_filter = Filter.get()
-            a_filter = str.lower(a_filter)
-            if log_var == 4:
-                print('Filter = ' + a_filter)
-            if influence_list[lauf] != 0:
-                print('')
-                # print(type(str(system_list[lauf])))
-                # print(str((faction_list[lauf])[0:20]))
-                # print(str(influence_list[lauf]))
-                if (a_filter in str.lower((faction_list[lauf]))) or (a_filter in str.lower((system_list[lauf]))):
-                    system.insert(END, ((str(system_list[lauf]))[0:15]) + '\t \t ' + str((faction_list[lauf])[0:20]) +
-                                  '\t \t \t' + str(influence_list[lauf]) + '\n')
-                    bgs.add_row([system_list[lauf], faction_list[lauf], influence_list[lauf]])
-            lauf += 1
-        faction_list = []
-        system_list = []
-        influence_list = []
-        index_of_list = []
-    elif MATS == 1:
-        for filename in filenames:
-            mats_auslesen(filename)
-            # system.insert(END, 'MATS')
-    if not filenames:
-        system.insert(END, 'Keine Daten für den Tag vorhanden')
-
-threading.Thread(target=starsystem).start()
-# starsystem()
+starsystem(10)
+threading.Thread(target=(starsystem(10))).start()
 
 
 def autorefresh():
@@ -418,6 +588,15 @@ def refreshing():
         bgs.clear_rows()
     except AttributeError:
         print('NoData in bgs.row')
+    try:
+        voucher.clear_rows()
+    except AttributeError:
+        print('NoData in voucher.row')
+    try:
+        mats_table.clear_rows()
+    except AttributeError:
+        print('NoData in voucher.row')
+
     auswertung()
 
 
@@ -440,104 +619,235 @@ def mats_auslesen(journal_file):
     if log_var > 1:
         print('mats_auslesen')
     mats_table.clear_rows()
-    # global name_list, count_list
-    name_list = []
-    count_list = []
     datei = open(journal_file, 'r', encoding='UTF8')
     for zeile in datei:
         search_string = 'MaterialCollected'
         if (zeile.find(search_string)) > -1:
             data = json.loads(zeile)
+            # print(data)
+            state = 1
+            extract_engi_stuff(data, state)
+
+
+def ody_mats_auslesen(journal_file):
+    if log_var > 1:
+        print('ody_mats_auslesen')
+    mats_table.clear_rows()
+    # global name_list, count_list
+    datei = open(journal_file, 'r', encoding='UTF8')
+    for zeile in datei:
+        search_string = 'BackpackChange'
+        if (zeile.find(search_string)) > -1:
+            data = json.loads(zeile)
+            # print(data)
             try:
-                if data['Name_Localised'] not in name_list:
-                    name_list.append(str(data['Name_Localised']))
-                    count_list.append(data['Count'])
-                else:
-                    temp = data['Name_Localised']
-                    index = name_list.index(temp)
-                    count_list[index] += data['Count']
+                for xx in data['Added']:
+                    print(xx)
+                    state = 1
+                    extract_engi_stuff(xx, state)
             except KeyError:
-                if log_var > 3:
-                    print(data['Name'], end=' ')
-                    print(data['Count'])
-                if data['Name'] not in name_list:
-                    name_list.append(str(data['Name']))
-                    count_list.append(data['Count'])
-                else:
-                    temp = data['Name']
-                    index = name_list.index(temp)
-                    count_list[index] += data['Count']
-    lauf = 0
-    while lauf < len(name_list):
-        if log_var > 3:
-            print(name_list, end=' ')
-            print(count_list)
-        mats_filter = Filter.get()
-        mats_filter = str.lower(mats_filter)
-        # print(mats_filter)
-        if mats_filter in str.lower((name_list[lauf])):
-            system.insert(END, str((name_list[lauf] + '\t \t')))
-            system.insert(END, count_list[lauf])
-            system.insert(END, '\n')
-            mats_table.add_row((name_list[lauf], count_list[lauf]))
-        lauf += 1
+                state = (-1)
+                for xx in data['Removed']:
+                    extract_engi_stuff(xx, state)
+                print('failed')
 
     # ===========================  GUI erstellung  ==============================
+
+
+def extract_engi_stuff(data, state):
+        try:
+            engi_stuff_ody_db(str(data['Name_Localised']), int(data['Count']), state)
+        except KeyError:
+            engi_stuff_ody_db(str(data['Name']), int(data['Count']), state)
+
+
+def engi_stuff_ody_db(name, count, state):
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    cursor.execute("CREATE table IF NOT EXISTS odyssey (Name TEXT, Count INTEGER)")
+    if state < 0:
+        count = count * (-1)
+    Item = cursor.execute("SELECT Name FROM odyssey WHERE Name = ?", (name,)).fetchall()
+
+    if not Item:
+        cursor.execute("INSERT INTO odyssey VALUES (?, ?)", (name, count))
+        connection.commit()
+    else:
+        Item = cursor.execute("SELECT Count FROM odyssey WHERE Name = ?", (name,)).fetchone()
+        count += int(Item[0])
+        cursor.execute("UPDATE odyssey SET Count = ? where Name = ?", (count, name))
+        connection.commit()
+    connection.close()
+
+
+def print_engi_stuff_db(filter_b):
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    filter_b = '%' + filter_b + '%'
+    cursor.execute("CREATE table IF NOT EXISTS odyssey (Name TEXT, Count INTEGER)")
+    DATA = cursor.execute("SELECT * FROM odyssey WHERE Name LIKE ? ORDER BY Name",
+                          (filter_b, )).fetchall()
+    connection.close()
+    # print(DATA)
+    return DATA
 
 
 def cp_to_clipboard():
     root.clipboard_clear()
     if BGS == 1:
+        root.clipboard_append(voucher.get_string(sortby="System"))
+        root.clipboard_append('\n')
+        root.clipboard_append('\n')
         root.clipboard_append(bgs.get_string(sortby="System"))
-    else:
+    elif MATS == 1:
+        root.clipboard_append(mats_table.get_string(sortby="Materials"))
+    elif ODYS == 1:
         root.clipboard_append(mats_table.get_string(sortby="Materials"))
     root.update()
 
 
-def mats():
-    global BGS, MATS
+def mats_menu():
+    global BGS, MATS, ODYS
     BGS = 0
+    ODYS = 0
     MATS = 1
     vortick.config(state=DISABLED)
     nachtick.config(state=DISABLED)
+    Filter.delete(0, END)
+    auswertung()
+
+
+def odys_menu():
+    global BGS, MATS, ODYS
+    BGS = 0
+    ODYS = 1
+    MATS = 0
+    vortick.config(state=DISABLED)
+    nachtick.config(state=DISABLED)
+    Filter.delete(0, END)
     auswertung()
 
 
 def bgs_menu():
-    global BGS, MATS
+    global BGS, MATS, ODYS
     BGS = 1
+    ODYS = 0
     MATS = 0
     vortick.config(state=NORMAL)
     nachtick.config(state=NORMAL)
+    Filter.delete(0, END)
     threading_auto()
 
 
+def auswertung():
+    if log_var > 1:
+        print('auswertung')
+    connection = sqlite3.connect("eddc.db")
+    cursor = connection.cursor()
+    cursor.execute("DROP TABLE IF EXISTS influence")
+    cursor.execute("DROP TABLE IF EXISTS odyssey")
+    cursor.execute("DROP TABLE IF EXISTS vouchers")
+    system.delete(.0, END)
+    Tag2 = Tag.get()
+    Monat2 = Monat.get()
+    Jahr2 = Jahr.get()
+    Date = str(Jahr2 + Monat2 + Tag2)
+    filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+    nodata = 0
+    if log_var == 2:
+        print(filenames)
+    auto_refresh = False
+    lauf_r = 0
+    if auto_refresh is True:
+        auto = len(filenames) - 1
+        while lauf_r < auto:
+            del filenames[lauf_r]
+            lauf_r += 1
+    if not filenames:
+        system.insert(END, 'Keine Log-Files für den Tag vorhanden')
+    else:
+        if BGS == 1:
+            for filename in filenames:
+                einfluss_auslesen(filename)
+                redeem_voucher(filename)
+                multi_sell_exploration_data(filename)
+                market_sell(filename)
+            b_filter = Filter.get()
+            DATA = print_vouchers_db(b_filter)
+            if DATA:
+                system.insert(END,
+                              ('    ----------    Bounty, Bonds, ExplorerData and Trade ...    ----------\n\n'))
+                for i in DATA:
+                    tmp = (f"{i[3]:,}")
+                    tmp = tmp.replace(',', '.')
+                    tmp = tmp + ' Cr'
+                    system.insert(END, ((str(i[1])[0:15]) + '\t\t' + (str(i[2])[0:25]) + '\t\t\t' + (str(i[0])[0:15])
+                                        + '\n\t\t\t\t\t' + tmp + '\n'))
+                    voucher.add_row((i[0], i[1], i[2], tmp))
+                system.insert(END,
+                              ('\n    -----------------------------------  Influence  -----------------------------------\n'))
+                system.insert(END, ('\n'))
+            else:
+                nodata = 1
+                print('NO VOUCHER DATA')
+            DATA = print_influence_db(b_filter)
+            if DATA:
+                for i in DATA:
+                    system.insert(END, ((str(i[0])[0:15]) + '\t\t' + (str(i[1])[0:25]) + '\t\t\t\t' + str(i[2]) + '\n'))
+                    bgs.add_row((i[0], i[1], i[2]))
+            else:
+                print('NO INFLUENCE DATA')
+                if nodata == 1:
+                    system.insert(END, '\n\tKeine Daten vorhanden')
+
+
+        elif MATS == 1:
+            for filename in filenames:
+                mats_auslesen(filename)
+            b_filter = Filter.get()
+            DATA = print_engi_stuff_db(b_filter)
+            for i in DATA:
+                system.insert(END, ((str(i[0])) + '\t \t \t \t' + (str(i[1])) + '\n'))
+                mats_table.add_row((i[0], i[1]))
+
+        elif ODYS == 1:
+            print('ODYS == 1')
+            for filename in filenames:
+                ody_mats_auslesen(filename)
+            b_filter = Filter.get()
+            DATA = print_engi_stuff_db(b_filter)
+            for i in DATA:
+                system.insert(END, ((str(i[0])) + '\t \t \t \t' + (str(i[1])) + '\n'))
+                mats_table.add_row((i[0], i[1]))
+
+    # if not filenames:
+    #     system.insert(END, 'Keine Log-Files für den Tag vorhanden')
+
+
 def main():
-    global system, root, Tag, Monat, Jahr, hour, minute, BGS, MATS, vortick, nachtick, Filter
+    global system, root, Tag, Monat, Jahr, hour, minute, BGS, MATS, ODYS, vortick, nachtick, Filter
     root = Tk()
     root.title('Elite Dangerous Data Collector')
     try:
-        # img = resource_path("eddc.ico")
         img = ("eddc.ico")
         root.iconbitmap(img)
     except TclError:
         print('Icon not found)')
+
     root.configure(background='black')
-    root.minsize(380, 460)
-    root.maxsize(380, 460)
+    root.minsize(415, 500)
+    root.maxsize(415, 500)
     bg = PhotoImage(file=("SNPX.png"))
-    # bg = PhotoImage(file=(resource_path("SNPX.png")))
-    # bg2 = PhotoImage(file=(resource_path("Horizon.png")))
     bg2 = PhotoImage(file=("Horizon.png"))
 
     my_menu = Menu(root)
     root.config(menu=my_menu)
 
-    # file_menu = Menu(my_menu)
     file_menu = Menu(my_menu, tearoff=False)
     my_menu.add_cascade(label="Datei", menu=file_menu)
     file_menu.add_command(label="BGS", command=bgs_menu)
-    file_menu.add_command(label="MATS", command=mats)
+    file_menu.add_command(label="MATS", command=mats_menu)
+    file_menu.add_command(label="Odyssey", command=odys_menu)
     file_menu.add_command(label="Exit", command=root.quit)
 
     my_top_logo = Label(root, image=bg, bg='black')
@@ -550,6 +860,7 @@ def main():
     my_time.grid()
     my_time_label = Frame(my_time, bg='black')
     my_time_label.grid()
+
     label_Tag = Label(my_time_label, text="Tag:", bg='black',
                       fg='white', font=("Helvetica", 12)).grid(column=0, row=0, sticky=W)
     Tag = Entry(my_time_label, width=2, font=("Helvetica", 12))
@@ -572,22 +883,20 @@ def main():
     my_frame = Frame(my_time, bg='black')
     my_frame.grid(column=0, row=1)
     Label(my_frame,
-          text="""Der letzte Tick war um:    """, bg='black', fg='white', font=("Helvetica", 12),
+          text=""" Der letzte Tick war um:    """, bg='black', fg='white', font=("Helvetica", 12),
           justify=LEFT).grid(column=0, row=0)
 
     my_tick = Frame(my_frame, bg='black')
     my_tick.grid(column=1, row=0)
 
-    hour = Text(my_tick, height=1, width=2)
-    hour.insert(INSERT, (str(t_hour)))
-    hour.get(1.0, END)
-    hour.delete(3.0)
+    hour = Entry(my_tick, width=2, font=("Helvetica", 12))
+    hour.insert(0, str(t_hour))
     hour.grid(column=0, row=0)
     Label(my_tick,
           text=""":""", bg='black', fg='white', font=("Helvetica", 12),
           justify=LEFT).grid(column=2, row=0)
-    minute = Text(my_tick, height=1, width=2)
-    minute.insert(INSERT, (str(t_minute)))
+    minute = Entry(my_tick, width=2, font=("Helvetica", 12))
+    minute.insert(0, str(t_minute))
     minute.grid(column=3, row=0)
 
     check_var = IntVar()
@@ -631,28 +940,29 @@ def main():
 
     label_Tag2 = Label(myfolder_grid, text="Filter:", bg='black',
                        fg='white', font=("Helvetica", 12)).grid(column=0, row=0, sticky=W)
-    Filter = Entry(myfolder_grid, width=30, font=("Helvetica", 10))
-    print(' HIER KOMMT DAS Dropdown Menu hin')
+    Filter = Entry(myfolder_grid, width=37, font=("Helvetica", 10))
+
+    # print(' HIER KOMMT DAS Dropdown Menu hin')
 
     Filter.insert(0, filter_name)
     Filter.grid(column=0, row=0)
 
-    folder = Text(myfolder_grid, height=1, width=55, bg='black', fg='white', font=("Helvetica", 8))
+    folder = Entry(myfolder_grid, width=62, bg='black', fg='white', font=("Helvetica", 8))
     folder.insert(END, path)
     folder.grid(column=0, row=1, pady=5)
 
-    system = Text(root, height=11, width=50, bg='black', fg='white', font=("Helvetica", 10))
-    system.pack(padx=20, pady=5)
+    system = Text(root, height=13, width=70, bg='black', fg='white', font=("Helvetica", 10))
+    system.pack(padx=15, pady=5)
 
     version_but = Button(root,
-                         text='Version 0.1.0.0',
+                         text='Version 0.2.2.0',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
                          fg='white',
                          command=logging,
                          font=("Helvetica", 10))
-    version_but.place(x=20, y=425)
+    version_but.place(x=15, y=465)
 
     clipboard = Button(root,
                        text='Copy to Clipboard',
@@ -662,7 +972,7 @@ def main():
                        fg='white',
                        command=cp_to_clipboard,
                        font=("Helvetica", 10))
-    clipboard.place(x=150, y=425)
+    clipboard.place(x=175, y=465)
 
     ok_but = Button(root,
                     # width=4,
@@ -673,14 +983,17 @@ def main():
                     fg='white',
                     command=threading_auto,
                     font=("Helvetica", 10))
-    ok_but.place(x=325, y=425)
+    ok_but.place(x=360, y=465)
 
     def callback(event):
         threading_auto()
+
 
     root.bind('<Return>', callback)
 
     root.mainloop()
 
+
+last_tick()
 
 main()
