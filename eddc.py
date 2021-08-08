@@ -5,6 +5,7 @@ import json
 import threading
 import time
 import sqlite3
+import inspect
 from builtins import print
 from datetime import date
 from tkinter import *
@@ -19,7 +20,7 @@ BGS = 1
 MATS = 0
 ODYS = 0
 root = ''
-log_var = 0
+log_var = 2
 tick = True
 tick_time = []
 log_time = []
@@ -34,6 +35,7 @@ today = str(today)
 Year = (today[2:4])
 Month = (today[5:7])
 Day = (today[8:10])
+
 with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
     value = QueryValueEx(key, '{4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4}')
 path = value[0] + '\\Frontier Developments\\Elite Dangerous\\'
@@ -45,6 +47,8 @@ mats_table = PrettyTable(['Materials', 'Count'])
 
 
 def last_tick():
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks")
     todos = json.loads(response.text)
 
@@ -73,8 +77,8 @@ def file_names():
 
 
 def date_for_ma(missionid, gmd_faction, x):
-    if log_var > 1:
-        print('date_for_MA')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     mission_found = False
     while x < 7:
         Tag2 = str(int(Tag.get()) - x)
@@ -91,8 +95,8 @@ def date_for_ma(missionid, gmd_faction, x):
 
 
 def get_mission_data(missionid, journal_file, gmd_faction):
-    if log_var > 1:
-        print('get_mission_data ' + journal_file)
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     global inf_data, docked
     docked = ''
     inf_data = ''
@@ -143,9 +147,9 @@ def get_mission_data(missionid, journal_file, gmd_faction):
 
 
 def get_faction_for(system_address):
-    # print(system_address)
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     filenames = file_names()
-    # print(filenames)
     for filename in filenames:
         datei = open(filename, 'r', encoding='UTF8')
         line = 0
@@ -160,6 +164,8 @@ def get_faction_for(system_address):
 
 
 def log_date(timestamp):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     global log_time
     log_year = (timestamp[:4])
     log_month = (timestamp[5:7])
@@ -171,8 +177,8 @@ def log_date(timestamp):
 
 
 def extract_data(data):
-    if log_var > 1:
-        print('extract_data')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     try:
         for p in data["FactionEffects"]:
             if log_var == 3:
@@ -216,8 +222,8 @@ def extract_data(data):
 
 
 def extract_influence(data):
-    if log_var > 1:
-        print('\nextract_influence\n')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     for xx in data['Influence']:
         if xx['Trend'] == 'UpGood':
             if not read_influence_db(xx['SystemAddress'], data['Faction']):
@@ -233,21 +239,23 @@ def extract_influence(data):
 
 def starsystem(time):
     if log_var > 0:
-        print('starsystem')
+        print('function ' + inspect.stack()[0][3])
     global starsytems_data, SystemAddress_list
     files = glob.glob(path + "\\Journal.*.log")
     filenames = []
     if (len(files)) < time:
-        start = len(files)
+        start = 0
     else:
         start = ((len(files)) - int(time))
-    while start < len(files):
+    while start < (len(files)):
         filenames.append(files[start])
         start += 1
     star_systems_db(filenames)
 
 
 def star_systems_db(filenames):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     for filename in filenames:
         datei = open(filename, 'r', encoding='UTF8')
         for zeile2 in datei:
@@ -260,6 +268,8 @@ def star_systems_db(filenames):
 
 
 def influence_db(ID, Faction, Influence):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     if ID == '':
         # print('NULL')
         ID = 'NONE'
@@ -280,6 +290,8 @@ def influence_db(ID, Faction, Influence):
 
 
 def update_influence_db(ID, Faction, Influence):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     if ID == '':
         # print('NULL')
         ID = 'NONE'
@@ -303,6 +315,8 @@ def update_influence_db(ID, Faction, Influence):
 
 
 def read_influence_db(ID, faction):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     if isinstance(ID, int):
         connection = sqlite3.connect("eddc.db")
         cursor = connection.cursor()
@@ -329,6 +343,8 @@ def read_influence_db(ID, faction):
 
 
 def print_influence_db(filter_b):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     filter_b = '%' + filter_b + '%'
@@ -340,6 +356,8 @@ def print_influence_db(filter_b):
 
 
 def starchart_db(ID, SystemName):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     cursor.execute("CREATE table IF NOT EXISTS starchart (SystemID INTEGER, SystemName TEXT)")
@@ -354,6 +372,8 @@ def starchart_db(ID, SystemName):
 
 
 def read_starchart_table(ID):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     if isinstance(ID, int):
         connection = sqlite3.connect("eddc.db")
         cursor = connection.cursor()
@@ -368,8 +388,8 @@ def read_starchart_table(ID):
 
 
 def einfluss_auslesen(journal_file):
-    if log_var > 1:
-        print('dateien_einlesen')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     tick_hour = hour.get()
     tick_minute = minute.get()
     tick_time[3] = tick_hour[0:2]
@@ -394,6 +414,9 @@ def einfluss_auslesen(journal_file):
 
 
 def check_tick_time(zeile, ea_tick):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     data = json.loads(zeile)
     timestamp = str(data['timestamp'])
     log_time = log_date(timestamp)
@@ -413,6 +436,9 @@ def check_tick_time(zeile, ea_tick):
 
 
 def multi_sell_exploration_data(journal_file):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     datei = open(journal_file, 'r', encoding='UTF8')
     line = 0
     for zeile in datei:
@@ -432,6 +458,9 @@ def multi_sell_exploration_data(journal_file):
 
 
 def market_sell(journal_file):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     datei = open(journal_file, 'r', encoding='UTF8')
     line = 0
     for zeile in datei:
@@ -454,6 +483,9 @@ def market_sell(journal_file):
 
 
 def find_last_docked(journal_file, data_found):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     datei = open(journal_file, 'r', encoding='UTF8')
     line = 0
     factions = ['test']
@@ -483,6 +515,9 @@ def find_last_docked(journal_file, data_found):
 
 
 def redeem_voucher(journal_file):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     datei = open(journal_file, 'r', encoding='UTF8')
     line = 0
     for zeile in datei:
@@ -514,6 +549,9 @@ def redeem_voucher(journal_file):
 
 
 def vouchers_db(vouchers, systemname, faction, amount):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     cursor.execute("CREATE table IF NOT EXISTS vouchers (Vouchers TEXT, SystemName Text, Faction TEXT, Amount INTEGER)")
@@ -534,6 +572,9 @@ def vouchers_db(vouchers, systemname, faction, amount):
 
 
 def print_vouchers_db(filter_b):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     filter_b = '%' + filter_b + '%'
@@ -557,13 +598,14 @@ def tickfalse():
     tick = False
 
 
-starsystem(10)
-threading.Thread(target=(starsystem(10))).start()
+starsystem(20)
+# threading.Thread(target=(starsystem(10))).start()
 
 
 def autorefresh():
-    if log_var > 1:
-        print('autorefresh')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     while check_var.get() != 0:
         print('while autorefresh')
         if check_var.get() != 0:
@@ -573,8 +615,9 @@ def autorefresh():
 
 
 def refreshing():
-    if log_var > 1:
-        print('refreshing')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     system.delete(1.0, END)
     system.insert(INSERT, 'Auswertung läuft ')
     i = 0
@@ -601,8 +644,9 @@ def refreshing():
 
 
 def threading_auto():
-    if log_var > 1:
-        print('threading_auto')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     if check_var.get() != 0:
         threading.Thread(target=autorefresh).start()
     else:
@@ -616,8 +660,9 @@ def logging():
 
 
 def mats_auslesen(journal_file):
-    if log_var > 1:
-        print('mats_auslesen')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     mats_table.clear_rows()
     datei = open(journal_file, 'r', encoding='UTF8')
     for zeile in datei:
@@ -630,8 +675,9 @@ def mats_auslesen(journal_file):
 
 
 def ody_mats_auslesen(journal_file):
-    if log_var > 1:
-        print('ody_mats_auslesen')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     mats_table.clear_rows()
     # global name_list, count_list
     datei = open(journal_file, 'r', encoding='UTF8')
@@ -662,6 +708,9 @@ def extract_engi_stuff(data, state):
 
 
 def engi_stuff_ody_db(name, count, state):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     cursor.execute("CREATE table IF NOT EXISTS odyssey (Name TEXT, Count INTEGER)")
@@ -681,6 +730,9 @@ def engi_stuff_ody_db(name, count, state):
 
 
 def print_engi_stuff_db(filter_b):
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     filter_b = '%' + filter_b + '%'
@@ -693,6 +745,9 @@ def print_engi_stuff_db(filter_b):
 
 
 def cp_to_clipboard():
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
+
     root.clipboard_clear()
     if BGS == 1:
         root.clipboard_append(voucher.get_string(sortby="System"))
@@ -740,8 +795,8 @@ def bgs_menu():
 
 
 def auswertung():
-    if log_var > 1:
-        print('auswertung')
+    if log_var > 0:
+        print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS influence")
