@@ -356,8 +356,8 @@ def print_influence_db(filter_b):
 
 
 def starchart_db(ID, SystemName):
-    if log_var > 0:
-        print('function ' + inspect.stack()[0][3])
+    # if log_var > 0:
+    #     print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     cursor.execute("CREATE table IF NOT EXISTS starchart (SystemID INTEGER, SystemName TEXT)")
@@ -402,6 +402,8 @@ def einfluss_auslesen(journal_file):
         search_string = "MissionCompleted"
         if (zeile.find(search_string)) > -1:
             data = json.loads(zeile)
+            if log_var > 1:
+                print(data)
             if check_tick_time(zeile, tick):
                 # print(data)
                 extract_data(data)
@@ -448,13 +450,23 @@ def multi_sell_exploration_data(journal_file):
             if check_tick_time(zeile, tick):
                 data_found = line
                 data = find_last_docked(journal_file, data_found)
-                # print(data)
+                if log_var > 1:
+                    print(data)
                 faction = data[0]
                 system_name = data[1]
                 data = json.loads(zeile)
                 # print('Sell ExplorationData ' + faction + ' ' + str(data["TotalEarnings"]))
                 vouchers_db('ExplorationData', system_name, str(faction), int(data["TotalEarnings"]))
     datei.close()
+
+
+def is_json_key_present(json, key):
+    try:
+        buf = json[key]
+    except KeyError:
+        return False
+
+    return True
 
 
 def market_sell(journal_file):
@@ -468,16 +480,24 @@ def market_sell(journal_file):
         search_string = "MarketSell"
         if (zeile.find(search_string)) > -1:
             if check_tick_time(zeile, tick):
+                print(zeile)
                 data_found = line
                 data = find_last_docked(journal_file, data_found)
-                # print(data)
+                if log_var > 1:
+                    print(data)
                 faction = data[0]
                 system_name = data[1]
                 data = json.loads(zeile)
+
                 try:
-                    if (data["BlackMarket"]):
+                    # if is_json_key_present(data, 'Blackmarket'):
+                    if data['BlackMarket']:
                         vouchers_db('BlackMarket', system_name, str(faction), int(data["TotalSale"]))
+                    else:
+                        print(data)
+                        vouchers_db('MarketSell', system_name, str(faction), int(data["TotalSale"]))
                 except KeyError:
+                    print('test2')
                     vouchers_db('MarketSell', system_name, str(faction), int(data["TotalSale"]))
     datei.close()
 
@@ -502,14 +522,12 @@ def find_last_docked(journal_file, data_found):
                 if line < data_found:
                     factions.append(docked_data)
                 faction = factions[-1]
-                # print(factions)
             except KeyError:
                 print('Faction in Docked not found')
             star_system = (data['StarSystem'])
             if line < data_found:
                 star_systems.append(star_system)
             star_system = star_systems[-1]
-            # print(star_systems)
     datei.close()
     return faction, star_system
 
@@ -530,6 +548,8 @@ def redeem_voucher(journal_file):
                 system_name = last_docked[1]
                 faction = last_docked[0]
                 data = json.loads(zeile)
+                if log_var > 1:
+                    print(data)
                 try:
                     if data['BrokerPercentage']:
                         print('Ignoring Interstellar Factor')
@@ -538,12 +558,16 @@ def redeem_voucher(journal_file):
                         for p in data["Factions"]:
                             if not p['Faction'] == '':
                                 vouchers_db('Bounty ', system_name, faction, int(p['Amount']))
+                                if log_var > 1:
+                                    print(data)
                     except KeyError:
                         try:
                             if data['Faction'] == 'PilotsFederation':
                                 print('InterstellarFactor')
                             elif not data['Faction'] == '':
                                 vouchers_db('CombatBonds', system_name, faction, int(data['Amount']))
+                                if log_var > 1:
+                                    print(data)
                         except KeyError:
                             print('No Faction Event')
 
@@ -551,20 +575,23 @@ def redeem_voucher(journal_file):
 def vouchers_db(vouchers, systemname, faction, amount):
     if log_var > 0:
         print('function ' + inspect.stack()[0][3])
+        print(vouchers, systemname, faction, amount)
 
     connection = sqlite3.connect("eddc.db")
     cursor = connection.cursor()
     cursor.execute("CREATE table IF NOT EXISTS vouchers (Vouchers TEXT, SystemName Text, Faction TEXT, Amount INTEGER)")
-    Item = cursor.execute("SELECT Faction FROM vouchers WHERE Faction = ? and Vouchers = ?",
-                          (faction, vouchers)).fetchall()
-
+    Item = cursor.execute("SELECT Amount FROM vouchers WHERE SystemName = ? and Faction = ? and Vouchers = ?",
+                          (systemname, faction, vouchers)).fetchall()
+    print(Item)
     if not Item:
         cursor.execute("INSERT INTO vouchers VALUES (?, ?, ?, ?)", (vouchers, systemname, faction, amount))
         connection.commit()
     else:
         Item = cursor.execute("SELECT Amount FROM vouchers WHERE SystemName = ? and Faction = ? and Vouchers = ?",
                               (systemname, faction, vouchers)).fetchone()
+        print(Item[0])
         amount += int(Item[0])
+        print(amount)
         cursor.execute("UPDATE vouchers SET Amount = ? where SystemName = ? and Faction = ? and Vouchers = ?",
                        (amount, systemname, faction, vouchers))
         connection.commit()
@@ -1010,7 +1037,7 @@ def main():
     system.pack(padx=15, pady=5)
 
     version_but = Button(root,
-                         text='Version 0.2.2.0',
+                         text='Version 0.2.2.6',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
