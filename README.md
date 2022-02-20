@@ -17,10 +17,10 @@ This tool shows you the following data cumulatively from the local log files of 
 - Amount of Credits earned by Bounty Vouchers for Faction which owns the Station your selling on 
 - Amount of Credits earned by Combat Bonds 
 
-In the "BGS" mode, the date on which the data was collected can be set if desired. 
-Then you can choose whether the data should be evaluated before or after the daily update of the game servers (the so-called "tick"). 
-The time of the "tick" can be adjusted in the corresponding field. 
-The data can be displayed live via the "Auto Refresh" function. 
+In the "BGS" mode, the date on which the data was collected can be set if desired.  
+Then you can choose whether the data should be evaluated before or after the daily update of the game servers (the so-called "tick").  
+The time of the "tick" can be adjusted in the corresponding field.  
+The data can be displayed live via the "Auto Refresh" function.  
 
 On "Mats" you can see your collected Materials.
 And on "Odyssey" you can see every Item you collected on foot.
@@ -38,10 +38,10 @@ Dieses Tool zeigt Ihnen die folgenden Daten kumuliert aus den lokalen Logdateien
 - Anzahl der Credits, die durch Kopfgeldgutscheine für die Fraktion verdient wurden, der die Station gehört, auf der sie verkauft wurden 
 - Anzahl der Credits, die durch Kampfanleihen verdient wurden
 
-Im "BGS"-Modus kann auf Wunsch das Datum, an dem die Daten gesammelt wurden, eingestellt werden. 
-Außerdem kann man wählen, ob die Daten vor oder nach dem täglichen Update der Spielserver (der sogenannte "Tick") ausgewertet werden sollen.  
-Der Zeitpunkt des "Ticks" kann in dem entsprechenden Feld eingestellt werden. 
-Über die Funktion "Auto Refresh" können die Daten live angezeigt werden. 
+Im "BGS"-Modus kann auf Wunsch das Datum, an dem die Daten gesammelt wurden, eingestellt werden.  
+Außerdem kann man wählen, ob die Daten vor oder nach dem täglichen Update der Spielserver (dem sogenannten "Tick") ausgewertet werden sollen.  
+Der Zeitpunkt des "Ticks" kann in dem entsprechenden Feld eingestellt werden.  
+Über die Funktion "Auto Refresh" können die Daten live angezeigt werden.  
 
 Bei "Mats" können gesammelte Materialien eingesehen werden. 
 Und bei "Odyssey" kann jeder Gegenstand eingesehen werden, der zu Fuß gesammelt wurde.
