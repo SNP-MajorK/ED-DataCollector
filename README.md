@@ -22,7 +22,7 @@ Then you can choose whether the data should be evaluated before or after the dai
 The time of the "tick" can be adjusted in the corresponding field.  
 The data can be displayed live via the "Auto Refresh" function.  
 
-On "Mats" you can see your collected Materials.
+On "Mats" you can see your collected Materials.  
 And on "Odyssey" you can see every Item you collected on foot.
 
 
@@ -43,5 +43,5 @@ Außerdem kann man wählen, ob die Daten vor oder nach dem täglichen Update der
 Der Zeitpunkt des "Ticks" kann in dem entsprechenden Feld eingestellt werden.  
 Über die Funktion "Auto Refresh" können die Daten live angezeigt werden.  
 
-Bei "Mats" können gesammelte Materialien eingesehen werden. 
+Bei "Mats" können gesammelte Materialien eingesehen werden.  
 Und bei "Odyssey" kann jeder Gegenstand eingesehen werden, der zu Fuß gesammelt wurde.
