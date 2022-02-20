@@ -30,7 +30,7 @@ German
 
 EDDC – Der Elite:Dangerous DataCollector
 
-Dieses Tool zeigt Ihnen die folgenden Daten kumuliert aus den lokalen Logdateien von Elite:Dangerous an: 
+Dieses Tool zeigt die folgenden Daten kumuliert aus den lokalen Logdateien von Elite:Dangerous an: 
 
 - Fraktionseinflusspunkte
 - Anzahl der durch Handel verdienten Credits (nicht Profit) 
