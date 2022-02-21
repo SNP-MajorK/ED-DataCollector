@@ -65,7 +65,7 @@ database = resource_path("eddc.db")
 
 
 def last_tick():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks")
     todos = json.loads(response.text)
@@ -84,7 +84,7 @@ def last_tick():
 
 
 def file_names(var):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     Tag2 = Tag.get()
     Tag2 = str(int(Tag2) - var).zfill(2)
@@ -96,7 +96,7 @@ def file_names(var):
 
 
 def date_for_ma(missionid, gmd_faction, x):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     mission_found = False
     while x < 7:
@@ -114,7 +114,7 @@ def date_for_ma(missionid, gmd_faction, x):
 
 
 def get_mission_data(missionid, journal_file, gmd_faction):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     global inf_data, docked
     docked = ''
@@ -166,7 +166,7 @@ def get_mission_data(missionid, journal_file, gmd_faction):
 
 
 def get_faction_for(system_address):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     filenames = file_names(0)
     for filename in filenames:
@@ -183,7 +183,7 @@ def get_faction_for(system_address):
 
 
 def log_date(timestamp):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     global log_time
     log_year = (timestamp[:4])
@@ -199,7 +199,7 @@ def log_date(timestamp):
 
 
 def extract_data(data):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     try:
         for p in data["FactionEffects"]:
@@ -244,7 +244,7 @@ def extract_data(data):
 
 
 def extract_influence(data):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     for xx in data['Influence']:
         if xx['Trend'] == 'UpGood':
@@ -260,7 +260,7 @@ def extract_influence(data):
 
 
 def starsystem(time):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     global starsytems_data, SystemAddress_list
     files = glob.glob(path + "\\Journal.*.log")
@@ -276,7 +276,7 @@ def starsystem(time):
 
 
 def star_systems_db(filenames):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     for filename in filenames:
         datei = open(filename, 'r', encoding='UTF8')
@@ -289,7 +289,7 @@ def star_systems_db(filenames):
 
 
 def influence_db(ID, Faction, Influence):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     if ID == '':
         # print('NULL')
@@ -304,7 +304,7 @@ def influence_db(ID, Faction, Influence):
                        (SystemName, Faction,))
         result = cursor.fetchall()
         if not result:
-            if log_var > 0:
+            if log_var > 2:
                 print('DB Else')
             cursor.execute("INSERT INTO influence VALUES (?, ?, ?)", (SystemName, Faction, Influence))
             connection.commit()
@@ -312,7 +312,7 @@ def influence_db(ID, Faction, Influence):
 
 
 def update_influence_db(ID, Faction, Influence):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     if ID == '':
         # print('NULL')
@@ -337,7 +337,7 @@ def update_influence_db(ID, Faction, Influence):
 
 
 def read_influence_db(ID, faction):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     if isinstance(ID, int):
         connection = sqlite3.connect(database)
@@ -365,7 +365,7 @@ def read_influence_db(ID, faction):
 
 
 def print_influence_db(filter_b):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
@@ -378,7 +378,7 @@ def print_influence_db(filter_b):
 
 
 def starchart_db(ID, SystemName):
-    # if log_var > 0:
+    # if log_var > 2:
     #     print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
@@ -386,7 +386,7 @@ def starchart_db(ID, SystemName):
     cursor.execute("SELECT SystemID FROM starchart WHERE SystemID= ?", (ID,))
     result = cursor.fetchall()
     if not result:
-        if log_var > 0:
+        if log_var > 2:
             print('DB Else')
         cursor.execute("INSERT INTO starchart VALUES (?, ?)", (ID, SystemName,))
         connection.commit()
@@ -394,7 +394,7 @@ def starchart_db(ID, SystemName):
 
 
 def read_starchart_table(ID):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     if isinstance(ID, int):
         connection = sqlite3.connect(database)
@@ -410,7 +410,7 @@ def read_starchart_table(ID):
 
 
 def einfluss_auslesen(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     tick_hour = hour.get()
     tick_minute = minute.get()
@@ -437,7 +437,7 @@ def einfluss_auslesen(journal_file):
 
 
 def check_tick_time(zeile, ea_tick):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     data = json.loads(zeile)
@@ -459,7 +459,7 @@ def check_tick_time(zeile, ea_tick):
 
 
 def multi_sell_exploration_data(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     datei = open(journal_file, 'r', encoding='UTF8')
@@ -491,7 +491,7 @@ def is_json_key_present(json, key):
 
 
 def market_sell(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     datei = open(journal_file, 'r', encoding='UTF8')
@@ -528,7 +528,7 @@ def market_sell(journal_file):
 
 
 def find_last_docked(journal_file, data_found):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     datei = open(journal_file, 'r', encoding='UTF8')
@@ -558,7 +558,7 @@ def find_last_docked(journal_file, data_found):
 
 
 def redeem_voucher(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     datei = open(journal_file, 'r', encoding='UTF8')
@@ -598,7 +598,7 @@ def redeem_voucher(journal_file):
 
 
 def vouchers_db(vouchers, systemname, faction, amount):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
         print(vouchers, systemname, faction, amount)
 
@@ -623,7 +623,7 @@ def vouchers_db(vouchers, systemname, faction, amount):
 
 
 def print_vouchers_db(filter_b):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     connection = sqlite3.connect(database)
@@ -656,7 +656,7 @@ starsystem(20)
 
 
 def autorefresh():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     while check_var.get() != 0:
@@ -672,7 +672,7 @@ def autorefresh():
 
 
 def refreshing():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     print('while refreshing')
     system.delete(1.0, END)
@@ -701,7 +701,7 @@ def refreshing():
 
 
 def threading_auto():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     if CODEX == 1:
         print('AUTO CODEX = 1 ')
@@ -720,7 +720,7 @@ def logging():
 
 
 def mats_auslesen(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     mats_table.clear_rows()
@@ -735,7 +735,7 @@ def mats_auslesen(journal_file):
 
 
 def ody_mats_auslesen(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     mats_table.clear_rows()
     datei = open(journal_file, 'r', encoding='UTF8')
@@ -759,20 +759,20 @@ def ody_mats_auslesen(journal_file):
 
 
 def older_logs(log_time, lauf):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     datum = date(year=int(log_time[0]), month=int(log_time[1]), day=int(log_time[2]))
     new_date = str(datum - timedelta(days=lauf))
     new_date = str(new_date[2:4] + new_date[5:7] + new_date[8:10])
     # print(new_date)
     filenames = glob.glob(path + "\\Journal." + new_date + "*.log")
-    if log_var > 0:
+    if log_var > 2:
         print(str(filenames))
     return filenames
 
 
 def codex_auslesen(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
         print('aktueles  LOG' + str(journal_file))
     bio_color = ['blank']
@@ -871,7 +871,7 @@ def read_log(filename, search_string, item):
 
 
 def codex_into_db(date_log, time_log, cmdr, data, bio_color,systemname, body, region):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
         # print(bio_color)
     connection = sqlite3.connect(database)
@@ -921,7 +921,7 @@ def codex_into_db(date_log, time_log, cmdr, data, bio_color,systemname, body, re
 
 
 def insert_into_death_db(date_log, time_log, cmdr):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
         # print(bio_color)
     connection = sqlite3.connect(database)
@@ -940,7 +940,7 @@ def insert_into_death_db(date_log, time_log, cmdr):
 
 
 def insert_into_last_sell(date_log, time_log, sell, cmdr):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
         # print(bio_color)
     connection = sqlite3.connect(database)
@@ -960,12 +960,12 @@ def insert_into_last_sell(date_log, time_log, sell, cmdr):
 
 
 def treeview_codex():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     global filter_region, filter_cmdr, filter_bdata, combo_cmdr, combo_region, \
         combo_bio_data, b_data, regions, cmdr, tree, normal_view, death_frame, \
-        death_date_combo, sell_combo, begin_time, end_time
-
+        death_date_combo, sell_combo, begin_time, end_time, sorting
+    sorting = IntVar()
     normal_view = 0
     filter_region = ''
     filter_cmdr = ''
@@ -1003,6 +1003,7 @@ def treeview_codex():
         else:
             normal_view = 0
         refresh_treeview()
+
 
     def player_death():
         global success, death_date_combo, sell_combo, normal_view
@@ -1123,25 +1124,26 @@ def treeview_codex():
     menu_tree = Menu(tree)
     tree.config(menu=menu_tree)
     file_menu = Menu(menu_tree, tearoff=False)
-    menu_tree.add_cascade(label="Settings", menu=file_menu)
+    menu_tree.add_cascade(label="More", menu=file_menu)
     file_menu.add_command(label="Switch View", command=switch_view)
     file_menu.add_command(label="Player Death", command=player_death)
 
     def create_frame():
         global death_frame
         death_frame = Frame(tree, background='black')
-        if log_var > 0:
+        if log_var > 2:
             print('function ' + inspect.stack()[0][3])
         global tree_frame, tree_scroll, codex_tree
-        tree_frame = Frame(tree)
+        tree_frame = Frame(tree, bg='black')
         tree_frame.pack(pady=10)
         tree_scroll = Scrollbar(tree_frame)
         tree_scroll.pack(side=RIGHT, fill=Y)
         codex_tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set, selectmode="extended")
         tree_scroll.config(command=codex_tree.yview)
 
+
     def selected(event):
-        if log_var > 0:
+        if log_var > 2:
             print('function ' + inspect.stack()[0][3])
         global filter_region, filter_cmdr, filter_bdata, filter_sday, filter_dday, \
             begin_time, end_time, sell_combo, death_date_combo
@@ -1171,24 +1173,31 @@ def treeview_codex():
 
 
     def codex_treeview():
-        if log_var > 0:
+        if log_var > 2:
             print('function ' + inspect.stack()[0][3])
-
         if normal_view == 0:
-            data = select_filter(filter_cmdr, filter_region, filter_bdata, normal_view)
+            if sorting.get() != 0:
+                update = 3
+            else:
+                update = 0
+            data = select_filter(filter_cmdr, filter_region, filter_bdata, update)
 
         elif normal_view == 1:
             data = missing_codex(filter_cmdr, filter_region)
-
+            update = 0
         elif normal_view == 2:
-            print('player death between')
-            data = select_filter(filter_cmdr, filter_region, filter_bdata, normal_view)
+            update = 2
+            data = select_filter(filter_cmdr, filter_region, filter_bdata, update)
+
+        # if sorting.get() != 0:
+        #     data = select_filter(filter_cmdr, filter_region, filter_bdata, sorting.get())
 
         if not data:
             data = [('DATE', 'TIME', 'COMMANDER', 'SPECIES',
                      'VARIANT', 'SYSTEM', 'BODY', "REGION", 1)]
         # creating treeview
-        codex_tree['columns'] = ('Index', 'Datum', 'Zeit', 'CMDR', 'Codex eintrag', 'Codex Farbe','System', 'Body', 'Region')
+        codex_tree['columns'] = ('Index', 'Datum', 'Zeit', 'CMDR', 'Codex eintrag', 'Codex Farbe','System',
+                                 'Body', 'Region', '')
         codex_tree.column("#0", width=15, stretch=NO)
         codex_tree.column("Index", anchor=W, width=30)
         codex_tree.column("Datum", anchor=W, width=80)
@@ -1199,6 +1208,7 @@ def treeview_codex():
         codex_tree.column("System", anchor=E, width=180)
         codex_tree.column("Body", anchor=E, width=180)
         codex_tree.column("Region", anchor=E, width=180)
+        codex_tree.column("", anchor=E, width=1)
 
         codex_tree.heading("#0", text="", anchor=W)
         codex_tree.heading("Index", text="Index", anchor=W)
@@ -1211,47 +1221,57 @@ def treeview_codex():
         codex_tree.heading("Body", text="Body", anchor=E)
         codex_tree.heading("Region", text="Region", anchor=E)
 
-        # get Data from Database
-
-
         # configure treeview
         codex_tree.tag_configure('oddrow', background="white")
         codex_tree.tag_configure('evenrow', background="lightblue")
         codex_tree.tag_configure('subrow', background="yellow")
 
+        # insert Data in treeview
+
         count = 0
         counter = 'a'
         for record in data:
+            if update == 3:
+                # Wenn nach Datum sortiert wird darf kein Subrow erstellt werden!
+                record = (record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],1,record[9])
             if count % 2 == 0:
+                # Alle geraden Zeilen werden hellblau eingefärbt
                 if record[8] != 0:
                     codex_tree.insert(parent='', index='end', iid=str(count), text="",
                                   values=(count, record[0], record[1], record[2], record[3], record[4],
                                           record[5], record[6], record[7]), tags=('evenrow',))
                 else:
                     count -= 1
-                    # print('Codex = 0 ' + str(count) + " " + (str(count) + counter))
                     codex_tree.insert(parent=str(count), index='end', iid=str(str(count) + counter), text="",
                                       values=(count, record[0], record[1], record[2], record[3], record[4],
                                               record[5], record[6], record[7]), tags=('subrow',))
                     counter = chr(ord(counter) + 1)
+
             else:
+                # Alle ungeraden Zeilen werden weiß eingefärbt.
                 if record[8] != 0:
                     codex_tree.insert(parent='', index='end', iid=str(count), text="",
                                   values=(count, record[0], record[1], record[2], record[3], record[4],
                                           record[5], record[6], record[7]), tags=('oddrow',))
                 else:
-                    count -= 1
-                    # print('Codex = 0 ' + str(count) + " " + (str(count) + counter))
-                    codex_tree.insert(parent=str(count), index='end', iid=str(str(count) + counter), text="",
-                                      values=(count, record[0], record[1], record[2], record[3], record[4],
-                                              record[5], record[6], record[7]), tags=('subrow',))
-                    counter = chr(ord(counter) + 1)
+                    if count > 1:
+                        count -= 1
+                        codex_tree.insert(parent=str(count), index='end', iid=str(str(count) + counter), text="",
+                                          values=(count, record[0], record[1], record[2], record[3], record[4],
+                                                  record[5], record[6], record[7]), tags=('subrow',))
+                        counter = chr(ord(counter) + 1)
+                    else:
+                        codex_tree.insert(parent='', index='end', iid=str(str(count) + counter), text="",
+                                          values=(count, record[0], record[1], record[2], record[3], record[4],
+                                                  record[5], record[6], record[7]), tags=('subrow',))
+                        counter = chr(ord(counter) + 1)
+
             count += 1
         codex_tree.pack()
 
     def refresh_treeview():
         global b_date, e_date, death_frame
-        if log_var > 0:
+        if log_var > 2:
             print('function ' + inspect.stack()[0][3])
         for i in codex_tree.get_children():
             codex_tree.delete(i)
@@ -1406,7 +1426,7 @@ def treeview_codex():
 
 
     def create_button():
-        global combo_cmdr, combo_regions, combo_bio_data, refresh_button, death_date_combo, sell_combo
+        global combo_cmdr, combo_regions, combo_bio_data, refresh_button, death_date_combo, sell_combo, sorting
 
         connection = sqlite3.connect(database)
         cursor = connection.cursor()
@@ -1468,22 +1488,39 @@ def treeview_codex():
         end_time.pack(side=LEFT, padx=10)
         e_date = end_time.get()
 
+        sort_button = Checkbutton(buttons_frame,
+                                  text="Sort by Date",
+                                  bg='black',
+                                  fg='white',
+                                  selectcolor='black',
+                                  activebackground='black',
+                                  activeforeground='white',
+                                  variable=sorting,
+                                  onvalue=3)
+        sort_button.pack(side=LEFT, padx=10)
+
+
         codex_frame = Frame(tree, highlightbackground="blue", highlightthickness=1, bd=10)
         codex_frame.pack()
         connection.close()
+        # else:
+        #     label_tag = Label(label_frame, text="View: Not in Personal Codex :", bg='black', fg='white',
+        #                       font=("Helvetica", 12))
+        #     label_tag.pack(side=LEFT)
+
 
     create_button()
 
     def selected_record(e):
         global my_img, my_label
-        if log_var > 0:
+        if log_var > 2:
             print('function ' + inspect.stack()[0][3])
         selected_tree = codex_tree.focus()
         values = codex_tree.item(selected_tree, 'values')
         my_img = ''
         if values:
             var = str(values[4]).split()
-            png = (var[0] + '' + var[1] + ".png")
+            png = (var[0] + '_' + var[1] + ".png")
             print(png)
             if Path('images/' + png).is_file():
                 photo = "images/" + str(png)
@@ -1494,7 +1531,7 @@ def treeview_codex():
                 print("File exist")
             else:
                 print("File not exist")
-                file = resource_path("images/avatar.jpg")
+                file = resource_path("images/Kein_Bild.png")
                 image = Image.open(file)
                 image = image.resize((320, 145), Image.ANTIALIAS)
                 my_img = ImageTk.PhotoImage(image)
@@ -1507,7 +1544,7 @@ def treeview_codex():
     # connection.close()
 
     def missing_codex(filter_cmdr, filter_region):
-        if log_var > 0:
+        if log_var > 2:
             print('function ' + inspect.stack()[0][3])
         global normal_view
         normal_view = 1
@@ -1629,74 +1666,79 @@ def treeview_codex():
 
 
 def select_filter(cmdr, region, bio_data, update):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
+    if update != 3:
+        order = 'cmdr, region, data, date_log, time_log'
+    else:
+        order = 'date_log desc, time_log DESC'
 
     if cmdr and region and bio_data:
         data = cursor.execute("""SELECT * FROM codex where cmdr = ? and region = ? and data = ?
                               AND player_death = 0                              
                               AND date_log BETWEEN ? AND ? 
-                              ORDER by cmdr, region, data, date_log, time_log""",
+                              ORDER by """ + order,
                               (cmdr, region, bio_data, b_date,e_date)).fetchall()
     # Fall 2 CMDR & Region
     elif cmdr and region and not bio_data:
         data = cursor.execute("""SELECT * FROM codex where cmdr = ? and region = ?
                               AND player_death = 0                              
                               AND date_log BETWEEN ? AND ? 
-                              ORDER by cmdr, region, data, date_log, time_log""",
+                              ORDER by """ + order,
                               (cmdr, region, b_date,e_date)).fetchall()
     # Fall 3 CMDR & Bio
     elif cmdr and not region and bio_data:
         data = cursor.execute("""SELECT * FROM codex where cmdr = ? and data = ?
                               AND player_death = 0                              
                               AND date_log BETWEEN ? AND ?                               
-                              ORDER by cmdr, region, data, date_log, time_log""",
+                              ORDER by """ + order,
                               (cmdr,bio_data, b_date,e_date)).fetchall()
     # Fall4 only CMDR
     elif cmdr and not region and not bio_data:
         data = cursor.execute("""SELECT * FROM codex where cmdr = ?
                               AND player_death = 0                              
                               AND date_log BETWEEN ? AND ? 
-                              ORDER by cmdr, region, data, date_log, time_log""", (cmdr, b_date,e_date)).fetchall()
+                              ORDER by """ + order,
+                              (cmdr, b_date,e_date)).fetchall()
 
     # Fall 5 only Region
     elif not cmdr and region and not bio_data:
         data = cursor.execute("""SELECT * FROM codex where region = ?
                               AND player_death = 0                              
                               AND date_log BETWEEN ? AND ?
-                              ORDER by cmdr, region, data, date_log, time_log""", (region, b_date,e_date)).fetchall()
+                              ORDER by """ + order,
+                              (region, b_date,e_date)).fetchall()
     # Fall 6 only Biodata
     elif not cmdr and not region and bio_data:
         data = cursor.execute("""SELECT * FROM codex where data = ?
                               AND player_death = 0                              
                               AND date_log BETWEEN ? AND ? 
-                              ORDER by cmdr, region, data, date_log, time_log""", (bio_data, b_date,e_date)).fetchall()
+                              ORDER by """ + order,
+                              (bio_data, b_date,e_date)).fetchall()
     # Fall 7 Region & Biodata
     elif not cmdr and region and bio_data:
         data = cursor.execute("""SELECT * FROM codex where region = ? and data = ?
                               AND player_death = 0                              
                               AND date_log BETWEEN ? AND ? 
-                              ORDER by cmdr, region, data, date_log, time_log""",
+                              ORDER by """ + order,
                               (region,bio_data, b_date,e_date)).fetchall()
     # Fall 8 no Filter
     elif not cmdr and not region and not bio_data:
-        # print('ohne alles')
         data = cursor.execute("""SELECT * FROM codex 
                               where player_death = 0 AND date_log BETWEEN ? AND ? 
-                              ORDER by cmdr, region, data, date_log, time_log""", (b_date,e_date)).fetchall()
-
-
+                              ORDER by """ + order, (b_date,e_date)).fetchall()
+                            # ORDER by cmdr, region, data, date_log, time_log""", (b_date,e_date)).fetchall()
+        # print(data)
     connection.commit()
     connection.close()
-    # print(data)
     return data
 
 
 def check_system(journal_file, zeilenr):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     system_address = "blank"
     body = "blank"
@@ -1715,7 +1757,7 @@ def check_system(journal_file, zeilenr):
 
 def find_codex(journal_file, zeilenr, biodata):
     bio_color = ''
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     species = 'blank empty'
     system_address_codex = ''
@@ -1741,7 +1783,7 @@ def find_codex(journal_file, zeilenr, biodata):
 
 
 def check_cmdr(journal_file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3] + " " + journal_file)
     cmdr = ""
     datei = open(journal_file, 'r', encoding='UTF8')
@@ -1763,7 +1805,7 @@ def extract_engi_stuff(data, state):
 
 
 def engi_stuff_ody_db(name, count, state):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     connection = sqlite3.connect(database)
@@ -1785,7 +1827,7 @@ def engi_stuff_ody_db(name, count, state):
 
 
 def print_engi_stuff_db(filter_b):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     connection = sqlite3.connect(database)
@@ -1800,7 +1842,7 @@ def print_engi_stuff_db(filter_b):
 
 
 def cp_to_clipboard():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     root.clipboard_clear()
@@ -1865,7 +1907,7 @@ def bgs_menu():
 
 
 def insert_logfile_in_db(file):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
@@ -1878,48 +1920,63 @@ def insert_logfile_in_db(file):
 
 
 def select_last_log_file():
-    if log_var > 0:
+    # Vorletztes Logfile aus der Datenbank auslesen und übergeben.
+
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     cursor.execute("CREATE table IF NOT EXISTS logfiles (Name TEXT)")
     item = cursor.execute("SELECT Name FROM logfiles", ()).fetchall()
     if item:
-        file = item[len(item) - 5]
+        # Das vorletzte Logfiles
+        file = item[len(item) - 2]
     else:
+        # Da noch keine Logfiles eingelesen wurden, werden alle eingelesen
         file = ['0']
     return file
 
 
 def check_last_logs(filenames_codex, length):
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
-    # new_list = filenames_codex
     last_log_file = select_last_log_file()[0]
-    print(last_log_file)
+    print('last log files = ' ,last_log_file)
     if last_log_file != '0':
-        # print(last_log_file[0])
         lauf = 0
         for i in filenames_codex:
             if i != last_log_file:
                 lauf += 1
             else:
                 break
-        # print(lauf)
         i = 0
+        # Alle Logfiles vor dem last_log_file werden aus der Liste entfernt
         while i < lauf:
             filenames_codex.pop(0)
             i += 1
+    # nur die neuesten Logfiles und die letzen zwei schon eingelesenen werden übergeben.
     return filenames_codex
 
 
+def read_codex_entrys():
+    system.insert(END, 'Codex Daten werden gelesen')
+    # Lade alle logfiles in die Variable filenames_codex
+    filenames_codex = glob.glob(path + "\\Journal.*.log")
+    last_log = (len(filenames_codex))
+    check_last_logs(filenames_codex, last_log)
+    for filename in filenames_codex:
+        insert_logfile_in_db(filename)
+        codex_auslesen(filename)
+    treeview_codex()
+
+
 def auswertung():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
 
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
-    if log_var > 0:
+    if log_var > 2:
         print("lösche tabellen")
     # cursor.execute("DROP TABLE IF EXISTS codex_entry")
     # cursor.execute("DROP TABLE IF EXISTS codex")
@@ -1930,7 +1987,7 @@ def auswertung():
     system.delete(.0, END)
     filenames = file_names(0)
     nodata = 0
-    if log_var == 2:
+    if log_var == 3:
         print(filenames)
     auto_refresh = False
     lauf_r = 0
@@ -1940,18 +1997,10 @@ def auswertung():
             del filenames[lauf_r]
             lauf_r += 1
     if not filenames:
+        # Wenn es keine logfiles an diesem Tag gibt, dann
         if CODEX == 1:
             system.insert(END, 'Codex Daten werden gelesen')
-            filenames_codex = glob.glob(path + "\\Journal.*.log")
-            last_log = (len(filenames_codex))
-            # print(filenames_codex)
-            check_last_logs(filenames_codex, last_log)
-            # print(filenames_codex)
-            for filename in filenames_codex:
-                # print(filenames)
-                insert_logfile_in_db(filename)
-                codex_auslesen(filename)
-            treeview_codex()
+            read_codex_entrys()
         else:
             system.insert(END, 'Keine Log-Files für den Tag vorhanden')
     else:
@@ -1990,7 +2039,6 @@ def auswertung():
                 if nodata == 1:
                     system.insert(END, '\n\tKeine Daten vorhanden')
 
-
         elif MATS == 1:
             for filename in filenames:
                 mats_auslesen(filename)
@@ -2011,25 +2059,15 @@ def auswertung():
                 mats_table.add_row((i[0], i[1]))
 
         elif CODEX == 1:
-            print('CODEX == 1')
-            filenames_codex = glob.glob(path + "\\Journal.*.log")
-            print('Elif ' + str(filenames_codex))
-            last_log = (len(filenames_codex))
-            # print(filenames_codex)
-            check_last_logs(filenames_codex, last_log)
-            # starsystem(2)
-            for filename in filenames_codex:
-                insert_logfile_in_db(filename)
-                codex_auslesen(filename)
-            print('END for filename in filenames:')
-            treeview_codex()
+            system.insert(END, 'Codex Daten werden gelesen')
+            read_codex_entrys()
 
     # if not filenames:
     #     system.insert(END, 'Keine Log-Files für den Tag vorhanden')
 
 
 def main():
-    if log_var > 0:
+    if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     global system, root, Tag, Monat, Jahr, hour, minute, BGS, MATS, ODYS, vortick, nachtick, Filter, tree
     root = Tk()
@@ -2195,7 +2233,7 @@ def main():
     ok_but.place(x=360, y=465)
 
     def callback(event):
-        if log_var > 0:
+        if log_var > 2:
             print('function ' + inspect.stack()[0][3])
         threading_auto()
 
