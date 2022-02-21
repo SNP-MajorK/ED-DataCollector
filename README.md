@@ -1,7 +1,7 @@
 # Elite Dangerous DataCollector
 Collects the Data from Elite Dangerous out of your Log Files and Displays them.
 
-Latest version: 0.2.2.6 (August 06, 2021)
+Latest version: 0.5.0.5 (Feburary 21, 2022)
 
 <img src="https://i.imgur.com/y6LZuzG.png" height="200px"> <img src="https://i.imgur.com/WA544LK.png" height="200px"> <img src="https://i.imgur.com/gDmfuS9.png" height="200px">
 
@@ -9,7 +9,7 @@ EDDC - Elite:Dangerous DataCollector
 
 This tool shows you the following data cumulatively from the local log files of Elite:Dangerous: 
 
-[Download Link](https://github.com/SNP-MajorK/ED-DataCollector/raw/master/exe/eddc.zip)
+[Download Link](https://github.com/SNP-MajorK/ED-DataCollector/releases/download/v0.5.0.5/eddc.zip)
 
 - Faction Influence Points 
 - Amount of Credits earned by Trade (not Profit) 
@@ -24,6 +24,14 @@ The data can be displayed live via the "Auto Refresh" function.
 
 On "Mats" you can see your collected Materials.  
 And on "Odyssey" you can see every Item you collected on foot.
+
+New Features 
+ - Shows all fully scanned Bio Signals with System and Region-Names.
+ - It is possible to filter via CMDR, Region or Bio Signal
+ - Show undiscovered Codex Entrys via Settings "Switch View"
+
+<img src="https://cdn.discordapp.com/attachments/944130098406248498/944135915457105930/unknown.png">
+
 
 
 German
