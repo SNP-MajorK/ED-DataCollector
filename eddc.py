@@ -329,10 +329,7 @@ def update_influence_db(ID, Faction, Influence):
         cursor.execute("UPDATE influence SET Influence = ? WHERE  SystemName= ? and Faction = ?",
                        (new_influence, SystemName, Faction))
         connection.commit()
-        # imperial = cursor.execute(
-        #     "SELECT SystemName, Influence FROM influence WHERE Faction = 'Mainani Empire Party'",
-        #     ).fetchall()
-        # print(imperial)
+
     connection.close()
 
 
@@ -418,7 +415,7 @@ def einfluss_auslesen(journal_file):
     tick_time[4] = tick_minute[0:2]
     if log_var == 5:
         print(tick_time)
-    print(journal_file)
+    # print(journal_file)
     datei = open(journal_file, 'r', encoding='UTF8')
     for zeile in datei:
         search_string = "MissionCompleted"
@@ -658,17 +655,14 @@ starsystem(20)
 def autorefresh():
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
+    if CODEX != 1:
 
-    while check_var.get() != 0:
-
-        print('while autorefresh')
-        if check_var.get() != 0:
-            print(check_var.get())
-            time.sleep(10.0)
-            if CODEX == 1:
-                print('AUTO CODEX = 1 ')
-                tree.destroy()
-            refreshing()
+        while check_auto_refresh.get() != 0:
+            print('while autorefresh')
+            if check_auto_refresh.get() != 0:
+                print(check_auto_refresh.get())
+                time.sleep(10.0)
+                refreshing()
 
 
 def refreshing():
@@ -683,7 +677,7 @@ def refreshing():
         system.insert(INSERT, '.')
         i += 1
     if log_var > 1:
-        print('Checkbox an oder aus ' + str(check_var.get()))
+        print('Checkbox an oder aus ' + str(check_auto_refresh.get()))
     try:
         bgs.clear_rows()
     except AttributeError:
@@ -696,8 +690,8 @@ def refreshing():
         mats_table.clear_rows()
     except AttributeError:
         print('NoData in voucher.row')
-
-    auswertung()
+    if CODEX != 1:
+        auswertung()
 
 
 def threading_auto():
@@ -707,7 +701,7 @@ def threading_auto():
         print('AUTO CODEX = 1 ')
         tree.destroy()
         auswertung()
-    elif check_var.get() != 0:
+    elif check_auto_refresh.get() != 0:
         threading.Thread(target=autorefresh).start()
     else:
         threading.Thread(target=refreshing).start()
@@ -771,7 +765,136 @@ def older_logs(log_time, lauf):
     return filenames
 
 
-def codex_auslesen(journal_file):
+def create_codex_entry():
+    # type 0 = geo; 1 = bio ; 2 = space
+    global bio_worth
+
+    bio_worth = [('Albidum Sinuous Tubers', '111,300'), ('Aleoida Arcus', '379,300'), ('Aleoida Coronamus', '339,100'),
+                 ('Aleoida Gravis', '596,500'), ('Aleoida Laminiae', '208,900'), ('Aleoida Spica', '208,900'),
+                 ('Amphora Plant', '117,900'), ('Aureum Brain Tree', '115,900'), ('Bacterium Acies', '50,000'),
+                 ('Bacterium Alcyoneum', '119,500'), ('Bacterium Aurasus', '78,500'), ('Bacterium Bullaris', '89,900'),
+                 ('Bacterium Cerbrus', '121,300'), ('Bacterium Informem', '426,200'), ('Bacterium Nebulus', '296,300'),
+                 ('Bacterium Omentum', '267,400'), ('Bacterium Scopulum', '280,600'), ('Bacterium Tela', '135,600'),
+                 ('Bacterium Verrata', '233,300'), ('Bacterium Vesicula', '56,100'), ('Bacterium Volu', '400,500'),
+                 ('Bark Mounds', '108,900'), ('Blatteum Bioluminescent Anemone', '110,500'),
+                 ('Blatteum Sinuous Tubers', '111,300'), ('Cactoida Cortexum', '222,500'),
+                 ('Cactoida Lapis', '164,000'), ('Cactoida Peperatis', '164,000'),
+                 ('Cactoida Pullulanta', '222,500'), ('Cactoida Vermis', '711,500'),
+                 ('Caeruleum Sinuous Tubers', '111,300'), ('Clypeus Lacrimam', '426,200'),
+                 ('Clypeus Margaritus', '557,800'), ('Clypeus Speculumi', '711,500'),
+                 ('Concha Aureolas', '400,500'), ('Concha Biconcavis', '806,300'), ('Concha Labiata', '157,100'),
+                 ('Concha Renibus', '264,300'), ('Croceum Anemone', '110,500'), ('Crystalline Shards', '117,900'),
+                 ('Electricae Pluma', '339,100'), ('Electricae Radialem', '339,100'),
+                 ('Fonticulua Campestris', '63,600'),
+                 ('Fonticulua Digitos', '127,700'), ('Fonticulua Fluctus', '900,000'), ('Fonticulua Lapida', '195,600'),
+                 ('Fonticulua Segmentatus', '806,300'), ('Fonticulua Upupam', '315,300'), ('Frutexa Acus', '400,500'),
+                 ('Frutexa Collum', '118,500'), ('Frutexa Fera', '118,100'), ('Frutexa Flabellum', '127,900'),
+                 ('Frutexa Flammasis', '500,100'), ('Frutexa Metallicum', '118,100'), ('Frutexa Sponsae', '326,500'),
+                 ('Fumerola Aquatis', '339,100'), ('Fumerola Carbosis', '339,100'), ('Fumerola Extremus', '711,500'),
+                 ('Fumerola Nitris', '389,400'), ('Fungoida Bullarum', '224,100'), ('Fungoida Gelata', '206,300'),
+                 ('Fungoida Setisis', '120,200'), ('Fungoida Stabitis', '174,000'), ('Gypseeum Brain Tree', '115,900'),
+                 ('Lindigoticum Brain Tree', '115,900'), ('Lindigoticum Sinuous Tubers', '111,300'),
+                 ('Lividum Brain Tree', '115,900'), ('Luteolum Anemone', '110,500'),
+                 ('Osseus Cornibus', '109,500'), ('Osseus Discus', '596,500'),
+                 ('Osseus Fractus', '239,400'), ('Osseus Pellebantus', '477,700'), ('Osseus Pumice', '197,800'),
+                 ('Osseus Spiralis', '159,900'), ('Ostrinum Brain Tree', '115,900'),
+                 ('Prasinum Bioluminescent Anemone', '110,500'), ('Prasinum Sinuous Tubers', '111,300'),
+                 ('Puniceum Anemone', '110,500'), ('Puniceum Brain Tree', '115,900'),
+                 ('Recepta Conditivus', '645,700'), ('Recepta Deltahedronix', '711,500'),
+                 ('Recepta Umbrux', '596,500'), ('Roseum Anemone', '110,500'),
+                 ('Roseum Bioluminescent Anemone', '110,500'), ('Roseum Brain Tree', '115,900'),
+                 ('Roseum Sinuous Tubers', '111,300'), ('Rubeum Bioluminescent Anemone', '110,500'),
+                 ('Stratum Araneamus', '162,200'), ('Stratum Cucumisis', '711,500'),
+                 ('Stratum Excutitus', '162,200'), ('Stratum Frigus', '171,900'),
+                 ('Stratum Laminamus', '179,500'), ('Stratum Limaxus', '102,500'), ('Stratum Paleas', '102,500'),
+                 ('Stratum Tectonicas', '806,300'), ('Tubus Cavas', '171,900'), ('Tubus Compagibus', '102,700'),
+                 ('Tubus Conifer', '315,300'), ('Tubus Rosarium', '400,500'), ('Tubus Sororibus', '557,800'),
+                 ('Tussock Albata', '202,500'), ('Tussock Capillum', '370,000'), ('Tussock Caputus', '213,100'),
+                 ('Tussock Catena', '125,600'), ('Tussock Cultro', '125,600'), ('Tussock Divisa', '125,600'),
+                 ('Tussock Ignis', '130,100'), ('Tussock Pennata', '320,700'), ('Tussock Pennatis', '59,600'),
+                 ('Tussock Propagito', '71,300'), ('Tussock Serrati', '258,700'), ('Tussock Stigmasis', '806,300'),
+                 ('Tussock Triticum', '400,500'), ('Tussock Ventusa', '201,300'), ('Tussock Virgam', '645,700'),
+                 ('Violaceum Sinuous Tubers', '111,300'), ('Viride Brain Tree', '115,900'),
+                 ('Viride Sinuous Tubers', '111,300')]
+
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+
+        cursor.execute("""CREATE table IF NOT EXISTS codex_entry (
+                        data TEXT,
+                        worth INTEGER,
+                        type INTEGER, 
+                        region TEXT)
+                        """)
+
+        regions = RegionMapData.regions
+
+        select = cursor.execute("SELECT * from codex_entry").fetchall()
+        # print(select)
+        if not select:
+            lauf = 0
+            for a in regions:
+                if a != None:
+                    for i in bio_worth:
+                        cursor.execute("INSERT INTO codex_entry VALUES (?, ?, ?, ?)", (i[0], i[1], 0, a))
+            connection.commit()
+create_codex_entry()
+
+def insert_codex_db(logtime, codex_name, cmdr, codex_entry, category, region, system):
+    if log_var > 2:
+        print('function ' + inspect.stack()[0][3])
+
+    log_time = (log_date(logtime))
+    date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
+    time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
+
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        cursor.execute("""CREATE table IF NOT EXISTS codex_data (
+                        date_log date,
+                        time_log timestamp,
+                        cmdr TEXT,                        
+                        codex_name TEXT,
+                        codex_entry TEXT,
+                        category TEXT,
+                        system TEXT,
+                        region TEXT)
+                        """)
+
+        select = cursor.execute("""SELECT date_log, time_log, cmdr, codex_name, region FROM codex_data WHERE 
+                                date_log = ? and
+                                time_log = ? and
+                                cmdr = ? and
+                                codex_name = ? and
+                                region = ?             
+                                """, (date_log, time_log, cmdr, codex_name, region)).fetchall()
+        if not select:
+            cursor.execute("INSERT INTO codex_data VALUES (?,?,?,?,?,?,?,?)",
+                           (date_log, time_log, cmdr, codex_name, codex_entry, category, system, region))
+
+
+def read_log_codex(journal_file):
+    if log_var > 2:
+        print('function ' + inspect.stack()[0][3])
+
+    cmdr = check_cmdr(journal_file)
+
+    with open(journal_file, 'r', encoding='UTF8') as datei:
+        for zeile in datei:
+            search_string = '"event":"CodexEntry"'
+            if zeile.find(search_string) > -1:
+                data = json.loads(zeile)
+                logtime = data['timestamp']
+                codex_name = (data['Name'])
+                codex_entry  = (data['Name_Localised'])
+                category = data['Category_Localised']
+                region = data['Region_Localised']
+                system = data['System']
+                # print(logtime, codex_name, codex_entry, cmdr, category, region, system)
+                insert_codex_db(logtime, codex_name, cmdr, codex_entry, category, region, system)
+
+
+def read_bio_data(journal_file):
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
         print('aktueles  LOG' + str(journal_file))
@@ -788,6 +911,7 @@ def codex_auslesen(journal_file):
 
             # find Region with SystemAddress
             region = (findRegionForBoxel(system_address_bio)['region'][1])
+            # print(findRegionForBoxel(system_address_bio))
 
             timestamp = str(data['timestamp'])
             log_time = (log_date(timestamp))
@@ -808,10 +932,10 @@ def codex_auslesen(journal_file):
                         if str(bio_cmdr) == str(region_cmdr):
                             bio_color = find_codex(filename, 99999, biodata)
                         if bio_color != '':
-                            print('codex info in ' + str(filename) + ' gefunden; break')
+                            # print('codex info in ' + str(filename) + ' gefunden; break')
                             break
                     if bio_color != '':
-                        print('codex info gefunden; break')
+                        # print('codex info gefunden; break')
                         break
                     if not filenames:
                         bio_color = ''
@@ -852,9 +976,8 @@ def codex_auslesen(journal_file):
 
 
 def read_log(filename, search_string, item):
-    # print('test')
     global success
-
+    # print(search_string, item)
     temp = []
     datei = open(filename, 'r', encoding='UTF8')
     for zeile in datei:
@@ -924,6 +1047,7 @@ def insert_into_death_db(date_log, time_log, cmdr):
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
         # print(bio_color)
+    # print(date_log, time_log, cmdr)
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     cursor.execute("""CREATE table IF NOT EXISTS player_death (
@@ -933,7 +1057,7 @@ def insert_into_death_db(date_log, time_log, cmdr):
                     """)
     select = cursor.execute("""SELECT * FROM player_death WHERE 
                             date_log = ? and time_log = ? and cmdr = ?""", (date_log, time_log, cmdr)).fetchall()
-    # print(select)
+    print(select)
     if not select:
         cursor.execute("INSERT INTO player_death VALUES (?, ?, ?)", (date_log, time_log, cmdr))
     connection.commit()
@@ -959,12 +1083,56 @@ def insert_into_last_sell(date_log, time_log, sell, cmdr):
     connection.commit()
 
 
+def read_player_death(filename):
+    cmdrs = ''
+    cmdr = ''
+    date_log = ''
+    time_log = ''
+    logtimes = read_log(filename, '"event":"Died"', 'timestamp')
+    # print(logtimes, success)
+    if logtimes:
+        # print('Test')
+        cmdrs = read_log(filename, '"event":"Commander"', 'Name')
+        cmdrs = cmdrs[0]
+        # print(logtimes)
+        for log_time in logtimes:
+            timestamp = log_time
+            log_time = (log_date(timestamp))
+            date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
+            time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
+            # print(date_log, time_log, cmdrs)
+            insert_into_death_db(date_log, time_log, cmdrs)
+    multisell(filename)
+
+
+
+def multisell(filename):
+    cmdrs = ''
+    cmdr = ''
+    date_log = ''
+    time_log = ''
+    multi_sell_expo_data = read_log(filename, '"event":"MultiSellExplorationData"', 'timestamp')
+    if multi_sell_expo_data:
+        for i in multi_sell_expo_data:
+            log_time = (log_date(i))
+            date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
+            time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
+            sell_type = 'Multisell ExplorationData'
+            # print(date_log, time_log, sell_date)
+            if success:
+                cmdrs = read_log(filename, '"event":"Commander"', 'Name')
+                cmdrs = cmdrs[0]
+            insert_into_last_sell(date_log, time_log, sell_type, cmdrs)
+
+
+
 def treeview_codex():
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     global filter_region, filter_cmdr, filter_bdata, combo_cmdr, combo_region, \
         combo_bio_data, b_data, regions, cmdr, tree, normal_view, death_frame, \
-        death_date_combo, sell_combo, begin_time, end_time, sorting
+        death_date_combo, sell_combo, begin_time, end_time, sorting, refresher
+    refresher = 0
     sorting = IntVar()
     normal_view = 0
     filter_region = ''
@@ -1005,49 +1173,49 @@ def treeview_codex():
         refresh_treeview()
 
 
+    def codex_stars():
+        global normal_view
+        if log_var > 2:
+            print('function ' + inspect.stack()[0][3])
+        normal_view = 3
+        refresh_treeview()
+
+
     def player_death():
         global success, death_date_combo, sell_combo, normal_view
         normal_view = 2
-        filenames_codex = glob.glob(path + "\\Journal.*.log")
+        # filenames_codex = glob.glob(path + "\\Journal.*.log")
         #
-        # # READ ONLY LAST 5 LOGS
-        # #
-        # last_log = (len(filenames_codex))
-        # check_last_logs(filenames_codex, last_log)
-        # #
-        # NEEDS FIXING!
-        #
-
-        cmdrs = ''
-        cmdr = ''
-        date_log = ''
-        time_log = ''
-        for filename in filenames_codex:
-            success = FALSE
-            logtimes = read_log(filename, '"event":"Died"', 'timestamp')
-            if success:
-                cmdrs = read_log(filename, '"event":"Commander"', 'Name')
-                cmdrs = cmdrs[0]
-                # print(logtimes)
-                for log_time in logtimes:
-                    timestamp = log_time
-                    log_time = (log_date(timestamp))
-                    date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
-                    time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
-                    # print(date_log, time_log, cmdrs)
-                    insert_into_death_db(date_log, time_log, cmdrs)
-            multi_sell_expo_data = read_log(filename, '"event":"MultiSellExplorationData"', 'timestamp')
-            if multi_sell_expo_data:
-                for i in multi_sell_expo_data:
-                    log_time = (log_date(i))
-                    date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
-                    time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
-                    sell_date = 'Multisell ExplorationData'
-                    # print(date_log, time_log, sell_date)
-                    if success:
-                        cmdrs = read_log(filename, '"event":"Commander"', 'Name')
-                        cmdrs = cmdrs[0]
-                    insert_into_last_sell(date_log, time_log, sell_date, cmdrs)
+        # cmdrs = ''
+        # cmdr = ''
+        # date_log = ''
+        # time_log = ''
+        # for filename in filenames_codex:
+        #     success = FALSE
+        #     logtimes = read_log(filename, '"event":"Died"', 'timestamp')
+        #     if success:
+        #         cmdrs = read_log(filename, '"event":"Commander"', 'Name')
+        #         cmdrs = cmdrs[0]
+        #         # print(logtimes)
+        #         for log_time in logtimes:
+        #             timestamp = log_time
+        #             log_time = (log_date(timestamp))
+        #             date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
+        #             time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
+        #             # print(date_log, time_log, cmdrs)
+        #             insert_into_death_db(date_log, time_log, cmdrs)
+        #     multi_sell_expo_data = read_log(filename, '"event":"MultiSellExplorationData"', 'timestamp')
+        #     if multi_sell_expo_data:
+        #         for i in multi_sell_expo_data:
+        #             log_time = (log_date(i))
+        #             date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
+        #             time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
+        #             sell_type = 'Multisell ExplorationData'
+        #             # print(date_log, time_log, sell_date)
+        #             if success:
+        #                 cmdrs = read_log(filename, '"event":"Commander"', 'Name')
+        #                 cmdrs = cmdrs[0]
+        #             insert_into_last_sell(date_log, time_log, sell_type, cmdrs)
         connection = sqlite3.connect(database)
         cursor = connection.cursor()
 
@@ -1077,6 +1245,11 @@ def treeview_codex():
         label_tag = Label(death_frame, text="VON:", bg='black', fg='white', font=("Helvetica", 11))
         label_tag.grid(column=1, row=0, padx=5)
         sell_combo.grid(column=1, row=1, padx=5)
+        cursor.execute("""CREATE table IF NOT EXISTS player_death (
+                        date_log date,
+                        time_log timestamp,
+                        cmdr TEXT)
+                        """)
         select_death = cursor.execute("""SELECT * FROM player_death WHERE cmdr = ? 
                                         GROUP BY date_log ORDER BY date_log DESC""",
                                         (filter_cmdr,)).fetchall()
@@ -1104,7 +1277,7 @@ def treeview_codex():
 
         print(b_date, e_date)
         cmdr = combo_cmdr.get()
-        print(cmdr)
+        # print(cmdr)
         connection = sqlite3.connect(database)
         cursor = connection.cursor()
         data = []
@@ -1127,6 +1300,8 @@ def treeview_codex():
     menu_tree.add_cascade(label="More", menu=file_menu)
     file_menu.add_command(label="Switch View", command=switch_view)
     file_menu.add_command(label="Player Death", command=player_death)
+    file_menu.add_command(label="Codex Stars", command=codex_stars)
+
 
     def create_frame():
         global death_frame
@@ -1151,6 +1326,7 @@ def treeview_codex():
         filter_cmdr = combo_cmdr.get()
         filter_bdata = combo_bio_data.get()
         refresh_combo()
+        refresh_treeview()
         # print(filter_cmdr + " " + filter_region + " " + filter_bdata)
 
 
@@ -1168,13 +1344,38 @@ def treeview_codex():
             e_date = filter_dday
             end_time.delete(0, END)
             end_time.insert(0, e_date)
-
         refresh_combo()
+
+
+    def worth_it(search_data):
+        if log_var > 2:
+            print('function ' + inspect.stack()[0][3])
+        # print(search_data[3])
+        with sqlite3.connect(database) as connection:
+            cursor = connection.cursor()
+            select = cursor.execute("SELECT worth FROM codex_entry WHERE data = ? ", (search_data[3],)).fetchone()
+        new = str(select[0])
+        x = new.replace(',','')
+        y = int(x)
+        return y
+
+
+
+    def read_codex_data():
+        if log_var > 2:
+            print('function ' + inspect.stack()[0][3])
+        with sqlite3.connect(database) as connection:
+            cursor = connection.cursor()
+            select = cursor.execute("SELECT * FROM codex_data WHERE category = 'Astronomical Bodies' ", ).fetchall()
+        # print(select)
+        return select
 
 
     def codex_treeview():
         if log_var > 2:
             print('function ' + inspect.stack()[0][3])
+        sum = 0
+
         if normal_view == 0:
             if sorting.get() != 0:
                 update = 3
@@ -1189,25 +1390,36 @@ def treeview_codex():
             update = 2
             data = select_filter(filter_cmdr, filter_region, filter_bdata, update)
 
+        elif normal_view == 3:
+            data = read_codex_data()
+            update = 0
+
         # if sorting.get() != 0:
         #     data = select_filter(filter_cmdr, filter_region, filter_bdata, sorting.get())
 
         if not data:
             data = [('DATE', 'TIME', 'COMMANDER', 'SPECIES',
                      'VARIANT', 'SYSTEM', 'BODY', "REGION", 1)]
+            sum = 0
+        elif normal_view == 2 or normal_view == 0:
+            sum = 0
+            for i in data:
+                sum += worth_it(i)
+
         # creating treeview
-        codex_tree['columns'] = ('Index', 'Datum', 'Zeit', 'CMDR', 'Codex eintrag', 'Codex Farbe','System',
-                                 'Body', 'Region', '')
+        codex_tree['columns'] = ('Index', 'Datum', 'Zeit', 'CMDR', 'Codex eintrag', 'Codex Farbe', 'Scan Value',
+                                 'System', 'Body', 'Region', '')
         codex_tree.column("#0", width=15, stretch=NO)
         codex_tree.column("Index", anchor=W, width=30)
-        codex_tree.column("Datum", anchor=W, width=80)
-        codex_tree.column("Zeit", anchor=W, width=80)
-        codex_tree.column("CMDR", anchor=W, width=100)
+        codex_tree.column("Datum", anchor=W, width=70)
+        codex_tree.column("Zeit", anchor=W, width=55)
+        codex_tree.column("CMDR", anchor=CENTER, width=120)
         codex_tree.column("Codex eintrag", anchor=E, width=180)
         codex_tree.column("Codex Farbe", anchor=E, width=100)
+        codex_tree.column("Scan Value", anchor=E, width=80)
         codex_tree.column("System", anchor=E, width=180)
-        codex_tree.column("Body", anchor=E, width=180)
-        codex_tree.column("Region", anchor=E, width=180)
+        codex_tree.column("Body", anchor=E, width=80)
+        codex_tree.column("Region", anchor=E, width=200)
         codex_tree.column("", anchor=E, width=1)
 
         codex_tree.heading("#0", text="", anchor=W)
@@ -1217,6 +1429,7 @@ def treeview_codex():
         codex_tree.heading("CMDR", text="CMDR", anchor=CENTER)
         codex_tree.heading("Codex eintrag", text="Codex Eintrag", anchor=E)
         codex_tree.heading("Codex Farbe", text="Codex Farbe", anchor=E)
+        codex_tree.heading("Scan Value", text="Scan Value", anchor=E)
         codex_tree.heading("System", text="System", anchor=E)
         codex_tree.heading("Body", text="Body", anchor=E)
         codex_tree.heading("Region", text="Region", anchor=E)
@@ -1230,20 +1443,28 @@ def treeview_codex():
 
         count = 0
         counter = 'a'
+        worth = ''
         for record in data:
+            if normal_view == 2 or normal_view == 0:
+                worth = worth_it(record)
             if update == 3:
                 # Wenn nach Datum sortiert wird darf kein Subrow erstellt werden!
                 record = (record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],1,record[9])
+            if normal_view == 3:
+                print(record)
+                record = (record[0], record[1], record[2], record[4], '', record[6], '',
+                          record[7], 1, 1)
+
             if count % 2 == 0:
                 # Alle geraden Zeilen werden hellblau eingefärbt
                 if record[8] != 0:
                     codex_tree.insert(parent='', index='end', iid=str(count), text="",
-                                  values=(count, record[0], record[1], record[2], record[3], record[4],
+                                  values=(count, record[0], record[1], record[2], record[3], record[4], worth,
                                           record[5], record[6], record[7]), tags=('evenrow',))
                 else:
                     count -= 1
                     codex_tree.insert(parent=str(count), index='end', iid=str(str(count) + counter), text="",
-                                      values=(count, record[0], record[1], record[2], record[3], record[4],
+                                      values=(count, record[0], record[1], record[2], record[3], record[4], worth,
                                               record[5], record[6], record[7]), tags=('subrow',))
                     counter = chr(ord(counter) + 1)
 
@@ -1251,26 +1472,33 @@ def treeview_codex():
                 # Alle ungeraden Zeilen werden weiß eingefärbt.
                 if record[8] != 0:
                     codex_tree.insert(parent='', index='end', iid=str(count), text="",
-                                  values=(count, record[0], record[1], record[2], record[3], record[4],
+                                  values=(count, record[0], record[1], record[2], record[3], record[4], worth,
                                           record[5], record[6], record[7]), tags=('oddrow',))
                 else:
                     if count > 1:
                         count -= 1
                         codex_tree.insert(parent=str(count), index='end', iid=str(str(count) + counter), text="",
-                                          values=(count, record[0], record[1], record[2], record[3], record[4],
+                                          values=(count, record[0], record[1], record[2], record[3], record[4], worth,
                                                   record[5], record[6], record[7]), tags=('subrow',))
                         counter = chr(ord(counter) + 1)
                     else:
                         codex_tree.insert(parent='', index='end', iid=str(str(count) + counter), text="",
-                                          values=(count, record[0], record[1], record[2], record[3], record[4],
+                                          values=(count, record[0], record[1], record[2], record[3], record[4], worth,
                                                   record[5], record[6], record[7]), tags=('subrow',))
                         counter = chr(ord(counter) + 1)
-
             count += 1
         codex_tree.pack()
+        if sum > 0 and (normal_view == 2 or normal_view == 0):
+            summen_text = ('Summe  - Anzahl Einträge : ' +  str(count) + '     Wertigkeit :  ' +  str(f"{sum:,}"))
+            summe = Label(tree_frame, text=summen_text, bg='black', fg='white')
+            summe.pack(fill=X, side=RIGHT)
+
 
     def refresh_treeview():
+        read_codex_entrys()
         global b_date, e_date, death_frame
+
+
         if log_var > 2:
             print('function ' + inspect.stack()[0][3])
         for i in codex_tree.get_children():
@@ -1288,6 +1516,16 @@ def treeview_codex():
         print(normal_view)
         codex_treeview()
         codex_tree.bind("<ButtonRelease-1>", selected_record)
+        # refreshin_treeview()
+
+
+    def refreshin_treeview():
+        global refresher
+        print('refreshing ' + str(refresher))
+        refresher += 1
+        time.sleep(10.0)
+
+        threading.Thread(target=refresh_treeview).start()
 
     global buttons_frame
     buttons_frame = Frame(tree, background='black')
@@ -1298,7 +1536,7 @@ def treeview_codex():
 
 
     def refresh_combo():
-
+        read_codex_entrys()
         connection = sqlite3.connect(database)
         cursor = connection.cursor()
 
@@ -1503,10 +1741,6 @@ def treeview_codex():
         codex_frame = Frame(tree, highlightbackground="blue", highlightthickness=1, bd=10)
         codex_frame.pack()
         connection.close()
-        # else:
-        #     label_tag = Label(label_frame, text="View: Not in Personal Codex :", bg='black', fg='white',
-        #                       font=("Helvetica", 12))
-        #     label_tag.pack(side=LEFT)
 
 
     create_button()
@@ -1548,120 +1782,71 @@ def treeview_codex():
             print('function ' + inspect.stack()[0][3])
         global normal_view
         normal_view = 1
-        cmdr = 'Major_K'
-        region = 'Achilles\'s Altar'
 
-        connection = sqlite3.connect(database)
-        cursor = connection.cursor()
-
-        # type 0 = geo; 1 = bio ; 2 = space
-        cursor.execute("""CREATE table IF NOT EXISTS codex_entry (
-                        data TEXT,
-                        type INTEGER, 
-                        region TEXT)
-                        """)
-
-        bio = ['Albidum Sinuous Tubers', 'Aleoida Arcus', 'Aleoida Coronamus', 'Aleoida Gravis',
-                'Aleoida Laminiae', 'Aleoida Spica', 'Amphora Plant', 'Aureum Brain Tree',
-                'Bacterium Acies', 'Bacterium Alcyoneum', 'Bacterium Aurasus', 'Bacterium Bullaris',
-                'Bacterium Cerbrus', 'Bacterium Informem', 'Bacterium Nebulus', 'Bacterium Omentum',
-                'Bacterium Scopulum', 'Bacterium Tela', 'Bacterium Verrata', 'Bacterium Vesicula',
-                'Bacterium Volu', 'Bark Mounds', 'Blatteum Bioluminescent Anemone', 'Blatteum Sinuous Tubers',
-                'Cactoida Cortexum', 'Cactoida Lapis', 'Cactoida Peperatis', 'Cactoida Pullulanta',
-                'Cactoida Vermis', 'Caeruleum Sinuous Tubers', 'Clypeus Lacrimam', 'Clypeus Margaritus',
-                'Clypeus Speculumi', 'Concha Aureolas', 'Concha Biconcavis', 'Concha Labiata',
-                'Concha Renibus', 'Croceum Anemone', 'Crystalline Shards', 'Electricae Pluma',
-                'Electricae Radialem', 'Fonticulua Campestris', 'Fonticulua Digitos', 'Fonticulua Fluctus',
-                'Fonticulua Lapida', 'Fonticulua Segmentatus', 'Fonticulua Upupam', 'Frutexa Acus',
-                'Frutexa Collum', 'Frutexa Fera', 'Frutexa Flabellum', 'Frutexa Flammasis',
-                'Frutexa Metallicum', 'Frutexa Sponsae', 'Fumerola Aquatis', 'Fumerola Carbosis',
-                'Fumerola Extremus', 'Fumerola Nitris', 'Fungoida Bullarum', 'Fungoida Gelata',
-                'Fungoida Setisis', 'Fungoida Stabitis', 'Gypseeum Brain Tree', 'Lindigoticum Brain Tree',
-                'Lindigoticum Sinuous Tubers', 'Lividum Brain Tree', 'Luteolum Anemone', 'Osseus Cornibus',
-                'Osseus Discus', 'Osseus Fractus', 'Osseus Pellebantus', 'Osseus Pumice',
-                'Osseus Spiralis', 'Ostrinum Brain Tree', 'Prasinum Bioluminescent Anemone', 'Prasinum Sinuous Tubers',
-                'Puniceum Anemone', 'Puniceum Brain Tree', 'Recepta Conditivus', 'Recepta Deltahedronix',
-                'Recepta Umbrux', 'Roseum Anemone', 'Roseum Bioluminescent Anemone', 'Roseum Brain Tree',
-                'Roseum Sinuous Tubers', 'Rubeum Bioluminescent Anemone', 'Stratum Araneamus', 'Stratum Cucumisis',
-                'Stratum Excutitus', 'Stratum Frigus', 'Stratum Laminamus', 'Stratum Limaxus',
-                'Stratum Paleas', 'Stratum Tectonicas', 'Tubus Cavas', 'Tubus Compagibus',
-                'Tubus Conifer', 'Tubus Rosarium', 'Tubus Sororibus', 'Tussock Albata',
-                'Tussock Capillum', 'Tussock Caputus', 'Tussock Catena', 'Tussock Cultro',
-                'Tussock Divisa', 'Tussock Ignis', 'Tussock Pennata', 'Tussock Pennatis',
-                'Tussock Propagito', 'Tussock Serrati', 'Tussock Stigmasis', 'Tussock Triticum',
-                'Tussock Ventusa', 'Tussock Virgam', 'Violaceum Sinuous Tubers', 'Viride Brain Tree',
-                'Viride Sinuous Tubers']
-        # region = ['Ryker\'s Hope', 'Newton\'s Vault', 'Achilles\'s Altar', 'Tenebrae', 'Lyra\'s Song']
-        region = RegionMapData.regions
-        del region[0]
-
-        select = cursor.execute("SELECT * from codex_entry").fetchall()
-        if not select:
-            lauf = 0
-            for a in region:
-                for i in bio:
-                    cursor.execute("INSERT INTO codex_entry VALUES (?, ?, ?)", (i, 1, a))
-                    # print(i,a,'0')
+        with sqlite3.connect(database) as connection:
+            cursor = connection.cursor()
+            cmdrs = cursor.execute("SELECT DISTINCT cmdr FROM codex").fetchall()
+            # print(cmdrs)
+            cursor.execute("DROP TABLE IF EXISTS codex_show")
             connection.commit()
+            cursor.execute("""CREATE table IF NOT EXISTS codex_show (
+                                    cmdr TEXT,
+                                    data TEXT, 
+                                    region TEXT)
+                                    """)
+            region = RegionMapData.regions
+            # del region[0]
+
+            select_show = cursor.execute("SELECT * from codex_show").fetchall()
+            if not select_show:
+                for cmdr in cmdrs:
+                    for a in region:
+                        if a != None:
+                            for i in bio_worth:
+                                cursor.execute("INSERT INTO codex_show VALUES (?, ?, ?)", (cmdr[0], i[0], a))
+                connection.commit()
 
 
-        connection = sqlite3.connect(database)
-        cursor = connection.cursor()
-        cmdrs = cursor.execute("SELECT DISTINCT cmdr FROM codex").fetchall()
-        # print(cmdrs)
-        cursor.execute("DROP TABLE IF EXISTS codex_show")
-        cursor.execute("""CREATE table IF NOT EXISTS codex_show (
-                                cmdr TEXT,
-                                data TEXT, 
-                                region TEXT)
-                                """)
-        select_show = cursor.execute("SELECT * from codex_show").fetchall()
-        if not select_show:
-            for cmdr in cmdrs:
-                for a in region:
-                    for i in bio:
-                        cursor.execute("INSERT INTO codex_show VALUES (?, ?, ?)", (cmdr[0], i, a))
-            connection.commit()
+            temp = cursor.execute("SELECT DISTINCT cmdr, data, region FROM codex WHERE codex.codex = 1").fetchall()
+            if temp:
+                # print(temp)
+                for i in temp:
+                    cmdr_select = cursor.execute("""SELECT * from codex_entry where data = ?
+                                                    and region = ?""", (i[1], i[2])).fetchall()
+                    delete_cmdr = str(i[0])
+                    delete_bio = str(cmdr_select[0][0])
+                    delete_region = str(cmdr_select[0][3])
 
+                    cursor.execute("DELETE FROM codex_show WHERE cmdr = ? AND data = ? AND region = ?",
+                                   (delete_cmdr, delete_bio, delete_region))
+                    # print(i, i[0], cmdr_select[0][0], cmdr_select[0][2])
+                connection.commit()
 
-        temp = cursor.execute("SELECT DISTINCT cmdr, data, region FROM codex WHERE codex.codex = 1").fetchall()
-        if temp:
-            # print(temp)
-            for i in temp:
-                cmdr_select = cursor.execute("""SELECT * from codex_entry where data = ?
-                                                and region = ?""", (i[1], i[2])).fetchall()
-                delete_cmdr = str(i[0])
-                delete_bio = str(cmdr_select[0][0])
-                delete_region = str(cmdr_select[0][2])
+            if filter_cmdr and filter_region:
+                select = cursor.execute("SELECT * FROM codex_show WHERE cmdr = ? and region = ?"
+                                        "ORDER BY data",
+                                        (filter_cmdr, filter_region)).fetchall()
 
-                cursor.execute("DELETE FROM codex_show WHERE cmdr = ? AND data = ? AND region = ?",
-                               (delete_cmdr, delete_bio, delete_region))
-                # print(i, i[0], cmdr_select[0][0], cmdr_select[0][2])
-            connection.commit()
+            if filter_cmdr and not filter_region:
+                select = cursor.execute("SELECT * FROM codex_show WHERE cmdr = ?"
+                                        "ORDER BY data",
+                                        (filter_cmdr, )).fetchall()
 
-        if filter_cmdr and filter_region:
-            select = cursor.execute("SELECT * FROM codex_show WHERE cmdr = ? and region = ?"
-                                    "ORDER BY data",
-                                    (filter_cmdr, filter_region)).fetchall()
+            if not filter_cmdr and filter_region:
+                select = cursor.execute("SELECT * FROM codex_show WHERE region = ?"
+                                        "ORDER BY data",
+                                        (filter_region, )).fetchall()
 
-        if filter_cmdr and not filter_region:
-            select = cursor.execute("SELECT * FROM codex_show WHERE cmdr = ?"
-                                    "ORDER BY data",
-                                    (filter_cmdr, )).fetchall()
-
-        if not filter_cmdr and filter_region:
-            select = cursor.execute("SELECT * FROM codex_show WHERE region = ?"
-                                    "ORDER BY data",
-                                    (filter_region, )).fetchall()
-
-        if not filter_cmdr and not filter_region:
-            select = cursor.execute("SELECT * FROM codex_show ORDER BY region, data").fetchall()
+            if not filter_cmdr and not filter_region:
+                select = cursor.execute("SELECT * FROM codex_show ORDER BY region, data").fetchall()
         lauf = 1
         data = []
         for i in select:
             data.append((' ', ' ', i[0], i[1], ' ', ' ', ' ', i[2], 1))
             lauf += 1
         return data
+
+
     tree.mainloop()
 
 
@@ -1866,6 +2051,8 @@ def codex_menu():
     CODEX = 1
     vortick.config(state=DISABLED)
     nachtick.config(state=DISABLED)
+    check_but.deselect()
+    check_but.config(state=DISABLED)
     Filter.delete(0, END)
     auswertung()
 
@@ -1876,6 +2063,7 @@ def mats_menu():
     ODYS = 0
     MATS = 1
     CODEX = 0
+    check_but.config(state=NORMAL)
     vortick.config(state=DISABLED)
     nachtick.config(state=DISABLED)
     Filter.delete(0, END)
@@ -1888,6 +2076,7 @@ def odys_menu():
     ODYS = 1
     MATS = 0
     CODEX = 0
+    check_but.config(state=NORMAL)
     vortick.config(state=DISABLED)
     nachtick.config(state=DISABLED)
     Filter.delete(0, END)
@@ -1900,6 +2089,7 @@ def bgs_menu():
     ODYS = 0
     MATS = 0
     CODEX = 0
+    check_but.config(state=NORMAL)
     vortick.config(state=NORMAL)
     nachtick.config(state=NORMAL)
     Filter.delete(0, END)
@@ -1959,15 +2149,20 @@ def check_last_logs(filenames_codex, length):
 
 
 def read_codex_entrys():
+    if log_var > 2:
+        print('function ' + inspect.stack()[0][3])
+    system.delete('1.0',END)
     system.insert(END, 'Codex Daten werden gelesen')
     # Lade alle logfiles in die Variable filenames_codex
     filenames_codex = glob.glob(path + "\\Journal.*.log")
     last_log = (len(filenames_codex))
     check_last_logs(filenames_codex, last_log)
     for filename in filenames_codex:
+        read_bio_data(filename)
+        read_log_codex(filename)
+        read_player_death(filename)
         insert_logfile_in_db(filename)
-        codex_auslesen(filename)
-    treeview_codex()
+    # treeview_codex()
 
 
 def auswertung():
@@ -1999,8 +2194,9 @@ def auswertung():
     if not filenames:
         # Wenn es keine logfiles an diesem Tag gibt, dann
         if CODEX == 1:
-            system.insert(END, 'Codex Daten werden gelesen')
+            # system.insert(END, 'Codex Daten werden gelesen')
             read_codex_entrys()
+            treeview_codex()
         else:
             system.insert(END, 'Keine Log-Files für den Tag vorhanden')
     else:
@@ -2059,17 +2255,63 @@ def auswertung():
                 mats_table.add_row((i[0], i[1]))
 
         elif CODEX == 1:
-            system.insert(END, 'Codex Daten werden gelesen')
+            # system.insert(END, 'Codex Daten werden gelesen')
             read_codex_entrys()
+            treeview_codex()
 
     # if not filenames:
     #     system.insert(END, 'Keine Log-Files für den Tag vorhanden')
 
 
+def set_language_db(var):
+    print('function ' + inspect.stack()[0][3])
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+    print('before ' , var)
+    if var == 'leer':
+
+        cursor.execute("""CREATE table IF NOT EXISTS lan_db 
+        (lang TEXT, switch INTEGER)""")
+        item = cursor.execute("SELECT lang FROM lan_db").fetchall()
+        print(item)
+        if not item:
+            cursor.execute("INSERT INTO lan_db VALUES (?, ?)", ('german', '1'))
+            connection.commit()
+            # print('ttest')
+        else:
+            connection.close()
+            return item
+        connection.close()
+        # return select
+    elif var == 'german':
+        cursor.execute("UPDATE lan_db SET lang = ?", (var,))
+        connection.commit()
+        connection.close()
+
+    elif var == 'english':
+        print('TEST')
+        cursor.execute("UPDATE lan_db SET lang = ?", (var,))
+        connection.commit()
+        connection.close()
+    print('after ', var)
+    return(var)
+
+
 def main():
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
-    global system, root, Tag, Monat, Jahr, hour, minute, BGS, MATS, ODYS, vortick, nachtick, Filter, tree
+    global system, root, Tag, Monat, Jahr, hour, minute, BGS, MATS, ODYS, vortick, nachtick, Filter, \
+        tree, check_but #, label_tag, label_monat, label_jahr
+
+    select = set_language_db('leer')
+    # print('Language selected:')
+    # print(select)
+    if not select or select[0][0] == 'german' or select == 'leer':
+        text = [('Tag'), ('Monat'), ('Jahr'), ('Der letzte Tick war um:'), ('vor dem Tick'), ('nach dem Tick')]
+    else:
+        text = [('Day'), ('Month'), ('Year'), ('Last BGS TICK was at  '), ('before Tick'), ('after Tick')]
+
+
     root = Tk()
     root.title('Elite Dangerous Data Collector')
     try:
@@ -2090,66 +2332,89 @@ def main():
     root.config(menu=my_menu)
 
     file_menu = Menu(my_menu, tearoff=False)
-    my_menu.add_cascade(label="Datei", menu=file_menu)
+    my_menu.add_cascade(label="File", menu=file_menu)
     file_menu.add_command(label="BGS", command=bgs_menu)
     file_menu.add_command(label="MATS", command=mats_menu)
     file_menu.add_command(label="Odyssey", command=odys_menu)
     file_menu.add_command(label="Codex", command=codex_menu)
     file_menu.add_command(label="Exit", command=root.quit)
+    settings_menu = Menu(my_menu, tearoff=False)
+    my_menu.add_cascade(label="Setting", menu=settings_menu)
+
 
     my_top_logo = Label(root, image=bg, bg='black')
-    my_top_logo.pack()
+    my_top_logo.pack(fill=X)
     my_bottom_logo = Label(root, image=bg2, bg='black')
     my_bottom_logo.place(x=0, y=100)
-    my_text_box = Label(root, bg='black')
-    my_text_box.pack()
-    my_time = Frame(my_text_box, bg='black')
-    my_time.grid()
-    my_time_label = Frame(my_time, bg='black')
-    my_time_label.grid()
+    ############################################### my_text_box ##############################################
+    my_text_box = Label(root, bg='black', borderwidth=2)
+    my_text_box.config(width=280)
+    # my_text_box = Label(root)
+    my_text_box.place(x=25,y=100)
 
-    label_tag = Label(my_time_label, text="Tag:", bg='black', fg='white', font=("Helvetica", 12))
-    label_tag.grid(column=0, row=0, sticky=W)
+
+    #################### my_time_label ###########################
+
+    # my_time_label = Frame(my_text_box, bg='black')
+    my_time_label = Frame(my_text_box, bg='black', borderwidth=2)
+    my_text_box.config(width=250)
+    my_time_label.pack(pady=5)
+    my_time_label.config(highlightbackground='black')
+
+    label_tag = Label(my_time_label, text=text[0], bg='black', fg='white', font=("Helvetica", 12))
+    label_tag.grid(column=0, row=0)
     Tag = Entry(my_time_label, width=2, font=("Helvetica", 12))
     Tag.insert(0, Day)
     Tag.grid(column=1, row=0, padx=5)
-
-    label_tag2 = Label(my_time_label, text="Monat:", bg='black', fg='white', font=("Helvetica", 12))
-    label_tag2.grid(column=2, row=0)
+    label_monat = Label(my_time_label, text=text[1], bg='black', fg='white', font=("Helvetica", 12))
+    label_monat.grid(column=2, row=0, padx=5)
     Monat = Entry(my_time_label, width=2, font=("Helvetica", 12))
     Monat.insert(0, Month)
     Monat.grid(column=3, row=0, padx=5)
 
-    label_tag3 = Label(my_time_label, text="Jahr:", bg='black', fg='white', font=("Helvetica", 12))
-    label_tag3.grid(column=4, row=0)
+    label_jahr = Label(my_time_label, text="Jahr:", bg='black', fg='white', font=("Helvetica", 12))
+    label_jahr.grid(column=4, row=0, padx=5)
     Jahr = Entry(my_time_label, width=2, font=("Helvetica", 12))
     Jahr.insert(0, Year)
     Jahr.grid(column=5, row=0, padx=5)
-    global check_var
 
-    my_frame = Frame(my_time, bg='black')
-    my_frame.grid(column=0, row=1)
-    Label(my_frame,
-          text=""" Der letzte Tick war um:    """, bg='black', fg='white', font=("Helvetica", 12),
-          justify=LEFT).grid(column=0, row=0)
+    #################### my_time_label ###########################
 
-    my_tick = Frame(my_frame, bg='black')
+    global check_auto_refresh
+
+    ############################ bgs_tick_frame ############################
+
+    bgs_tick_frame = Frame(my_text_box, bg='black', borderwidth=2)
+    # bgs_tick_frame = Frame(my_text_box, bg='black')
+    bgs_tick_frame.pack(side=LEFT, pady=5)
+
+    last_tick_label = Label(bgs_tick_frame, text=text[3], bg='black', fg='white', font=("Helvetica", 12), justify=LEFT)
+    last_tick_label.grid(column=0, row=0)
+
+    ############# my_tick ############
+
+    my_tick = Frame(bgs_tick_frame, bg='black')
     my_tick.grid(column=1, row=0)
 
     hour = Entry(my_tick, width=2, font=("Helvetica", 12))
     hour.insert(0, str(t_hour))
     hour.grid(column=0, row=0)
-    Label(my_tick,
+    label_colon = Label(my_tick,
           text=""":""", bg='black', fg='white', font=("Helvetica", 12),
-          justify=LEFT).grid(column=2, row=0)
+          justify=LEFT)
+    label_colon.grid(column=2, row=0)
+
     minute = Entry(my_tick, width=2, font=("Helvetica", 12))
     minute.insert(0, str(t_minute))
     minute.grid(column=3, row=0)
 
-    check_var = IntVar()
-
-    check_but = Checkbutton(my_time, text="Autorefresh    "
-                            , variable=check_var
+    ############# my_tick ############
+    my_check_box_place = Frame(root, bg='black', borderwidth=2)
+    my_check_box_place.place(x=300, y=100)
+    check_auto_refresh = IntVar()
+    #
+    check_but = Checkbutton(my_check_box_place, text="Autorefresh    "
+                            , variable=check_auto_refresh
                             , bg='black'
                             , fg='white'
                             , selectcolor='black'
@@ -2157,39 +2422,43 @@ def main():
                             , activeforeground='white'
                             , command=threading_auto
                             , font=("Helvetica", 10))
-    check_but.grid(column=1, row=0)
+    check_but.pack()
 
-    my_boxes = Frame(my_time, bg='black')
-    my_boxes.grid(column=1, row=1)
+    ################## my_boxes #####################
+
+    my_boxes = Frame(root, bg='black', borderwidth=2)
+    my_boxes.place(x=300, y=125)
 
     v = IntVar()
     vortick = Radiobutton(my_boxes,
-                          text="vor dem Tick", bg='black', fg='white', selectcolor='black',
+                          text=text[4], bg='black', fg='white', selectcolor='black',
                           activebackground='black', activeforeground='white',
-                          padx=10,
+                          # padx=10,
                           variable=v,
                           value=1, command=tickfalse)
     vortick.grid(column=0, row=0, sticky=W)
 
+
     nachtick = Radiobutton(my_boxes,
-                           text="nach dem Tick", bg='black', fg='white', selectcolor='black',
+                           text=text[5], bg='black', fg='white', selectcolor='black',
                            activebackground='black', activeforeground='white',
-                           padx=10,
+                           # padx=10,
                            variable=v,
                            value=2, command=ticktrue)
-    nachtick.grid(column=0, row=1)
+    nachtick.grid(column=0, row=1, sticky=W)
     nachtick.select()
 
+
+    ################################### my_folder #######################################
+
     my_folder = Frame(root, bg='black')
-    my_folder.pack()
+    my_folder.place(x=15, y=180)
     myfolder_grid = Frame(my_folder, bg='black')
     myfolder_grid.grid()
 
-    label_tag2 = Label(myfolder_grid, text="Filter:", bg='black',
+    label_filter = Label(myfolder_grid, text="Filter:", bg='black',
                        fg='white', font=("Helvetica", 12)).grid(column=0, row=0, sticky=W)
     Filter = Entry(myfolder_grid, width=37, font=("Helvetica", 10))
-
-    # print(' HIER KOMMT DAS Dropdown Menu hin')
 
     Filter.insert(0, filter_name)
     Filter.grid(column=0, row=0)
@@ -2197,12 +2466,13 @@ def main():
     folder = Entry(myfolder_grid, width=62, bg='black', fg='white', font=("Helvetica", 8))
     folder.insert(END, path)
     folder.grid(column=0, row=1, pady=5)
+    ################################### my_folder #######################################
 
-    system = Text(root, height=13, width=70, bg='black', fg='white', font=("Helvetica", 10))
-    system.pack(padx=15, pady=5)
+    system = Text(root, height=14, width=54, bg='black', fg='white', font=("Helvetica", 10))
+    system.place(x=15, y=235)
 
     version_but = Button(root,
-                         text='Version 0.5.0.5',
+                         text='Version 0.5.1.2',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
@@ -2230,7 +2500,7 @@ def main():
                     fg='white',
                     command=threading_auto,
                     font=("Helvetica", 10))
-    ok_but.place(x=360, y=465)
+    ok_but.place(x=368, y=465)
 
     def callback(event):
         if log_var > 2:
@@ -2238,6 +2508,35 @@ def main():
         threading_auto()
 
     root.bind('<Return>', callback)
+
+    def refresh_label(data):
+        label_tag.config(text=data[0])
+        label_monat.config(text=data[1])
+        label_jahr.config(text=data[2])
+        last_tick_label.config(text=data[3])
+        vortick.config(text=data[4])
+        nachtick.config(text=data[5])
+
+    def set_language(language):
+        if language == 1:
+            data = [('Tag'), ('Monat'), ('Jahr'), ('Der letzte TICK war um '), ('vor dem Tick'), ('nach dem Tick')]
+            set_language_db('german')
+        elif language == 2:
+            data = [('Day'), ('Month'), ('Year'), ('Last BGS TICK was at '), ('before Tick'), ('after Tick')]
+            set_language_db('english')
+        refresh_label(data)
+        # return data
+
+    def language_de():
+        language = 1
+        set_language(language)
+
+    def language_en():
+        language = 2
+        set_language(language)
+
+    settings_menu.add_command(label="Sprache - Deutsch", command=language_de)
+    settings_menu.add_command(label="Language - English", command=language_en)
 
     root.mainloop()
 
