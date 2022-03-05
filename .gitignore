@@ -1,1 +1,5 @@
 /exe/eddc/
+/output
+.git
+.idea
+__pycache__
