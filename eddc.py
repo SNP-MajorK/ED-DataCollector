@@ -83,6 +83,7 @@ def last_tick():
         tick_time = [t_year, t_month, t_day, t_hour, t_minute]
 
 def file_names(var):
+    # Changes beacuse of new naming of logfiles!
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     update_eleven = datetime(2022,3,14)
@@ -114,36 +115,6 @@ def file_names(var):
         else:
             filenames = glob.glob(path + "\\Journal.*.log")
             return (filenames)
-
-# def file_names_old(var):
-#     if log_var > 2:
-#         print('function ' + inspect.stack()[0][3])
-#     Tag2 = Tag.get()
-#     Tag2 = str(int(Tag2) - var).zfill(2)
-#     Monat2 = Monat.get()
-#     Jahr2 = Jahr.get()
-#     Date = str(Jahr2 + Monat2 + Tag2)
-#     Date = str(Jahr2 + Monat2 + Tag2)
-#     filenames = glob.glob(path + "\\Journal." + Date + "*.log")
-#     print(filenames)
-#     return filenames
-
-
-# def file_names_new(var):
- #     if log_var > 2:
-#         print('function ' + inspect.stack()[0][3])
-#     Tag2 = Tag.get()
-#     Tag2 = str(int(Tag2) - var).zfill(2)
-#     Monat2 = Monat.get()
-#     Jahr2 = Jahr.get()
-#     Date = str(Jahr2 + Monat2 + Tag2)
-#     Date = ("20" + str(Jahr2) + "-" + str(Monat2)  + "-" + str(Tag2) +"T")
-#     print(Date)
-#     filenames = glob.glob(path + "\\Journal." + Date + "*.log")
-#     return filenames
-
-
-
 
 def date_for_ma(missionid, gmd_faction, x):
     if log_var > 2:
