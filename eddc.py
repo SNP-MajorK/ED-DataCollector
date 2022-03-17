@@ -11,7 +11,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 from pathlib import Path
 from winreg import *
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import requests
 from prettytable import PrettyTable
 
@@ -82,17 +82,67 @@ def last_tick():
         t_minute = str(date[14:16])
         tick_time = [t_year, t_month, t_day, t_hour, t_minute]
 
-
 def file_names(var):
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
-    Tag2 = Tag.get()
-    Tag2 = str(int(Tag2) - var).zfill(2)
-    Monat2 = Monat.get()
-    Jahr2 = Jahr.get()
-    Date = str(Jahr2 + Monat2 + Tag2)
-    filenames = glob.glob(path + "\\Journal." + Date + "*.log")
-    return filenames
+    update_eleven = datetime(2022,3,14)
+    if var == 0:
+        Tag2 = Tag.get()
+        Tag2 = str(int(Tag2) - var).zfill(2)
+        Monat2 = Monat.get()
+        Jahr2 = Jahr.get()
+        search_date = datetime(int("20" + Jahr2), int(Monat2), int(Tag2))
+        if search_date > update_eleven:
+            Date = ("20" + str(Jahr2) + "-" + str(Monat2) + "-" + str(Tag2) + "T")
+            print(Date)
+            filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+            return filenames
+        else:
+            Date = str(Jahr2 + Monat2 + Tag2)
+            filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+            print(filenames)
+            return filenames
+    else:
+        print('TEst')
+        search_date = datetime(int(Year), int(Month), int(Day))
+        print(search_date)
+        # update_eleven = update_eleven.strftime('%Y-%m-%d')
+        if search_date > update_eleven:
+            print("search_date")
+            filenames = glob.glob(path + "\\Journal.202*.log")
+            return (filenames)
+        else:
+            filenames = glob.glob(path + "\\Journal.*.log")
+            return (filenames)
+
+# def file_names_old(var):
+#     if log_var > 2:
+#         print('function ' + inspect.stack()[0][3])
+#     Tag2 = Tag.get()
+#     Tag2 = str(int(Tag2) - var).zfill(2)
+#     Monat2 = Monat.get()
+#     Jahr2 = Jahr.get()
+#     Date = str(Jahr2 + Monat2 + Tag2)
+#     Date = str(Jahr2 + Monat2 + Tag2)
+#     filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+#     print(filenames)
+#     return filenames
+
+
+# def file_names_new(var):
+ #     if log_var > 2:
+#         print('function ' + inspect.stack()[0][3])
+#     Tag2 = Tag.get()
+#     Tag2 = str(int(Tag2) - var).zfill(2)
+#     Monat2 = Monat.get()
+#     Jahr2 = Jahr.get()
+#     Date = str(Jahr2 + Monat2 + Tag2)
+#     Date = ("20" + str(Jahr2) + "-" + str(Monat2)  + "-" + str(Tag2) +"T")
+#     print(Date)
+#     filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+#     return filenames
+
+
 
 
 def date_for_ma(missionid, gmd_faction, x):
@@ -104,7 +154,8 @@ def date_for_ma(missionid, gmd_faction, x):
         Monat2 = Monat.get()
         Jahr2 = Jahr.get()
         Date = str(Jahr2 + Monat2 + str(Tag2).zfill(2))
-        filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+        filenames = file_names(0)
+        # filenames = glob.glob(path + "\\Journal." + Date + "*.log")
         for filename in filenames:
             # print(filename)
             if get_mission_data(missionid, filename, gmd_faction):
@@ -756,12 +807,25 @@ def older_logs(log_time, lauf):
     if log_var > 2:
         print('function ' + inspect.stack()[0][3])
     datum = date(year=int(log_time[0]), month=int(log_time[1]), day=int(log_time[2]))
+    update_eleven = datetime(2022, 3, 14)
     new_date = str(datum - timedelta(days=lauf))
+    print(new_date)
+    ol_year = str(new_date[2:4])
+    ol_month = str(new_date[5:7])
+    ol_day = str(new_date[8:10])
     new_date = str(new_date[2:4] + new_date[5:7] + new_date[8:10])
-    # print(new_date)
-    filenames = glob.glob(path + "\\Journal." + new_date + "*.log")
-    if log_var > 2:
-        print(str(filenames))
+    print(ol_year, ol_month, ol_day)
+    search_date = datetime(int("20" + ol_year), int(ol_month), int(ol_day))
+    if search_date > update_eleven:
+        Date = ("20" + str(Jahr2) + "-" + str(Monat2) + "-" + str(Tag2) + "T")
+        print(Date)
+        filenames = glob.glob(path + "\\Journal." + Date + "*.log")
+        return filenames
+    else:
+        filenames = glob.glob(path + "\\Journal." + new_date + "*.log")
+        print(filenames)
+        return filenames
+
     return filenames
 
 
@@ -1184,38 +1248,7 @@ def treeview_codex():
     def player_death():
         global success, death_date_combo, sell_combo, normal_view
         normal_view = 2
-        # filenames_codex = glob.glob(path + "\\Journal.*.log")
-        #
-        # cmdrs = ''
-        # cmdr = ''
-        # date_log = ''
-        # time_log = ''
-        # for filename in filenames_codex:
-        #     success = FALSE
-        #     logtimes = read_log(filename, '"event":"Died"', 'timestamp')
-        #     if success:
-        #         cmdrs = read_log(filename, '"event":"Commander"', 'Name')
-        #         cmdrs = cmdrs[0]
-        #         # print(logtimes)
-        #         for log_time in logtimes:
-        #             timestamp = log_time
-        #             log_time = (log_date(timestamp))
-        #             date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
-        #             time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
-        #             # print(date_log, time_log, cmdrs)
-        #             insert_into_death_db(date_log, time_log, cmdrs)
-        #     multi_sell_expo_data = read_log(filename, '"event":"MultiSellExplorationData"', 'timestamp')
-        #     if multi_sell_expo_data:
-        #         for i in multi_sell_expo_data:
-        #             log_time = (log_date(i))
-        #             date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
-        #             time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
-        #             sell_type = 'Multisell ExplorationData'
-        #             # print(date_log, time_log, sell_date)
-        #             if success:
-        #                 cmdrs = read_log(filename, '"event":"Commander"', 'Name')
-        #                 cmdrs = cmdrs[0]
-        #             insert_into_last_sell(date_log, time_log, sell_type, cmdrs)
+
         connection = sqlite3.connect(database)
         cursor = connection.cursor()
 
@@ -2154,7 +2187,8 @@ def read_codex_entrys():
     system.delete('1.0',END)
     system.insert(END, 'Codex Daten werden gelesen')
     # Lade alle logfiles in die Variable filenames_codex
-    filenames_codex = glob.glob(path + "\\Journal.*.log")
+    # filenames_codex = glob.glob(path + "\\Journal.*.log")
+    filenames_codex = file_names(1)
     last_log = (len(filenames_codex))
     check_last_logs(filenames_codex, last_log)
     for filename in filenames_codex:
@@ -2472,7 +2506,7 @@ def main():
     system.place(x=15, y=235)
 
     version_but = Button(root,
-                         text='Version 0.5.1.2',
+                         text='Version 0.5.2.0',
                          activebackground='#000050',
                          activeforeground='white',
                          bg='black',
