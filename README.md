@@ -1,7 +1,7 @@
 # Elite Dangerous DataCollector
 Collects the Data from Elite Dangerous out of your Log Files and Displays them.
 
-Latest version: 0.5.3.0 (March 23, 2022)
+Latest version: 0.5.5.0 (April 02, 2022)
 
 <img src="https://i.imgur.com/y6LZuzG.png" height="200px"> <img src="https://i.imgur.com/WA544LK.png" height="200px"> <img src="https://i.imgur.com/gDmfuS9.png" height="200px">
 
@@ -9,7 +9,7 @@ EDDC - Elite:Dangerous DataCollector
 
 This tool shows you the following data cumulatively from the local log files of Elite:Dangerous: 
 
-[Download Link](https://github.com/SNP-MajorK/ED-DataCollector/releases/tag/v0.5.3.0)
+[Download Link](https://github.com/SNP-MajorK/ED-DataCollector/releases/)
 
 - "BGS-Main"all BGS relevant data are displayed here. 
   - The time of the last tick (UTC) is automatically loaded and set.
@@ -34,7 +34,10 @@ This tool shows you the following data cumulatively from the local log files of 
   - new Radio Button Sort by Date
   - Show undiscovered Codex Entrys via Settings "Switch View"
   - Codex Stars shows all other Codex Entrys (WIP)
-  - Player Death, here you can "mark" a time period and it will no longer display those Entrys. (experimental WIP)
+  - Needs more Work, currently deactivated.
+    - Player Death, here you can "mark" a time period and it will no longer display those Entrys. (experimental WIP)
+  - Integrated a klightspeed's EliteDangerousRegionMap for Region Mapping of Star Systems (under MIT licence)
+
   
 <img src="https://cdn.discordapp.com/attachments/944130098406248498/944135915457105930/unknown.png">
 
