@@ -10,4 +10,3 @@ update log
 - No Internet Warning implemented, when trying to get TICK
 - ignore json when line is not complete
 - threading for import Codex Data implemented
-select * from codex_show EXCEPT SELECT cmdr, data, region from codex order by region
