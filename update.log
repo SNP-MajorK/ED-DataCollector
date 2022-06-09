@@ -1,0 +1,13 @@
+update log
+- search in older logs fixed (all logs from today + yeasterday)
+- sorting in Odyssey MATS changed to count DESC instead of name
+- Program version check implemented
+- Database version check implemented
+- new Menu Points 
+	- about 
+		- Version Check 
+		- delete all Data from Database
+- No Internet Warning implemented, when trying to get TICK
+- ignore json when line is not complete
+- threading for import Codex Data implemented
+select * from codex_show EXCEPT SELECT cmdr, data, region from codex order by region
