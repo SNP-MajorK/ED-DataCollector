@@ -1,0 +1,86 @@
+Aleoida Arcus;150;Star;B,Yellow,A,Green,F,Teal,K,Turquoise,M,Emerald,L,Lime,T,Sage,TTS,Mauve,Y,Teal,N,Ocher
+Aleoida Coronamus;150;Star;B,Yellow,A,Green,F,Teal,K,Turquoise,M,Emerald,L,Lime,T,Sage,TTS,Mauve,Y,Teal,N,Ocher
+Aleoida Gravis;150;Star;B,Yellow,A,Green,F,Teal,K,Turquoise,M,Emerald,L,Lime,T,Sage,TTS,Mauve,Y,Teal,N,Ocher
+Aleoida Laminiae;150;Star;B,Yellow,A,Green,F,Teal,K,Turquoise,M,Emerald,L,Lime,T,Sage,TTS,Mauve,Y,Teal,N,Ocher
+Aleoida Spica;150;Star;B,Yellow,A,Green,F,Teal,K,Turquoise,M,Emerald,L,Lime,T,Sage,TTS,Mauve,Y,Teal,N,Ocher
+Bacterium Acies;500;Material;Antinomy,Cyan,Polonium,Magenta,Ruthenium,Cobalt,Technetium,Lime,Tellurium,White,Yttrium,Aquamarin
+Bacterium Alcyoneum;500;Star;O,Turquoise,B,Grey,A,Yellow,F,Lime,G,Emerald,K,Green,M,Teal,L,Sage,T,Red,TTS,Maroon,W,Amethyst,D,Ocher,N,Indigo
+Bacterium Aurasus;500;Star;O,Turquoise,B,Grey,A,Yellow,F,Lime,G,Emerald,K,Green,M,Teal,L,Sage,T,Red,TTS,Maroon,W,Amethyst,D,Ocher,N,Indigo
+Bacterium Bullaris;500;Material;Antinomy,Cobalt,Polonium,Yellow,Ruthenium,Aquamarine,Technetium,Gold,Tellurium,Lime,Yttrium,Red
+Bacterium Cerbrus;500;Star;O,Turquoise,B,Grey,A,Yellow,F,Lime,G,Emerald,K,Green,M,Teal,L,Sage,T,Red,TTS,Maroon,W,Amethyst,D,Ocher,N,Indigo
+Bacterium Informem;500;Material;Antinomy,Magenta,Polonium,Gold,Ruthenium,Orange,Tellurium,Green,Yttrium,Cobalt
+Bacterium Nebulus;500;Material;Antinomy,Magenta,Polonium,Gold,Ruthenium,Orange,Tellurium,Green,Yttrium,Cobalt
+Bacterium Omentum;500;Material;Cadmium,Lime,Mercury,White,Molybdenum,Aquamarine,Niobium,Peach,Tungsten,Blue,Tin,Red
+Bacterium Scopulum;500;Material;Cadmium,White,Mercury,Peach,Molybdenum,Lime,Niobium,Red,Tungsten,Aquamarine,Tin,Mulberry
+Bacterium Tela;500;Material;Cadmium,Gold,Mercury,Orange,Molybdenum,Yellow,Niobium,Magenta,Tungsten,Green,Tin,Cobalt
+Bacterium Verrata;500;Material;Cadmium,Peach,Mercury,Red,Molybdenum,White,Niobium,Mulberry,Tungsten,Lime,Tin,Blue
+Bacterium Vesicula;500;Material;Antinomy,Cyan,Polonium,Orange,Ruthenium,Mulberry,Technetium,Gold,Tellurium,Red,Yttrium,Lime
+Bacterium Volu;500;Material;Antinomy,Red,Polonium,Aquamarine,Ruthenium,Cobalt,Tellurium,Cyan,Yttrium,Gold
+Cactoida Cortexum;300;Star;A,Green,F,Yellow,G,Teal,M,Amethyst,L,Mauve,T,Orange,TTS,Red,N,Sage
+Cactoida Lapis;300;Star;A,Green,F,Yellow,G,Teal,M,Amethyst,L,Mauve,T,Orange,TTS,Red,N,Sage
+Cactoida Peperatis;300;Star;A,Green,F,Yellow,G,Teal,M,Amethyst,L,Mauve,T,Orange,TTS,Red,N,Sage
+Cactoida Pullulanta;300;Star;A,Green,F,Yellow,G,Teal,M,Amethyst,L,Mauve,T,Orange,TTS,Red,N,Sage
+Cactoida Vermis;300;Star;A,Green,F,Yellow,G,Teal,M,Amethyst,L,Mauve,T,Orange,TTS,Red,N,Sage
+Clypeus Lacrimam;150;Star;A,Orange,F,Mauve,G,Amethyst,K,Grey,M,Turquoise,L,Teal,N,Yellow
+Clypeus Margaritus;150;Star;A,Orange,F,Mauve,G,Amethyst,K,Grey,M,Turquoise,L,Teal,N,Yellow
+Clypeus Speculumi;150;Star;A,Orange,F,Mauve,G,Amethyst,K,Grey,M,Turquoise,L,Teal,N,Yellow
+Concha Aureolas;150;Star;A,Teal,F,Grey,G,Turquoise,K,Red,L,Orange,N,Emerald
+Concha Biconcavis;150;Material;Antinomy,Peach,Ruthenium,Orange
+Concha Labiata;150;Star;A,Teal,F,Grey,G,Turquoise,K,Red,L,Orange,N,Emerald
+Concha Renibus;150;Material;Cadmium,Red,Mercury,Mulberry,Molybdenum,Peach,Niobium,Blue,Tungsten,White,Tin,Aquamarine
+Electricae Pluma;1000;Material;Antinomy,Cobalt,Polonium,Cyan,Ruthenium,Blue,Technetium,Magenta,Tellurium,Red,Yttrium,Mulberry
+Electricae Radialem;1000;Material;Antinomy,Cyan,Polonium,Cobalt,Ruthenium,Blue,Technetium,Aquamarine,Tellurium,Magenta,Yttrium,Green
+Fonticulua Campestris;500;Star;B,Lime,A,Green,F,Yellow,G,Teal,K,Emerald,M,Amethyst,L,Mauve,T,Orange,TTS,Red,Y,Ocher,D,Turquoise,N,Sage,Ae/Be,Maroon
+Fonticulua Digitos;500;Star;B,Lime,A,Green,F,Yellow,G,Teal,K,Emerald,M,Amethyst,L,Mauve,T,Orange,TTS,Red,Y,Ocher,D,Turquoise,N,Sage,Ae/Be,Maroon
+Fonticulua Fluctus;500;Star;B,Lime,A,Green,F,Yellow,G,Teal,K,Emerald,M,Amethyst,L,Mauve,T,Orange,TTS,Red,Y,Ocher,D,Turquoise,N,Sage,Ae/Be,Maroon
+Fonticulua Lapida;500;Star;B,Lime,A,Green,F,Yellow,G,Teal,K,Emerald,M,Amethyst,L,Mauve,T,Orange,TTS,Red,Y,Ocher,D,Turquoise,N,Sage,Ae/Be,Maroon
+Fonticulua Segmentatus;500;Star;B,Lime,A,Green,F,Yellow,G,Teal,K,Emerald,M,Amethyst,L,Mauve,T,Orange,TTS,Red,Y,Ocher,D,Turquoise,N,Sage,Ae/Be,Maroon
+Fonticulua Upupam;500;Star;B,Lime,A,Green,F,Yellow,G,Teal,K,Emerald,M,Amethyst,L,Mauve,T,Orange,TTS,Red,Y,Ocher,D,Turquoise,N,Sage,Ae/Be,Maroon
+Frutexa Acus;150;Star;B,Lime,F,Green,G,Emerald,M,Grey,L,Teal,TTS,Mauve,D,Indigo,N,Red
+Frutexa Collum;150;Star;B,Lime,F,Green,G,Emerald,M,Grey,L,Teal,TTS,Mauve,D,Indigo,N,Red
+Frutexa Fera;150;Star;B,Lime,F,Green,G,Emerald,M,Grey,L,Teal,TTS,Mauve,D,Indigo,N,Red
+Frutexa Flabellum;150;Star;B,Lime,F,Green,G,Emerald,M,Grey,L,Teal,TTS,Mauve,D,Indigo,N,Red
+Frutexa Flammasis;150;Star;B,Lime,F,Green,G,Emerald,M,Grey,L,Teal,TTS,Mauve,D,Indigo,N,Red
+Frutexa Metallicum;150;Star;B,Lime,F,Green,G,Emerald,M,Grey,L,Teal,TTS,Mauve,D,Indigo,N,Red
+Frutexa Sponsae;150;Star;B,Lime,F,Green,G,Emerald,M,Grey,L,Teal,TTS,Mauve,D,Indigo,N,Red
+Fungoida Bullarum;300;Material;Antinomy,Red,Polonium,Mulberry,Ruthenium,Magenta,Technetium,Peach,Tellurium,Gold,Yttrium,Orange
+Fungoida Gelata;300;Material;Cadmium,Cyan,Mercury,Lime,Molybdenum,Mulberry,Niobium,Green,Tungsten,Orange,Tin,Red
+Fungoida Setisis;300;Material;Antinomy,Peach,Polonium,White,Ruthenium,Gold,Technetium,Lime,Tellurium,Yellow,Yttrium,Orange
+Fungoida Stabitis;300;Material;Cadmium,Blue,Mercury,Green,Molybdenum,Magenta,Niobium,White,Tungsten,Peach,Tin,Orange
+Osseus Cornibus;800;Star;A,Lime,F,Turquoise,G,Grey,K,Indigo,T,Emerald,TTS,Green
+Osseus Discus;800;Material;Cadmium,White,Mercury,Lime,Molybdenum,Peach,Niobium,Aquamarine,Tungsten,Red,Tin,Blue
+Osseus Fractus;800;Star;A,Lime,F,Turquoise,G,Grey,K,Indigo,T,Emerald,TTS,Green
+Osseus Pellebantus;800;Star;A,Lime,F,Turquoise,G,Grey,K,Indigo,T,Emerald,TTS,Green
+Osseus Pumice;800;Material;Antinomy,White,Polonium,Peach,Ruthenium,Gold,Technetium,Lime,Tellurium,Green,Yttrium,Yellow
+Osseus Spiralis;800;Star;A,Lime,F,Turquoise,G,Grey,K,Indigo,T,Emerald,TTS,Green
+Recepta Conditivus;150;Material;Antinomy,Lime,Polonium,White,Tellurium,Cyan,Yttrium,Green
+Recepta Deltahedronix;150;Material;Cadmium,Lime,Mercury,Gold,Molybdenum,Orange,Niobium,Mulberry,Tungsten,Red
+Recepta Umbrux;150;Star;A,Amethyst,F,Mauve,G,Orange,K,Red,M,Maroon,T,Teal
+Stratum Araneamus;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Stratum Cucumisis;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Stratum Excutitus;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Stratum Frigus;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Stratum Laminamus;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Stratum Limaxus;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Stratum Paleas;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Stratum Tectonicas;500;Star;F,Emerald,K,Lime,M,Green,T,Grey,TTS,Amethyst,D,Mauve
+Tubus Cavas;800;Star;B,Emerald,A,Indigo,F,Grey,G,Red,K,Maroon,M,Teal,L,Turquoise,T,Mauve,TTS,Ocher,N,Amethyst
+Tubus Compagibus;800;Star;B,Emerald,A,Indigo,F,Grey,G,Red,K,Maroon,M,Teal,L,Turquoise,T,Mauve,TTS,Ocher,N,Amethyst
+Tubus Conifer;800;Star;B,Emerald,A,Indigo,F,Grey,G,Red,K,Maroon,M,Teal,L,Turquoise,T,Mauve,TTS,Ocher,N,Amethyst
+Tubus Rosarium;800;Star;B,Emerald,A,Indigo,F,Grey,G,Red,K,Maroon,M,Teal,L,Turquoise,T,Mauve,TTS,Ocher,N,Amethyst
+Tubus Sororibus;800;Star;B,Emerald,A,Indigo,F,Grey,G,Red,K,Maroon,M,Teal,L,Turquoise,T,Mauve,TTS,Ocher,N,Amethyst
+Tussock Albata;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Capillum;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Caputus;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Catena;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Cultro;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Divisa;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Ignis;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Pennata;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Pennatis;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Propagito;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Serrati;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Stigmasis;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Triticum;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Ventusa;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red
+Tussock Virgam;200;Star;F,Yellow,G,Lime,K,Green,M,Emerald,L,Sage,T,Teal,D,Maroon,Black Hole,Red

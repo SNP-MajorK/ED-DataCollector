@@ -1,0 +1,85 @@
+aleoida arcus;a,b,f,k,m,n,l,t,y;rocky body;0.016, 0.098;0.04, 0.26;thin carbon dioxide;175, 180
+aleoida coronamus;a,b,f,k,m,n,l,t,y;high metal content body,rocky body;0.026, 0.099;0.04, 0.29;thin carbon dioxide;180, 190
+aleoida gravis;a,b,f,k,m,n,l,t,y;high metal content body,rocky body;0.055, 0.099;0.05, 0.27;thin carbon dioxide;190, 195
+aleoida laminiae;a,b,f,k,m,n,l,t,y;high metal content body,rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;152, 176
+aleoida spica;a,b,f,k,m,n,l,t,y;high metal content body,rocky body;0, 0.013;0.04, 0.27;thin ammonia;170, 176
+bacterium acies;k,m,l,t,y;icy body,rocky ice body;0.001, 0.079;0.27, 0.73;thin neon;20, 140
+bacterium alcyoneum;o,b,a,f,g,k,m,l,t,w,d,n,;high metal content body,rocky body;0.001, 0.014;0.04, 0.37;thin ammonia;152, 177
+bacterium aurasus;o,b,a,f,g,k,m,l,t,w,d,n,;high metal content body,rocky body;0.001, 0.099;0.04, 0.6;thin carbon dioxide;140, 400
+bacterium bullaris;f,g,k,l,m,t,y;icy body;0.001, 0.099;0.03, 0.6;thin methane;65, 130
+bacterium cerbrus;o,b,a,f,g,k,m,l,t,w,d,n,;high metal content body,rocky body,rocky ice body;0.001, 0.099;0.04, 0.6;thin sulfur dioxide,thin water;130, 500
+bacterium informem;a,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.098;0.13, 0.59;thin nitrogen;40, 150
+bacterium nebulus;black hole,l,m,t,white dwarf,y;icy body;0.067, 0.098;0.4, 0.54;thin helium;20, 21
+bacterium omentum;black hole,f,g,herbig ae/be,k,l,m,t,white dwarf,y;icy body;0.001, 0.097;0.03, 0.59;thin argon,thin methane,thin neon,thin neon-rich;20, 157
+bacterium scopulum;k,l,m,t;icy body;001, 099;03, 0,6;thin argon,thin methane,thin neon,thin neon-rich;20, 110
+bacterium tela;a,b,black hole,cj,cn,f,g,herbig ae/be,k,l,m,ms,neutron star,s,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.099;0.03, 0.61;thin carbon dioxide,thin neon-rich,thin sulfur dioxide,thin water;20, 499
+bacterium verrata;a,black hole,f,g,herbig ae/be,k,l,m,t,white dwarf,y;icy body;0.001, 0.099;0.04, 0.6;thin argon,thin neon,thin neon-rich;20, 230
+bacterium vesicula;a,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice body;0, 0.098;0.15, 0.60;thin argon;50, 233
+cactoida cortexum;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.025, 0.099;0.04, 0.27;thin carbon dioxide;180, 195
+cactoida lapis;a,black hole,f,g,k,l,m,neutron star,o,t,white dwarf,y;high metal content body,rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;160, 177
+cactoida peperatis;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;160, 176
+cactoida pullulanta;a,black hole,f,g,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.027, 0.098;0.04, 0.27;thin carbon dioxide;180, 195
+cactoida vermis;a,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.001, 0.099;0.04, 0.27;thin sulfur dioxide;163, 450
+clypeus lacrimam;a,b,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;rocky body;0.055, 0.099;0.04, 0.24;thin carbon dioxide,thin water;190, 452
+clypeus margaritus;a,b,f,g,k,l,m,neutron star,t,y;high metal content body;0.053, 0.099;0.05, 0.27;thin carbon dioxide,thin water;190, 450
+clypeus speculumi;a,b,f,g,k,m,neutron star;rocky body;0.056, 0.099;0.04, 0.24;thin carbon dioxide,thin water;190, 449
+concha aureolas;a,b,black hole,f,g,k,l,m,neutron star,y;high metal content body,rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;152, 177
+concha biconcavis;a,black hole,f,g,k,m,t,y;high metal content body,rocky body;0.001, 0.005;0.1, 0.27;thin nitrogen;43, 50
+concha labiata;a,b,black hole,f,g,k,l,m,neutron star,t,white dwarf,wolf-rayet,y;high metal content body,rocky body;0.002, 0.098;0.04, 0.24;thin carbon dioxide;150, 195
+concha renibus;a,b,black hole,cj,cn,f,g,k,l,m,neutron star,s,t,white dwarf,y;high metal content body,rocky body;0.013, 0.099;0.04, 0.27;thin ammonia,thin carbon dioxide,thin methane,thin water;180, 452
+electricae pluma;a,black hole,herbig ae/be,l,m,neutron star,t,white dwarf,y;icy body;0.001, 0.099;0.03, 0.27;thin argon,thin argon-rich,thin neon-rich;50, 148
+electricae radialem;a,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;icy body;0.001, 0.097;0.03, 0.27;thin argon,thin argon-rich,thin neon-rich;50, 148
+fonticulua campestris;b,a,f,g,k,m,l,t,tts,y,d,n,herbig ae/be;icy body,rocky ice body;0.001, 0.098;0.03, 0.28;thin argon;50, 150
+fonticulua digitos;b,a,f,g,k,m,l,t,tts,y,d,n,herbig ae/be;icy body,rocky ice body;0.031, 0.099;0.03, 0.06;thin methane;84, 109
+fonticulua fluctus;b,a,f,g,k,m,l,t,tts,y,d,n,herbig ae/be;icy body,rocky ice body;0.014, 0.08;0.24, 0.27;thin oxygen;145, 197
+fonticulua lapida;b,a,f,g,k,m,l,t,tts,y,d,n,herbig ae/be;icy body,rocky ice body;0.001, 0.098;0.19, 0.28;thin nitrogen;50, 81
+fonticulua segmentatus;b,a,f,g,k,m,l,t,tts,y,d,n,herbig ae/be;icy body,rocky ice body;0.001, 0.027;0.25, 0.27;thin neon,thin neon-rich;51, 68
+fonticulua upupam;b,a,f,g,k,m,l,t,tts,y,d,n,herbig ae/be;icy body,rocky ice body;0.019, 0.098;0.21, 0.28;thin argon-rich;61, 115
+frutexa acus;b,f,g,m,l,t,d,n,black hole,neutron star,t,white dwarf,wolf-rayet,y;rocky body;0.003, 0.099;0.04, 0.24;thin carbon dioxide;146, 195
+frutexa collum;b,f,g,m,l,t,d,n,black hole,neutron star,t,white dwarf,wolf-rayet,y;high metal content body,rocky body;0.001, 0.004;0.04, 0.27;thin sulfur dioxide;132, 210
+frutexa fera;b,f,g,m,l,t,d,n,black hole,neutron star,t,white dwarf,wolf-rayet,y;rocky body;0.003, 0.098;0.04, 0.23;thin carbon dioxide;147, 195
+frutexa flabellum;b,f,g,m,l,t,d,n,black hole,neutron star,t,white dwarf,wolf-rayet,y;rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;152, 177
+frutexa flammasis;b,f,g,m,l,t,d,n,black hole,neutron star,t,white dwarf,wolf-rayet,y;rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;152, 176
+frutexa metallicum;b,f,g,m,l,t,d,n,black hole,neutron star,t,white dwarf,wolf-rayet,y;high metal content body;0.001, 0.098;0.04, 0.28;thin ammonia,thin carbon dioxide;148, 400
+frutexa sponsae;b,f,g,m,l,t,d,n,black hole,neutron star,t,white dwarf,wolf-rayet,y;rocky body;0.059, 0.099;0.04, 0.06;thin water;398, 452
+fungoida bullarum;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body,rocky ice body;0.001, 0.098;0.06, 0.28;thin argon,thin nitrogen;50, 124
+fungoida gelata;a,b,black hole,cj,cn,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body,rocky ice body;0.003, 0.099;0.04, 0.27;thin ammonia,thin carbon dioxide,thin methane,thin water;81, 452
+fungoida setisis;a,b,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body,rocky ice body;0.001, 0.097;0.03, 0.28;thin ammonia,thin methane;68, 176
+fungoida stabitis;a,b,black hole,f,g,k,l,m,neutron star,s,t,white dwarf,y;high metal content world,rocky body;0.026, 0.099;0.04, 0.27;thin carbon dioxide,thin water;180, 452
+osseus cornibus;a,black hole,f,g,k,l,t,y;high metal content body,rocky body;0.027, 0.098;0.04, 0.27;thin carbon dioxide;180, 195
+osseus discus;a,b,black hole,cj,cn,f,g,k,l,m,neutron star,s,t,y;high metal content body,rocky body,rocky ice body;0.002, 0.099;0.04, 0.27;thin ammonia,thin methane,thin water;81, 452
+osseus fractus;a,black hole,f,g,k,l,m,neutron star,t,y;high metal content body,rocky body;0.025, 0.099;0.04, 0.27;thin carbon dioxide;180, 190
+osseus pellebantus;a,black hole,f,g,k,l,m,t,y;high metal content body,rocky body;0.058, 0.099;0.04, 0.27;thin carbon dioxide;191, 196
+osseus pumice;a,b,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body,rocky ice body;0.001, 0.098;0.03, 0.28;thin argon,thin argon-rich,thin methane,thin nitrogen;43, 130
+osseus spiralis;a,black hole,f,g,k,l,m,o,t,white dwarf,y;high metal content body,rocky body,rocky ice body;0.001, 0.014;0.04, 0.28;thin ammonia;160, 177
+recepta conditivus;a,b,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.097;0.05, 0.27;thin carbon dioxide,thin oxygen,thin sulfur dioxide;132, 269
+recepta deltahedronix;a,b,black hole,f,g,k,l,m,neutron star,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.098;0.04, 0.27;thin carbon dioxide,thin sulfur dioxide;132, 268
+recepta umbrux;a,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.098;0.04, 0.27;thin carbon dioxide,thin oxygen,thin sulfur dioxide;132, 271
+stratum araneamus;a,b,black hole,f,g,k,l,m,neutron star,o,t,white dwarf,y;rocky body;0.001, 0.096;0.26, 0.54;thin sulfur dioxide;165, 373
+stratum cucumisis;b,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;rocky body;0.001, 0.099;0.05, 0.56;thin carbon dioxide,thin sulfur dioxide;191, 400
+stratum excutitus;black hole,f,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;rocky body;0.001, 0.099;0.04, 0.47;thin carbon dioxide,thin sulfur dioxide;165, 190
+stratum frigus;a,black hole,f,herbig ae/be,k,l,m,t,y;rocky body;0.001, 0.096;0.05, 0.52;thin carbon dioxide,thin sulfur dioxide;191, 400
+stratum laminamus;black hole,f,g,k,l,m,t,white dwarf,y;rocky body;0.001, 0.013;0.04, 0.34;thin ammonia;165, 176
+stratum limaxus;black hole,f,herbig ae/be,k,l,m,t,white dwarf,y;rocky body;0.001, 0.098;0.04, 0.48;thin carbon dioxide,thin sulfur dioxide;165, 190
+stratum paleas;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;rocky body;0, 0.099;0.04, 0.58;thin ammonia,thin carbon dioxide,thin carbon dioxide-rich,thin water;165, 450
+stratum tectonicas;f,g,k,l,m,t,white dwarf,wolf-rayet,y;high metal content body;0.001, 0.099;0.05, 0.6;thin ammonia,thin argon,thin argon-rich,thin carbon dioxide,thin carbon dioxide-rich,thin oxygen,thin sulfur dioxide,thin water;165, 450
+tubus cavas;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;rocky body;0.003, 0.098;0.04, 0.15;thin carbon dioxide;160, 195
+tubus compagibus;a,b,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;rocky body;0.003, 0.098;0.04, 0.15;thin carbon dioxide;160, 196
+tubus conifer;a,b,f,g,k,l,m,neutron star,t,white dwarf,y;rocky body;0.003, 0.098;0.04, 0.15;thin carbon dioxide;160, 195
+tubus rosarium;a,b,black hole,f,g,k,l,m,neutron star,o,t,white dwarf,y;rocky body;0.001, 0.013;0.04, 0.15;thin ammonia;160, 177
+tubus sororibus;a,b,f,g,k,l,m,neutron star,t;high metal content body;0.001, 0.092;0.05, 0.15;thin ammonia,thin carbon dioxide;160, 190
+tussock albata;black hole,f,g,k,l,m,neutron star,t,white dwarf,wolf-rayet,y;high metal content body,rocky body;0.016, 0.099;0.04, 0.27;thin carbon dioxide;175, 180
+tussock capillum;black hole,f,g,k,l,m,t,white dwarf,y;rocky body,rocky ice body;0.001, 0.098;0.03, 0.27;thin argon,thin methane;80, 127
+tussock caputus;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,icy body,rocky body;0.028, 0.099;0.04, 0.29;thin argon-rich,thin carbon dioxide;86, 190
+tussock catena;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;152, 176
+tussock cultro;black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;152, 177
+tussock divisa;black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.001, 0.013;0.04, 0.27;thin ammonia;152, 176
+tussock ignis;f,g,k,l,m,neutron star,t,white dwarf,wolf-rayet,y;high metal content body,rocky body;0.003, 0.051;0.04, 0.19;thin carbon dioxide;161, 170
+tussock pennata;f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.003, 0.011;0.04, 0.09;thin carbon dioxide;147, 154
+tussock pennatis;black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.003, 0.099;0.04, 0.27;thin carbon dioxide;147, 195
+tussock propagito;black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.003, 0.098;0.04, 0.27;thin carbon dioxide;146, 196
+tussock serrati;a,f,g,k,l,m,neutron star,t,y;high metal content body,rocky body;0.011, 0.07;0.05, 0.23;thin carbon dioxide;171, 174
+tussock stigmasis;black hole,f,g,k,l,m,neutron star,t,y;high metal content body,rocky body;0.001, 0.004;0.04, 0.28;thin sulfur dioxide;132, 166
+tussock triticum;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.058, 0.098;0.05, 0.27;thin carbon dioxide;191, 195
+tussock ventusa;f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.003, 0.022;0.04, 0.12;thin carbon dioxide;155, 160
+tussock virgam;f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.053, 0.099;0.04, 0.06;thin water;392, 450
