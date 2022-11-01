@@ -2436,7 +2436,7 @@ def get_info_for_bio_scan(data):
     species = data['Species_Localised']
     system = data['SystemAddress']
     body = data['Body']
-    print(data)
+    # print(data)
     cursor.execute("""CREATE table IF NOT EXISTS star_map (
                                                 starsystem TEXT,
                                                 system_address TEXT,
@@ -2472,7 +2472,7 @@ def get_info_for_bio_scan(data):
                            (body_name,)).fetchall()
     count_bios = []
 
-    print(count)
+    # print(count)
 
     for i in count:
         select_count = cursor.execute("""Select count(species) from temp where species = ? and body = ? """,
@@ -2483,6 +2483,7 @@ def get_info_for_bio_scan(data):
         species_2 = bio_name[1]
         color = ''
         mark_missing = '0'
+        count_1 =  select_count[0]
         if select_count[0] == 0:
             count_1 = 0
         if select_count[0] == 1:
