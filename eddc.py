@@ -2494,7 +2494,6 @@ def get_info_for_bio_scan(data):
             count_1 = 3
 
         insert_into_bio_db(body_name, count_1, genus, species_2, color, mark_missing)
-
     connection.close()
 
 
