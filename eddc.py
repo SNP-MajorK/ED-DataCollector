@@ -43,15 +43,15 @@ today = str(today)
 Year = (today[2:4])
 Month = (today[5:7])
 Day = (today[8:10])
-b_date = '2021-05-19'
-e_date = '2040-01-01'
+b_date = ''
+e_date = ''
 success = FALSE
 t_hour = 'Tick Time'
 t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.1'
+version_number = '0.7.0.2'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -115,9 +115,10 @@ def last_tick():
     logger(funktion, log_var)
 
     try:
-        response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks", timeout=1)
+        response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks", timeout=3)
         todos = json.loads(response.text)
     except requests.exceptions.ConnectionError:
+        print('Tick Error')
         todos = json.loads('[{"_id":"627fe6d6de3f1142b60d6dcd",'
                            '"time":"2022-05-14T16:56:36.000Z",'
                            '"updated_at":"2022-05-14T17:28:54.588Z",'
@@ -221,13 +222,14 @@ def tail_file(file):
                 if data.get('event') == 'Scan' and data.get('ScanType') == 'Detailed' and data.get('Landable'):
                     get_planet_info(data)
             linenr = count
-        # print(linenr)
+        print(linenr)
     if a != linenr:
         return 1
     else:
         return 0
 
-
+global data_old
+data_old = None
 
 def start_read_logs():
     funktion = inspect.stack()[0][3]
@@ -248,20 +250,34 @@ def start_read_logs():
     if not item:
         cursor.execute("INSERT INTO logfiles VALUES (?)", (last,))
         connection.commit()
+
         global linenr
         linenr = 0
+
+    connection.close()
+
+    data = None
     global data_old
-    print(last)
+    logger(last, 15)
     if tail_file(last) != 0:
         data = get_data_from_DB(last)
+    if data != None:
+        # print(data)
         data_old = data
-    else:
+    if data == None and data_old != None:
         data = data_old
-        # print('Benutze alte Daten, da es keine neuen gibt ????')
+        print('Benutze alte Daten, da es keine neuen gibt ????')
+
+    # print('data_old' , data_old)
     # print('data' , data)
-    if data == None:
+    if data == None and data_old == None:
+        print('no new log files')
         data = read_data_from_last_system(last)
-    connection.close()
+        data_old = data
+    current_system = system_scan(last)
+    if current_system[0] not in data[0][0]:
+        data = None
+
     return data
 
 
@@ -375,7 +391,7 @@ def extract_data(data):
 
 
     except KeyError:
-        print('extract_data  - exception')
+        logger('extract_data  - exception',log_var)
         ed_faction = (data['Faction'])
         mission_id = data['MissionID']
         date_for_ma(mission_id, ed_faction, 0)
@@ -480,8 +496,8 @@ def read_influence_db(ID, faction):
             # print(result[0][0])
             return result[0][0]
         except IndexError:
-            print('read_inf_db ' + str(ID) + '  ' + str(faction))
-            print('not yet in DB')
+            logger('read_inf_db ' + str(ID) + '  ' + str(faction), 2)
+            logger('not yet in DB', 2)
 
 
 def print_influence_db(filter_b):
@@ -524,7 +540,7 @@ def read_starchart_table(system_id):
             connection.close()
             return system_name[0][0]
         except IndexError:
-            print('SystemAddress =  ' + str(system_id))
+            logger('SystemAddress =  ' + str(system_id), 2)
             connection.close()
 
 
@@ -619,7 +635,7 @@ def market_sell(journal_file):
                             # print('MarketSell')
                             vouchers_db('MarketSell', system_name, str(faction), int(data["TotalSale"]))
                     except KeyError:
-                        print('KeyError BlackMarket')
+                        logger('KeyError BlackMarket', 2)
                         vouchers_db('MarketSell', system_name, str(faction), profit)
 
 
@@ -644,7 +660,7 @@ def find_last_docked(journal_file, data_found):
                         factions.append(docked_data)
                     faction = factions[-1]
                 except KeyError:
-                    print('Faction in Docked not found')
+                    logger('Faction in Docked not found', 2)
                 star_system = (data['StarSystem'])
                 if line < data_found:
                     star_systems.append(star_system)
@@ -744,7 +760,7 @@ def auto_refresh():
     logger(funktion, log_var)
     if eddc_modul != 4:
         while check_auto_refresh.get() != 0:
-            print('while auto_refresh')
+            logger('while auto_refresh', 2)
             if check_auto_refresh.get() != 0:
                 logger(check_auto_refresh.get(), log_var)
                 for i in range(0, 15):
@@ -1457,11 +1473,22 @@ def get_data_from_DB(file):
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     current_system = system_scan(file)
+    # print('current_system', current_system)
     if current_system == None:
-        return
+        return ' '
     cmdr = check_cmdr(file)
     select = cursor.execute("SELECT * FROM planet_infos where SystemName = ?", (current_system[0],)).fetchall()
-    get_biodata_from_planet(cmdr, select)
+    body_name = mark_planet(file)
+    print('select',select)
+    print('body_name', body_name)
+    if body_name and ((current_system[0]) in body_name):
+        body = body_name.replace(str(current_system[0]), '')
+        for number, i in enumerate(select):
+            if body == i[3]:
+
+                select.insert(0, select.pop(number))
+    # print(select)
+    return get_biodata_from_planet(cmdr, select)
 
 
 def get_biodata_from_planet(cmdr, select):
@@ -1470,6 +1497,7 @@ def get_biodata_from_planet(cmdr, select):
 
     data_2 = []
     for i in select:
+        # print('i ', i)
         system_address = int(i[0])
         system_name = str(i[1])
         body_name = str(i[1]) + str(i[3])
@@ -1527,8 +1555,9 @@ def get_biodata_from_planet(cmdr, select):
                 and bio_scan_count = 3""", (body_name,)).fetchall()
         count_select = cursor.execute("SELECT count from planet_bio_info where body = ?", (body_name, )).fetchall()
 
-        # print('Bios on Planet = ', count_select[0][0])
-        # print('gescannte Bios ' , len(select_bios_on_body))
+        # print('Bios on Planet ', body_name, ' = ', count_select[0][0])
+        # print('gescannte Bios ' , (select_bios_on_body))
+        # print('komplett gescannte Bios ' , select_complete_bios_on_body)
         species_all = []
         genus_all = []
 
@@ -1549,37 +1578,39 @@ def get_biodata_from_planet(cmdr, select):
             species_all.append(str(i[2]))
             genus_all.append(str(i[1]))
 
-        if bio_names != []:
-            for count, i in enumerate(bcd):
-                bio_name = i[0].split(' ')
-                genus = bio_name[0]
-                species = bio_name[1]
-                temp = genus.capitalize() + ' ' + species.capitalize()
-                color =  i[2]
-                bio_distance = i[1]
-                if temp in missing_bio:
-                    mark_missing = 1
-                else:
-                    mark_missing = 0
-                bio_scan_count = get_bio_scan_count(temp, body_name)
-                if (bio_scan_count) == None:
-                    return
-                insert_into_bio_db(body_name, bio_scan_count[1], genus.capitalize(),
-                                   species.capitalize(), color, mark_missing)
-                if genus.capitalize() in genus_all:
-                    continue
-                if species.capitalize() in species_all:
-                    continue
-                if count > 0:
-                    bio_name = str(bcd[count - 1]).split(' ')
-                    genus2 = bio_name[0]
-                    if genus == genus2:
-                        genus = ''
-                data_2.append(('', body_name, bio_scan_count[0], genus.capitalize(),
-                            species.capitalize(), color, bio_distance,'', '', mark_missing))
+        if int(count_select[0][0]) != int(select_complete_bios_on_body[0][0]):
+
+            if bio_names != []:
+                for count, i in enumerate(bcd):
+                    bio_name = i[0].split(' ')
+                    genus = bio_name[0]
+                    species = bio_name[1]
+                    temp = genus.capitalize() + ' ' + species.capitalize()
+                    color =  i[2]
+                    bio_distance = i[1]
+                    if temp in missing_bio:
+                        mark_missing = 1
+                    else:
+                        mark_missing = 0
+                    bio_scan_count = get_bio_scan_count(temp, body_name)
+                    if (bio_scan_count) == None:
+                        return
+                    insert_into_bio_db(body_name, bio_scan_count[1], genus.capitalize(),
+                                       species.capitalize(), color, mark_missing)
+                    if genus.capitalize() in genus_all:
+                        continue
+                    if species.capitalize() in species_all:
+                        continue
+                    if count > 0:
+                        bio_name = str(bcd[count - 1]).split(' ')
+                        genus2 = bio_name[0]
+                        if genus == genus2:
+                            genus = ''
+                    data_2.append(('', body_name, bio_scan_count[0], genus.capitalize(),
+                                species.capitalize(), color, bio_distance,'', '', mark_missing))
 
     if data_2:
-        # print(data_2)
+        logger(('data_2', data_2), log_var)
         return data_2
 
 
@@ -1744,9 +1775,6 @@ def treeview_codex():
         return select
 
 
-
-
-
     def check_planets():
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
@@ -1755,7 +1783,7 @@ def treeview_codex():
         data = []
         data = start_read_logs()
         if not data:
-            print('No Data - check_planet')
+            logger('No Data - check_planet', 2)
             data = [('DATE', 'TIME', 'COMMANDER', 'SPECIES',
                 'VARIANT', 'SYSTEM', 'BODY', "REGION", "No Data", "No Data")]
         return data
@@ -2040,15 +2068,22 @@ def treeview_codex():
                 switch = 0
                 if data2 != data3:
                     switch = 1 # es gibt neue Daten zum Anzeigen
-            # print('switch ', switch)
-            # print('normal_view', normal_view)
+
+            b_date_new  = begin_time.get()
+            e_date_new =  end_time.get()
+            # print(b_date, begin_time.get())
+            # print(e_date, end_time.get())
+            #
+            if b_date != b_date_new or e_date != e_date_new:
+                print('Datums Filter hat sich verändert')
+                switch = 1
+
             if switch == 1:
                 logger('log have changed', 1)
                 refresh_view()
                 refresh_combo()
-                # time.sleep(3.0)
             else:
-                # print('nothing new')
+                print('nothing new')
                 time.sleep(5.0)
 
     def refresh_view():
@@ -2062,6 +2097,7 @@ def treeview_codex():
             # print(i)
             codex_tree.delete(i)
         tree_frame.destroy()
+        global b_date, e_date
         b_date = begin_time.get()
         e_date = end_time.get()
         create_frame()
@@ -2262,7 +2298,9 @@ def treeview_codex():
         end_time = Entry(buttons_frame, width=10, font=("Helvetica", 11))
         end_time.insert(0, str(date.today()))
         end_time.pack(side=LEFT, padx=10)
-        # e_date = end_time.get()
+        global b_date, e_date
+        b_date = begin_time.get()
+        e_date = end_time.get()
         global sort_button
         sort_button = Checkbutton(buttons_frame,
                                   text="Sort by Date",
@@ -2343,17 +2381,18 @@ def treeview_codex():
 
     codex_tree.bind("<ButtonRelease-1>", selected_record)
     # connection.close()
-    refresh_view()
+    # refresh_view()
     refresh_treeview()
 
 
     if tree_start > 1:
-        print(tree_start)
-        refresh_view()
+        print('tree_start', tree_start)
+        time.sleep(3.0)
+        # refresh_view()
         refresh_treeview()
     else:
         tree_start += 1
-        print(tree_start)
+        print('tree_start', tree_start)
     tree.mainloop()
 
 
@@ -2501,10 +2540,10 @@ def get_info_for_get_body_name(data):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    starsystem = data['StarSystem']
-    system_address = data['SystemAddress']
-    body_ID = data['BodyID']
-    bodyname = data['BodyName']
+    starsystem = data.get('StarSystem')
+    system_address = data.get('SystemAddress')
+    body_ID = data.get('BodyID')
+    bodyname = data.get('BodyName')
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     cursor.execute("""CREATE table IF NOT EXISTS star_map (
@@ -2545,6 +2584,20 @@ def get_info_for_system_Scan(data):
         cursor.execute("INSERT INTO starchart VALUES (?,?,?) ", (int(system_address), system_name, int(body_count)))
         connection.commit()
     connection.close()
+
+
+def mark_planet(file):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+    with open(file, 'r', encoding='UTF8') as datei:
+        for zeile in datei.readlines()[::-1]:  # Read File line by line reversed!
+            data = read_json(zeile)
+            if data.get('event') == 'Location' or data.get('event') == 'Disembark' or \
+                    data.get('event') == 'SAAScanComplete':
+                # print(data)
+                # system_id = data.get('SystemAddress')
+                body_name = data.get('Body')
+                return body_name
 
 
 def get_planet_info(data):
@@ -2782,6 +2835,10 @@ def select_filter(sf_cmdr, region, bio_data, update):
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     data = []
+    global b_date, e_date
+    b_date = begin_time.get()
+    e_date = end_time.get()
+    print(b_date, e_date)
 
     if update != 3:
         order = 'cmdr, region, data, date_log, time_log'
@@ -2940,19 +2997,19 @@ def check_cmdr(journal_file):
 def system_scan(journal_file): # Sucht im Logfile nach
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    logger('Start System Scan', log_var)
-    search_string = 'FSSDiscoveryScan'
+    # search_string = 'FSSDiscoveryScan'
     with open(journal_file, 'r', encoding='UTF8') as datei:
         for zeile in datei.readlines()[::-1]:  # Read File line by line reversed!
         # for zeile in datei:
-            if zeile.find(search_string) > -1:
-                data = json.loads(zeile)
-                # print(data)
-                body_count = data['BodyCount']
-                system_name = data['SystemName']
-                system_address = data['SystemAddress']
+            data = read_json(zeile)
+            if data.get('event') == 'Location' or data.get('event') == "FSSDiscoveryScan":
+                body_count = data.get('BodyCount')
+                system_name = data.get('SystemName')
+                if system_name == None:
+                    system_name = data.get('StarSystem')
+                system_address = data.get('SystemAddress')
                 systems = (system_name, system_address, body_count)
-                # print(systems)
+                logger(systems, log_var)
                 return systems
 
 
@@ -3157,7 +3214,7 @@ def create_DB_Bio_prediction():
                 zeile[6] = float(zeile[6][0]), float(zeile[6][1])  # Temp
                 zeile[7] = str(zeile[7])  # Volcanism Y/N
             except IndexError:
-                print(zeile)
+                logger(zeile, 2)
             # print(zeile)
             insert_data_into_db(zeile)
 
@@ -3706,7 +3763,7 @@ def auswertung(eddc_modul):
             xx = select_last_log_file()[0]
             if xx == '0':
                 filenames = file_names(1)
-            print('Keine Log-Files für Heute vorhanden')
+            logger('Keine Log-Files für Heute vorhanden', 1)
             read_codex_entrys()
             treeview_codex()
         else:
@@ -3739,14 +3796,14 @@ def auswertung(eddc_modul):
                 system.insert(END, '\n')
             else:
                 nodata = 1
-                print('NO VOUCHER DATA')
+                logger('NO VOUCHER DATA', 3)
             data = print_influence_db(b_filter)
             if data:
                 for i in data:
                     system.insert(END, ((str(i[0])[0:15]) + '\t\t' + (str(i[1])[0:25]) + '\t\t\t\t' + str(i[2]) + '\n'))
                     bgs.add_row((i[0], i[1], i[2]))
             else:
-                print('NO INFLUENCE DATA')
+                logger('NO INFLUENCE DATA', 2)
                 if nodata == 1:
                     system.insert(END, '\n\tKeine Daten vorhanden')
 
@@ -3758,7 +3815,7 @@ def auswertung(eddc_modul):
             data = print_engi_stuff_db(b_filter)
             summe = 0
             for i in data:
-                system.insert(END, ((str(i[0])) + '\t \t \t \t \t' + (str(i[1])) + '\n'))
+                system.insert(END, ((str(i[0]).capitalize()) + '\t \t \t \t \t' + (str(i[1])) + '\n'))
                 mats_table.add_row((i[0], i[1]))
                 summe += i[1]
             a = 'Summe', summe
@@ -3768,7 +3825,7 @@ def auswertung(eddc_modul):
 
         elif eddc_modul == 2: # Collected Odyssey on Foot Material
             star_systems_db(filenames)
-            print('ody_mats == 1')
+            logger('ody_mats == 1', 2)
             for filename in filenames:
                 ody_mats_auslesen(filename)
             b_filter = Filter.get()
@@ -3793,7 +3850,7 @@ def auswertung(eddc_modul):
         elif eddc_modul == 5: # Kampfrang
             combat_rank()
 
-        elif eddc_modul == 6: # System Scanner for Biological Life
+        elif eddc_modul == 6: # Thargoid
             thargoids()
 
 
@@ -3862,11 +3919,11 @@ def db_version(): # Programmstand und DB Stand werden mit einander verglichen
         cursor.execute("UPDATE db_version set version = ?", (version_number,))
         connection.commit()
         connection.close()
-        print('Update Version')
+        logger('Update Version', 2)
         update_db()
         # connection.commit()
     elif item[0][0] == version_number:
-        print('Same Version')
+        logger('Same Version', 2)
         connection.close()
 
 
@@ -3963,7 +4020,6 @@ def create_tables():
                                         species TEXT,
                                         bio_scan_count INTEGER,
                                         mark_missing TEXT)""")
-
 
     cursor.execute("""CREATE table IF NOT EXISTS star_map (
                                                 starsystem TEXT,

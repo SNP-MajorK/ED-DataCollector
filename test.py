@@ -1,71 +1,82 @@
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import datetime
 import json
+import codecs
 
-timestamp = "2020-04-20T18:26:29Z"
-faction = "Stellanebula Project"
-mission_type = "Mission_Courier"
-mission_id = 512345678
- 
+today = datetime.datetime.now()
+# today = datetime.datetime(2022, 9, 20)
+# today = datetime.datetime(2022, 9, 23)
+day = today.strftime('%d')
+month = today.strftime('%b')
+month2 = today.strftime('%m')
+year = today.strftime('%Y')
+year = str(int(year) + 1286)
+filename = 'data.json'
+filename2 = 'uuid.json'
+# filename = '/home/4N0NYM/bot/data.json'
 
-def create_json_ma():
-	my_json = 	{"timestamp": "2020-04-20T18:26:29Z",
-					 "event": "MissionAccepted",
-					 "Faction": faction,
-					 "Name": mission_type,
-					 "LocalisedName": "Sensitive Data Delivery",
-					 "TargetFaction": "Peoples Procyon Values Party",
-					 "DestinationSystem": "Procyon",
-					 "DestinationStation": "Davy Dock",
-					 "Expiry": "2020-04-21T18:25:18Z",
-					 "Wing": 'false',
-					 "Influence": "++",
-					 "Reputation": "+",
-					 "Reward": 53764,
-					 "MissionID": mission_id } 
-	with open('data.json', 'a+', encoding='utf-8') as f:
-			json.dump(my_json, f)
-			f.write('\n')
+print(today)
+month = month.upper()
+url = "https://community.elitedangerous.com/de/galnet/"+day +"-" + month + "-" + year
+content = urlopen(url).read()
+print(url)
 
-create_json_ma()
+soup = BeautifulSoup(content, 'lxml')
+text = soup.find_all('div', class_='article')
+
+my_json = []
 
 
-def create_json_mission_completed():
-	my_json = 	{
-				  "timestamp": "2021-05-17T02:32:40Z",
-				  "event": "MissionCompleted",
-				  "Faction": faction,
-				  "Name": mission_type,
-				  "MissionID": mission_id,
-				  "Commodity": "$Bertrandite_Name;",
-				  "Commodity_Localised": "Bertrandite",
-				  "Count": 624,
-				  "DestinationSystem": "Apotanites",
-				  "DestinationStation": "Galois Terminal",
-				  "Reward": 47604000,
-				  "FactionEffects": [
-					{
-					  "Faction": faction,
-					  "Effects": [
-						{
-						  "Effect": "$MISSIONUTIL_Interaction_Summary_EP_up;",
-						  "Effect_Localised": "The economic status of $#MinorFaction; has improved in the $#System; system.",
-						  "Trend": "UpGood"
-						}
-					  ],
-					  "Influence": [
-						{
-						  "SystemAddress": 2793649703291,
-						  "Trend": "UpGood",
-						  "Influence": "+++++"
-						}
-					  ],
-					  "ReputationTrend": "UpGood",
-					  "Reputation": "++"
-					}
-				  ]
-				}
-	with open('data.json', 'a+', encoding='utf-8') as f:
-		json.dump(my_json, f)
-		f.write('\n')
+def check(uuid):
+        uuids = []
+        with open(filename2, 'r', encoding='UTF8') as datei:
+                for zeile in datei:
+                        data = json.loads(zeile)
+                        uuids.append(data['message_nr'])
 
-		
-create_json_mission_completed()                        
+        # print(uuids)
+        if uuid in uuids:
+                return 1
+        else:
+                my_json = {
+                        'message_nr': uuid
+                }
+                if my_json:
+                        with codecs.open(filename2, 'a+', encoding='utf-8', errors='ignore') as f:
+                                data = json.dumps(my_json, ensure_ascii=False)
+                                f.write(data)
+                                f.write('\n')
+                return 0
+
+
+
+def write_json_file():
+        for count, t in enumerate(reversed(text)):
+                UUID = int(str(day) + str(month2) + str(year) + str(count))
+                if check(UUID) != 1:
+                        headline = t.find_all('h3')
+                        for h in headline:
+                                head = h.text
+                        l_head = t.find_all('p', class_="small")
+                        for l in l_head:
+                                datum = l.text
+                        gn = t.find_all('p')
+                        for i in gn:
+                                tex = i.text
+                        # print(len(head) + len(datum) + len(tex) + len(url))
+                        tex = tex + '\r\n' + url
+                        my_json = {
+                                'message_nr': UUID,
+                                'header': head,
+                                'date': datum,
+                                'content': tex
+                                }
+                        if my_json:
+                                with codecs.open(filename, 'w', encoding='utf-8', errors='ignore') as f:
+                                        data = json.dumps(my_json, ensure_ascii=False)
+                                        f.write(data)
+                                        f.write('\n')
+                # break
+write_json_file()
+
