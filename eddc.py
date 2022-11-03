@@ -1497,7 +1497,6 @@ def get_biodata_from_planet(cmdr, select):
 
     data_2 = []
     for i in select:
-        # print('i ', i)
         system_address = int(i[0])
         system_name = str(i[1])
         body_name = str(i[1]) + str(i[3])
