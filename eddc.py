@@ -51,7 +51,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.2'
+version_number = '0.7.0.3'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -270,7 +270,12 @@ def start_read_logs():
         data = read_data_from_last_system(last)
         data_old = data
     current_system = system_scan(last)
-    if current_system[0] and (current_system[0] not in data[0][0]):
+    print('data ', isinstance(data, str))
+
+    if not isinstance(data, str): # Wenn data eine Liste ist
+        if current_system[0] and (current_system[0] not in data[0][0]):
+            data = None
+    else: # Wenn Data ein str ist setze es auf None
         data = None
     return data
 
@@ -1944,6 +1949,7 @@ def treeview_codex():
                     record = (
                         record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[9], 1,
                         record[7])
+                    logger(record, log_var)
                     counter = 'a'
                     worth = ''
                     tag = 'oddrow'

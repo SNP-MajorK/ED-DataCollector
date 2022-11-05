@@ -4,6 +4,7 @@
 .idea
 __pycache__
 eddc.db
+eddc.db_
 update.log
 test.py
 data.json
