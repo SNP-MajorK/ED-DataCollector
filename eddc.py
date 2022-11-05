@@ -268,16 +268,13 @@ def start_read_logs():
         data = data_old
         print('Benutze alte Daten, da es keine neuen gibt ????')
 
-    # print('data_old' , data_old)
-    # print('data' , data)
     if data == None and data_old == None:
         print('no new log files')
         data = read_data_from_last_system(last)
         data_old = data
     current_system = system_scan(last)
-    if current_system[0] not in data[0][0]:
+    if current_system[0] and (current_system[0] not in data[0][0]):
         data = None
-
     return data
 
 
@@ -2606,17 +2603,17 @@ def get_planet_info(data):
 
     # print(data)
     if data['Atmosphere']:
-        system_id = data['SystemAddress']
-        body_name = data['BodyName']
+        system_id = data.get('SystemAddress')
+        body_name = data.get('BodyName')
         if check_body(body_name) == 0:
             return
-        planet_type = data['PlanetClass']
-        body_atmos = data['Atmosphere']
-        body_gravity = float(data['SurfaceGravity']) / 10
-        body_temp = data['SurfaceTemperature']
-        body_pressure = float(data['SurfacePressure']) / 100000
-        body_distance = int(data['DistanceFromArrivalLS'])
-        volcanism = data['Volcanism']
+        planet_type = data.get('PlanetClass')
+        body_atmos = data.get('Atmosphere')
+        body_gravity = float(data.get('SurfaceGravity')) / 10
+        body_temp = data.get('SurfaceTemperature')
+        body_pressure = float(data.get('SurfacePressure')) / 100000
+        body_distance = int(data.get('DistanceFromArrivalLS'))
+        volcanism = data.get('Volcanism')
         if volcanism:
             # print(body_name, 'VOLCANISM Y ')
             volcanism = 'Y'
