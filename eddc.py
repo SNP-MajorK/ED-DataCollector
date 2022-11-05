@@ -125,9 +125,6 @@ def last_tick():
                            '"__v":0}]')
         messagebox.showwarning("TICK failed", "No Internet Connection")
 
-    #
-
-    # todos = json.loads(response.text)
     global t_hour
     global t_minute
     global tick_time
