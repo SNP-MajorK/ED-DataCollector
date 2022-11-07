@@ -51,7 +51,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.3'
+version_number = '0.7.0.4'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -193,7 +193,7 @@ linenr = 0
 
 def tail_file(file):
     funktion = inspect.stack()[0][3]
-    logger(funktion, 3)
+    logger(funktion, log_var)
 
     # print(file)
     global linenr
@@ -272,7 +272,7 @@ def start_read_logs():
     current_system = system_scan(last)
     print('data ', isinstance(data, str))
 
-    if not isinstance(data, str): # Wenn data eine Liste ist
+    if not isinstance(data, str) and data != None: # Wenn data eine Liste ist
         if current_system[0] and (current_system[0] not in data[0][0]):
             data = None
     else: # Wenn Data ein str ist setze es auf None
@@ -1100,6 +1100,7 @@ def read_log_codex(journal_file):
                     codex_entry = (data['Name'])
                     codex_entry = str(codex_entry)
                     codex_entry = codex_entry.replace('$Codex_Ent_Standard_', '')
+                    codex_entry = codex_entry.replace('$Codex_Ent_', '')
                     codex_entry = codex_entry.replace('_', ' ')
                     codex_entry = codex_entry.replace('Name;', '')
                     codex_entry = codex_entry.replace('gas ;', '')
@@ -1478,8 +1479,8 @@ def get_data_from_DB(file):
     cmdr = check_cmdr(file)
     select = cursor.execute("SELECT * FROM planet_infos where SystemName = ?", (current_system[0],)).fetchall()
     body_name = mark_planet(file)
-    print('select',select)
-    print('body_name', body_name)
+    # print('select',select)
+    # print('body_name', body_name)
     if body_name and ((current_system[0]) in body_name):
         body = body_name.replace(str(current_system[0]), '')
         for number, i in enumerate(select):
@@ -1858,6 +1859,7 @@ def treeview_codex():
                 update = 0  # Nach Biologischen Daten sortiert
             # print(update)
             data = select_filter(filter_cmdr, filter_region, filter_bdata, update)
+            # print(data)
 
         elif normal_view == 1:
             data = missing_codex(filter_cmdr, filter_region)
@@ -2085,6 +2087,7 @@ def treeview_codex():
                 print('nothing new')
                 time.sleep(5.0)
 
+
     def refresh_view():
         global tree_start
         tree_start += 1
@@ -2106,6 +2109,7 @@ def treeview_codex():
     global buttons_frame
     buttons_frame = Frame(tree, background='black')
     buttons_frame.pack(fill=X, pady=15)
+
 
     def refresh_combo():
         funktion = inspect.stack()[0][3]
@@ -2844,10 +2848,10 @@ def select_filter(sf_cmdr, region, bio_data, update):
     else:
         order = 'date_log desc, time_log DESC'
 
-    bio_data = '%' + bio_data +'%'
+    if bio_data != '':
+        bio_data = '%' + bio_data +'%'
     if bio_data == '%---------%':
         bio_data = ''
-
 
     if sf_cmdr and region and bio_data:
         data = cursor.execute("""SELECT * FROM codex where cmdr = ? and region = ? and data like ?
@@ -3758,7 +3762,6 @@ def auswertung(eddc_modul):
     if not filenames:
         # Wenn es keine logfiles an diesem Tag gibt, dann
         if eddc_modul == 4:
-            logger('Test', 1)
             xx = select_last_log_file()[0]
             if xx == '0':
                 filenames = file_names(1)
