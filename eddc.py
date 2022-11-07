@@ -1166,11 +1166,8 @@ def read_bio_data(journal_file):
                     # print('bio_color ', biodata, bio_color)
                     lauf = 1
                     while lauf < 15:
-                        # print('111')
                         filenames = older_logs(rbd_log_time, lauf)
-                        # print(filenames)
                         for filename in reversed(filenames):
-                            # print(filename)
                             region_cmdr = check_cmdr(filename)
                             if str(bio_cmdr) == str(region_cmdr):
                                 bio_color = find_codex(filename, 99999, biodata)
