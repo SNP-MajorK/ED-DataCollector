@@ -1188,8 +1188,6 @@ def read_bio_data(journal_file):
                                 logger(('break lauf ' + str(lauf)), log_var)
                             break
                         lauf = lauf + 1
-                # else:
-                #     region_cmdr = bio_cmdr
 
                 if rbd_system == "blank":
                     lauf = 1
