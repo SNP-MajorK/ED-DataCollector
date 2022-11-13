@@ -31,7 +31,7 @@ bacterium tela;a,b,black hole,cj,cn,f,g,herbig ae/be,k,l,m,ms,neutron star,s,t,w
 bacterium tela;a,b,black hole,cj,cn,f,g,herbig ae/be,k,l,m,ms,neutron star,s,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice world;0.001, 0.99;0.025, 0.61;thin water;400, 500;Y
 bacterium tela;a,b,black hole,cj,cn,f,g,herbig ae/be,k,l,m,ms,neutron star,s,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice world;0.001, 0.99;0.025, 0.61;thin water-rich;240, 320;Y
 bacterium verrata;a,black hole,f,g,herbig ae/be,k,l,m,t,white dwarf,y;icy body;0.001, 0.099;0.04, 0.65;thin argon,thin neon,thin neon-rich;20, 230;Y
-bacterium vesicula;a,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.098;0.27, 0.55;thin argon;50, 235;N
+bacterium vesicula;a,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.098;0.02, 0.99;thin argon;50, 235;N
 bacterium volu;a,b,black hole,f,g,herbig ae/be,k,l,m,t,y;icy body,rocky ice world;0.014, 0.099;0.24, 0.55;thin oxygen;145, 245;N
 cactoida cortexum;a,black hole,f,g,k,l,m,neutron star,t,white dwarf,y;high metal content body,rocky body;0.025, 0.099;0.039, 0.279;thin carbon dioxide;180, 196;N
 cactoida lapis;a,black hole,f,g,k,l,m,neutron star,o,t,white dwarf,y;high metal content body,rocky body;0.001, 0.013;0.039, 0.279;thin ammonia;160, 177;N

@@ -51,7 +51,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.4'
+version_number = '0.7.0.5'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -214,9 +214,9 @@ def tail_file(file):
                     get_info_for_bio_scan(data)
                 if data.get('event') == 'FSSDiscoveryScan':
                     get_info_for_system_Scan(data)
-                if data.get('event') == 'FSSBodySignals':
+                if data.get('event') == 'FSSBodySignals' or data.get('event') == 'SAASignalsFound':
                     get_info_scan_planets(data)
-                if data.get('event') == 'Scan' and data.get('ScanType') == 'Detailed' and data.get('Landable'):
+                if data.get('event') == 'Scan' and data.get('Landable'):
                     get_planet_info(data)
             linenr = count
         print(linenr)
@@ -233,8 +233,6 @@ def start_read_logs():
     logger(funktion, log_var)
 
     files = file_names(2)
-    # print('files = file_names(0)')
-
     if len(files) > 0:
         last = files[len(files) - 1]
     else:
@@ -263,17 +261,17 @@ def start_read_logs():
         data_old = data
     if data == None and data_old != None:
         data = data_old
-        print('Benutze alte Daten, da es keine neuen gibt ????')
 
     if data == None and data_old == None:
         print('no new log files')
         data = read_data_from_last_system(last)
         data_old = data
     current_system = system_scan(last)
-    print('data ', isinstance(data, str))
+    print('isinstance string von data = ', isinstance(data, str))
 
-    if not isinstance(data, str) and data != None: # Wenn data eine Liste ist
-        if current_system[0] and (current_system[0] not in data[0][0]):
+    # Wenn data eine Liste ist und current_system nicht None ist
+    if not isinstance(data, str) and data != None and current_system[0] != None:
+        if current_system[0] not in data[0][0]:
             data = None
     else: # Wenn Data ein str ist setze es auf None
         data = None
@@ -1381,7 +1379,7 @@ def worth_it(search_data):
     return y
 
 
-def insert_into_planet_bio_db(body_name, body_id, count, region):
+def insert_into_planet_bio_db(body_name, body_id, count, region, bio_genus):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
@@ -1392,15 +1390,33 @@ def insert_into_planet_bio_db(body_name, body_id, count, region):
                                         body TEXT,
                                         body_id TEXT,
                                         count TEXT,
-                                        region TEXT)""")
+                                        region TEXT,
+                                        bio_genus)""")
 
     select = cursor.execute("""SELECT body from planet_bio_info where body = ?""",
                             (body_name, )).fetchall()
 
+    select_genus = cursor.execute("""SELECT bio_genus from planet_bio_info where body = ?""",
+                            (body_name,)).fetchall()
+    # print('select_genus = ', select_genus)
+    # print('bio_genus = ', bio_genus)
+
     if select == []:
-        cursor.execute("INSERT INTO planet_bio_info VALUES (?,?,?,?)",
-                       (body_name, body_id, count, region))
+        cursor.execute("INSERT INTO planet_bio_info VALUES (?,?,?,?,?)",
+                       (body_name, body_id, count, region, bio_genus))
         connection.commit()
+
+    if bio_genus and select != [] and select_genus == [('',)]:
+        logger(funktion, 3)
+        # print(select, select_genus, 'bio_genus = "', bio_genus, '"')
+        cursor.execute("""UPDATE planet_bio_info SET bio_genus = ? 
+                            where body = ? and body_id = ? and region = ?""",
+                       (bio_genus, body_name, body_id, region))
+        connection.commit()
+
+
+
+    # print('Hier muss noch ein Update rein')
 
 
 def insert_into_bio_db(body_name, bio_scan_count, genus, species, color, mark_missing):
@@ -1511,7 +1527,8 @@ def get_biodata_from_planet(cmdr, select):
                                             body TEXT,
                                             body_id TEXT,
                                             count TEXT,
-                                            region TEXT)""")
+                                            region TEXT,
+                                            bio_genus)""")
 
         b_count = cursor.execute("SELECT count FROM planet_bio_info where body = ?", (body_name,)).fetchone()
         if b_count:
@@ -1578,6 +1595,7 @@ def get_biodata_from_planet(cmdr, select):
                 for count, i in enumerate(bcd):
                     bio_name = i[0].split(' ')
                     genus = bio_name[0]
+                    genus2 = ''
                     species = bio_name[1]
                     temp = genus.capitalize() + ' ' + species.capitalize()
                     color =  i[2]
@@ -1596,15 +1614,28 @@ def get_biodata_from_planet(cmdr, select):
                     if species.capitalize() in species_all:
                         continue
                     if count > 0:
-                        bio_name = str(bcd[count - 1]).split(' ')
+                        # print(bcd[count - 1][0], 'Name')
+                        bio_name = str(bcd[count - 1][0]).split(' ')
                         genus2 = bio_name[0]
-                        if genus == genus2:
-                            genus = ''
-                    data_2.append(('', body_name, bio_scan_count[0], genus.capitalize(),
+                    marked = 0
+                    fdg = check_genus(body_name, genus)
+                    if fdg != None:
+                        identified_on_body = str(fdg[0])
+                        iob = identified_on_body.split(', ')
+                        del iob[0]
+                        # print(body_name, iob, genus2.capitalize())
+                        if genus.capitalize() in iob:
+                            marked = 1
+                    else:
+                        marked = 1
+                    if genus == genus2:
+                        genus = ''
+                    if marked == 1:
+                        data_2.append(('', body_name, bio_scan_count[0], genus.capitalize(),
                                 species.capitalize(), color, bio_distance,'', '', mark_missing))
 
     if data_2:
-        logger(('data_2', data_2), log_var)
+        logger(('data_2', data_2), 3)
         return data_2
 
 
@@ -2604,7 +2635,7 @@ def get_planet_info(data):
     logger(funktion, log_var)
 
     # print(data)
-    if data['Atmosphere']:
+    if data.get('Atmosphere'):
         system_id = data.get('SystemAddress')
         body_name = data.get('BodyName')
         if check_body(body_name) == 0:
@@ -2631,7 +2662,7 @@ def get_planet_info(data):
             materials = materials + ' ' + str(i)
         connection = sqlite3.connect(database)
         cursor = connection.cursor()
-
+        cursor.execute("CREATE table IF NOT EXISTS stars (SystemID INTEGER, star_class TEXT)")
         select = cursor.execute("SELECT star_class FROM stars WHERE SystemID= ?", (system_id,)).fetchall()
         if select != []:
             star_class = select[0][0]
@@ -2691,22 +2722,46 @@ def get_star_info(data):
         connection.commit()
     connection.close()
 
+def check_genus(body_name, genus2):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+
+    select = cursor.execute("""SELECT bio_genus from planet_bio_info where body = ?""",
+                            (body_name, )).fetchone()
+    # print(body_name, select)
+    if select != ('',):
+        # print(select)
+        return select
+    else:
+        return None
+
 
 def get_info_scan_planets(data):
     # data['event'] == 'FSSBodySignals':
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    body_name = data['BodyName']
-    body_id = data['BodyID']
+    genus = ''
+    if data.get('event') == 'SAASignalsFound':
+
+        for i in data.get('Genuses'):
+            geni = i.get('Genus_Localised')
+            # print(geni)
+            genus = genus + ', ' + geni
+    body_name = data.get('BodyName')
+    body_id = data.get('BodyID')
     system_address = data['SystemAddress']
     bio_count = 0
     region = (findRegionForBoxel(system_address)['region'][1])
+    # print('read data',body_name,genus)
+
     for signal in (data['Signals']):
-        bio_count = (signal['Count'])
-    for i in (data['Signals']):
-        if 'Bio' in (i['Type_Localised']):
-            insert_into_planet_bio_db(body_name, body_id, bio_count, region)
+        if 'Bio' in (signal['Type_Localised']):
+            bio_count = (signal['Count'])
+            insert_into_planet_bio_db(body_name, body_id, bio_count, region, genus)
             if check_body(body_name) == 1:
                 bios = get_species_for_planet(body_name)
                 for i in bios:
@@ -2921,7 +2976,8 @@ def check_body(body_name):
                                         body TEXT,
                                         body_id TEXT,
                                         count TEXT,
-                                        region TEXT)""")
+                                        region TEXT,
+                                        bio_genus)""")
 
     select = cursor.execute("""SELECT body from planet_bio_info where body = ?""",
                             (body_name, )).fetchall()
@@ -3351,10 +3407,10 @@ def select_prediction_db(star_type, planet_type ,body_atmos, body_gravity, body_
                                         Athmospere like ? and
                                         Gravity_min < ? and Gravity_max > ? and
                                         Temp_min <= ? and Temp_max >= ? and
-                                        Pressure_min < ? and Pressure_max > ? 
-                                        """,
+                                        Pressure_min < ? and Pressure_max > ? and 
+                                        Volcanism = ?""",
                                        (planet_type, body_atmos, body_gravity, body_gravity,
-                                        body_temp, body_temp, body_pressure, body_pressure) ).fetchall()
+                                        body_temp, body_temp, body_pressure, body_pressure, volcanism)).fetchall()
     # print(select_prediction)
     return select_prediction
 
@@ -3885,19 +3941,20 @@ def set_language_db(var):
     return var
 
 
-def update_db():
+def update_db(old_version):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
-    cursor.execute("ALTER TABLE starchart RENAME TO TempOldTable")
-    cursor.execute("CREATE table IF NOT EXISTS starchart (SystemID INTEGER, SystemName TEXT, Count INTEGER)")
-    cursor.execute("INSERT INTO starchart (SystemID, SystemName) Select SystemID, SystemName FROM TempOldTable")
-
-
-    connection.commit()
-    connection.close()
+    print(old_version)
+    if old_version != '0.7.0.4' and \
+            (old_version == '0.7.0.3' or old_version == '0.7.0.2' or
+             old_version == '0.7.0.1' or old_version == '0.7.0.0'):
+        print("ALTER TABLE planet_bio_info ADD bio_genus")
+        # cursor.execute("ALTER TABLE planet_bio_info ADD bio_genus")
+        connection.commit()
+        connection.close()
 
 
 def db_version(): # Programmstand und DB Stand werden mit einander verglichen
@@ -3917,7 +3974,7 @@ def db_version(): # Programmstand und DB Stand werden mit einander verglichen
         connection.commit()
         connection.close()
         logger('Update Version', 2)
-        update_db()
+        update_db(item[0][0])
         # connection.commit()
     elif item[0][0] == version_number:
         logger('Same Version', 2)
@@ -4008,7 +4065,8 @@ def create_tables():
                                         body TEXT,
                                         body_id TEXT,
                                         count TEXT,
-                                        region TEXT)""")
+                                        region TEXT,
+                                        bio_genus)""")
 
 
     cursor.execute("""CREATE table IF NOT EXISTS bio_info_on_planet (
