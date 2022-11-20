@@ -51,7 +51,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.5'
+version_number = '0.7.0.6'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -219,7 +219,7 @@ def tail_file(file):
                 if data.get('event') == 'Scan' and data.get('Landable'):
                     get_planet_info(data)
             linenr = count
-        print(linenr)
+        logger(linenr, 1)
     if a != linenr:
         return 1
     else:
@@ -263,11 +263,11 @@ def start_read_logs():
         data = data_old
 
     if data == None and data_old == None:
-        print('no new log files')
-        data = read_data_from_last_system(last)
+        # print('no new log files')
+        # data = read_data_from_last_system(last)
         data_old = data
     current_system = system_scan(last)
-    print('isinstance string von data = ', isinstance(data, str))
+    # print('isinstance string von data = ', isinstance(data, str))
 
     # Wenn data eine Liste ist und current_system nicht None ist
     if not isinstance(data, str) and data != None and current_system[0] != None:
@@ -1376,6 +1376,7 @@ def worth_it(search_data):
     else:
         x = 0
     y = int(x)
+    # print(funktion, search_data, y)
     return y
 
 
@@ -1594,6 +1595,7 @@ def get_biodata_from_planet(cmdr, select):
             if bio_names != []:
                 for count, i in enumerate(bcd):
                     bio_name = i[0].split(' ')
+                    logger((body_name ,bio_name), log_var)
                     genus = bio_name[0]
                     genus2 = ''
                     species = bio_name[1]
@@ -1606,6 +1608,7 @@ def get_biodata_from_planet(cmdr, select):
                         mark_missing = 0
                     bio_scan_count = get_bio_scan_count(temp, body_name)
                     if (bio_scan_count) == None:
+                        logger((body_name, bio_name), 1)
                         return
                     insert_into_bio_db(body_name, bio_scan_count[1], genus.capitalize(),
                                        species.capitalize(), color, mark_missing)
@@ -1630,12 +1633,14 @@ def get_biodata_from_planet(cmdr, select):
                         marked = 1
                     if genus == genus2:
                         genus = ''
+                    else:
+                        genus2 = genus
                     if marked == 1:
                         data_2.append(('', body_name, bio_scan_count[0], genus.capitalize(),
-                                species.capitalize(), color, bio_distance,'', '', mark_missing))
+                                species.capitalize(), color, bio_distance,'', genus2.capitalize(), mark_missing))
 
     if data_2:
-        logger(('data_2', data_2), 3)
+        logger(('data_2', data_2), log_var)
         return data_2
 
 
@@ -1695,7 +1700,7 @@ def treeview_codex():
         img = resource_path("eddc.ico")
         tree.iconbitmap(img)
     except TclError:
-        print('Icon not found)')
+        logger('Icon not found', 1)
     style = ttk.Style(tree)
     style.theme_use('default')
     style.configure('Treeview',
@@ -1969,7 +1974,7 @@ def treeview_codex():
             if normal_view == 4: # SystemScanner
                 set_system_scanner_treeview()
                 # print('record' ,record)
-                new = record[3] + ' ' + record[4]
+                new = record[8] + ' ' + record[4]
                 search = 0,1,2,new
                 worth = worth_it(search)
                 worth = format(worth, ',d')
@@ -2102,15 +2107,15 @@ def treeview_codex():
             # print(e_date, end_time.get())
             #
             if b_date != b_date_new or e_date != e_date_new:
-                print('Datums Filter hat sich verändert')
+                logger('Datums Filter hat sich verändert',1)
                 switch = 1
 
             if switch == 1:
-                logger('log have changed', 1)
+                # logger('log have changed', 1)
                 refresh_view()
                 refresh_combo()
             else:
-                print('nothing new')
+                # print('nothing new')
                 time.sleep(5.0)
 
 
@@ -2415,13 +2420,13 @@ def treeview_codex():
 
 
     if tree_start > 1:
-        print('tree_start', tree_start)
+        logger(('tree_start', tree_start),1)
         time.sleep(3.0)
         # refresh_view()
         refresh_treeview()
     else:
         tree_start += 1
-        print('tree_start', tree_start)
+        logger(('tree_start', tree_start),1)
     tree.mainloop()
 
 
@@ -2667,14 +2672,14 @@ def get_planet_info(data):
         if select != []:
             star_class = select[0][0]
         else:
-            print('no star with ', system_id)
+            logger(('no star with ', system_id), 1)
             return
 
         select = cursor.execute("SELECT SystemName FROM starchart WHERE SystemID= ?", (system_id,)).fetchall()
         if select != []:
             system_name = select[0][0]
         else:
-            print('no SystemName with ', system_id)
+            logger(('no SystemName with ', system_id),1)
             return
 
         body_name = body_name.replace(system_name, '')
@@ -2758,8 +2763,9 @@ def get_info_scan_planets(data):
     region = (findRegionForBoxel(system_address)['region'][1])
     # print('read data',body_name,genus)
 
-    for signal in (data['Signals']):
-        if 'Bio' in (signal['Type_Localised']):
+    for signal in (data.get('Signals')):
+
+        if 'Bio' in (signal.get('Type')):
             bio_count = (signal['Count'])
             insert_into_planet_bio_db(body_name, body_id, bio_count, region, genus)
             if check_body(body_name) == 1:
@@ -2891,7 +2897,7 @@ def select_filter(sf_cmdr, region, bio_data, update):
     global b_date, e_date
     b_date = begin_time.get()
     e_date = end_time.get()
-    print(b_date, e_date)
+    # print(b_date, e_date)
 
     if update != 3:
         order = 'cmdr, region, data, date_log, time_log'
@@ -3370,7 +3376,7 @@ def get_color_or_distance(bio_name, star, materials):
                                 (bio_name2, star)).fetchall()
         if data != []:
             data = data[0]
-        # print('star', distance, data)
+
     else:
         data = []
         for mat in materials:
@@ -3380,7 +3386,9 @@ def get_color_or_distance(bio_name, star, materials):
             if select:
                 for i in select:
                     data.append(i[0])
-    # print(distance, data)
+    if data == []:
+        data = 'Unknown'
+    logger((bio_name,distance, data), log_var)
     return distance, data
 
 
@@ -3397,12 +3405,40 @@ def select_prediction_db(star_type, planet_type ,body_atmos, body_gravity, body_
     planet_type = planet_type.lower()
     star_type = star_type.lower()
     body_temp = int(body_temp)
-    # print('select Bio_prediction',  star_type, planet_type ,body_atmos,
+    # print('select Bio_prediction',  planet_type ,body_atmos,
     #       body_gravity, body_temp, body_pressure, volcanism)
 
-    # volcanism wieder aus geschaltet, weil es nicht korrekt ermittelt wird.
+    if volcanism == 'Y':
+        select_prediction = []
+        select_bacterium = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
+                                                Name like '%bacterium tela%' or  
+                                                Name like '%bacterium cerberus%' and  
+                                                (Planettype = ? and
+                                                Athmospere like ? and
+                                                Gravity_min < ? and Gravity_max > ? and
+                                                Temp_min <= ? and Temp_max >= ? and
+                                                Pressure_min < ? and Pressure_max > ?) """,
+                                           (planet_type, body_atmos, body_gravity, body_gravity,
+                                            body_temp, body_temp, body_pressure, body_pressure)).fetchall()
+        # print('select_bacterium', select_bacterium)
+        select_bio = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
+                                                        Name not like '%bacterium%' and
+                                                        Planettype = ? and
+                                                        Athmospere like ? and
+                                                        Gravity_min < ? and Gravity_max > ? and
+                                                        Temp_min <= ? and Temp_max >= ? and
+                                                        Pressure_min < ? and Pressure_max > ? """,
+                                          (planet_type, body_atmos, body_gravity, body_gravity,
+                                           body_temp, body_temp, body_pressure, body_pressure)).fetchall()
+        # print('select_bio', select_bio)
 
-    select_prediction = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
+        for i in select_bacterium:
+            select_prediction.append(i)
+        for a in select_bio:
+            select_prediction.append(a)
+
+    else:
+        select_prediction = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
                                         Planettype = ? and
                                         Athmospere like ? and
                                         Gravity_min < ? and Gravity_max > ? and
@@ -3947,11 +3983,11 @@ def update_db(old_version):
 
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
-    print(old_version)
+    # print(old_version)
     if old_version != '0.7.0.4' and \
             (old_version == '0.7.0.3' or old_version == '0.7.0.2' or
              old_version == '0.7.0.1' or old_version == '0.7.0.0'):
-        print("ALTER TABLE planet_bio_info ADD bio_genus")
+        # print("ALTER TABLE planet_bio_info ADD bio_genus")
         # cursor.execute("ALTER TABLE planet_bio_info ADD bio_genus")
         connection.commit()
         connection.close()
@@ -4118,7 +4154,7 @@ def main():
         img = resource_path("eddc.ico")
         root.iconbitmap(img)
     except TclError:
-        print('Icon not found)')
+        logger(('Icon not found)'),1)
 
     root.configure(background='black')
     root.minsize(415, 500)

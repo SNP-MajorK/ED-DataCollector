@@ -25,8 +25,8 @@ Clypeus Lacrimam;150;Star;A,Orange,F,Mauve,G,Amethyst,K,Grey,M,Turquoise,L,Teal,
 Clypeus Margaritus;150;Star;A,Orange,F,Mauve,G,Amethyst,K,Grey,M,Turquoise,L,Teal,N,Yellow
 Clypeus Speculumi;150;Star;A,Orange,F,Mauve,G,Amethyst,K,Grey,M,Turquoise,L,Teal,N,Yellow
 Concha Aureolas;150;Star;A,Teal,F,Grey,G,Turquoise,K,Red,L,Orange,N,Emerald
-Concha Biconcavis;150;Material;Antimony,Peach,Ruthenium,Orange
-Concha Labiata;150;Star;A,Teal,F,Grey,G,Turquoise,K,Red,L,Orange,N,Emerald
+Concha Biconcavis;150;Material;Antimony,Peach,Ruthenium,Orange,Yttrium,Gold,Polonium,Red,Technetium,White,Tellurium,Yellow
+Concha Labiata;150;Star;A,Teal,F,Grey,G,Turquoise,K,Red,L,Orange,N,Emerald,D,Green
 Concha Renibus;150;Material;Cadmium,Red,Mercury,Mulberry,Molybdenum,Peach,Niobium,Blue,Tungsten,White,Tin,Aquamarine
 Electricae Pluma;1000;Material;Antimony,Cobalt,Polonium,Cyan,Ruthenium,Blue,Technetium,Magenta,Tellurium,Red,Yttrium,Mulberry
 Electricae Radialem;1000;Material;Antimony,Cyan,Polonium,Cobalt,Ruthenium,Blue,Technetium,Aquamarine,Tellurium,Magenta,Yttrium,Green
