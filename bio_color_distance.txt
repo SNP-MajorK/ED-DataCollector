@@ -8,7 +8,7 @@ Bacterium Alcyoneum;500;Star;O,Turquoise,B,Grey,A,Yellow,F,Lime,G,Emerald,K,Gree
 Bacterium Aurasus;500;Star;O,Turquoise,B,Grey,A,Yellow,F,Lime,G,Emerald,K,Green,M,Teal,L,Sage,T,Red,TTS,Maroon,W,Amethyst,D,Ocher,N,Indigo
 Bacterium Bullaris;500;Material;Antimony,Cobalt,Polonium,Yellow,Ruthenium,Aquamarine,Technetium,Gold,Tellurium,Lime,Yttrium,Red
 Bacterium Cerbrus;500;Star;O,Turquoise,B,Grey,A,Yellow,F,Lime,G,Emerald,K,Green,M,Teal,L,Sage,T,Red,TTS,Maroon,W,Amethyst,D,Ocher,N,Indigo
-Bacterium Informem;500;Material;Antimony,Magenta,Polonium,Gold,Ruthenium,Orange,Tellurium,Green,Yttrium,Cobalt
+Bacterium Informem;500;Material;Antimony,Magenta,Polonium,Gold,Ruthenium,Orange,Tellurium,Green,Technetium,Aquamarin,Yttrium,Cobalt
 Bacterium Nebulus;500;Material;Antimony,Magenta,Polonium,Gold,Ruthenium,Orange,Tellurium,Green,Yttrium,Cobalt
 Bacterium Omentum;500;Material;Cadmium,Lime,Mercury,White,Molybdenum,Aquamarine,Niobium,Peach,Tungsten,Blue,Tin,Red
 Bacterium Scopulum;500;Material;Cadmium,White,Mercury,Peach,Molybdenum,Lime,Niobium,Red,Tungsten,Aquamarine,Tin,Mulberry

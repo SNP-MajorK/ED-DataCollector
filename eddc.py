@@ -51,10 +51,11 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.6'
+version_number = '0.7.0.7'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
+global status
 mats_table = PrettyTable(['Materials', 'Count'])
 
 # Set Program Path Data to random used Windows temp folder.
@@ -204,6 +205,9 @@ def tail_file(file):
             if linenr < count:
                 # print(linenr, count)
                 data = read_json(zeile)
+                if data == ['']:
+                    return
+                print(data)
                 if data.get('event') == 'Commander':
                     cmdr = data['Name']
                 if data.get('event') == 'StartJump'and data.get('JumpType') == "Hyperspace":
@@ -219,14 +223,16 @@ def tail_file(file):
                 if data.get('event') == 'Scan' and data.get('Landable'):
                     get_planet_info(data)
             linenr = count
-        logger(linenr, 1)
+        logger(linenr, log_var)
     if a != linenr:
         return 1
     else:
         return 0
 
+
 global data_old
 data_old = None
+
 
 def start_read_logs():
     funktion = inspect.stack()[0][3]
@@ -263,13 +269,8 @@ def start_read_logs():
         data = data_old
 
     if data == None and data_old == None:
-        # print('no new log files')
-        # data = read_data_from_last_system(last)
         data_old = data
     current_system = system_scan(last)
-    # print('isinstance string von data = ', isinstance(data, str))
-
-    # Wenn data eine Liste ist und current_system nicht None ist
     if not isinstance(data, str) and data != None and current_system[0] != None:
         if current_system[0] not in data[0][0]:
             data = None
@@ -799,7 +800,7 @@ def threading_auto():
     logger(funktion, log_var)
 
     if eddc_modul == 4:
-        logger('AUTO CODEX = 1 ', log_var)
+        logger('AUTO CODEX = 1 ', 5)
         # tree.destroy()
         for record in tree.get_children():
             tree.delete(record)
@@ -1474,9 +1475,6 @@ def update_bio_db(body_name, bio_scan_count, genus, species):
                                  and species = ?""",
                             (body_name, genus, species)).fetchall()
 
-    # if select[0][0] == bio_scan_count:
-    #     print(select)
-
 
 def get_data_from_DB(file):
     funktion = inspect.stack()[0][3]
@@ -1520,7 +1518,8 @@ def get_biodata_from_planet(cmdr, select):
         body_temp = float(i[8])
         body_pressure = float(i[9])
         volcanism = str(i[10])
-        materials = str(i[11])
+        sulphur_concentration = float(i[11])
+        materials = str(i[12])
         material = materials.split(' ')
         connection = sqlite3.connect(database)
         cursor = connection.cursor()
@@ -1537,7 +1536,7 @@ def get_biodata_from_planet(cmdr, select):
         else:
             bio_count = 0
         bio_names = select_prediction_db(star_class, planet_type, body_atmos,
-                                         body_gravity, body_temp, body_pressure, volcanism)
+                                         body_gravity, body_temp, body_pressure, volcanism, sulphur_concentration)
         # print(star_class, planet_type, body_atmos, body_gravity, body_temp, body_pressure, volcanism)
         bio = []
         bcd = []
@@ -1567,9 +1566,7 @@ def get_biodata_from_planet(cmdr, select):
                 and bio_scan_count = 3""", (body_name,)).fetchall()
         count_select = cursor.execute("SELECT count from planet_bio_info where body = ?", (body_name, )).fetchall()
 
-        # print('Bios on Planet ', body_name, ' = ', count_select[0][0])
-        # print('gescannte Bios ' , (select_bios_on_body))
-        # print('komplett gescannte Bios ' , select_complete_bios_on_body)
+
         species_all = []
         genus_all = []
 
@@ -1586,7 +1583,7 @@ def get_biodata_from_planet(cmdr, select):
             gcod_color = gcod[0][0][0]
             gcod_bio_distance = gcod[1]
             data_2.append(('', i[0], scan, i[1],
-                           i[2], gcod_color, gcod_bio_distance, '', '', 0))
+                           i[2], gcod_bio_distance, gcod_color, '', i[1], 0))
             species_all.append(str(i[2]))
             genus_all.append(str(i[1]))
 
@@ -1644,7 +1641,7 @@ def get_biodata_from_planet(cmdr, select):
         return data_2
 
 
-def read_data_from_last_system(file):
+def read_data_from_last_system(file): #NEEDS REVIEW
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
@@ -1808,7 +1805,6 @@ def treeview_codex():
     def check_planets():
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
-        logger(normal_view, log_var)
 
         data = []
         data = start_read_logs()
@@ -2103,9 +2099,7 @@ def treeview_codex():
 
             b_date_new  = begin_time.get()
             e_date_new =  end_time.get()
-            # print(b_date, begin_time.get())
-            # print(e_date, end_time.get())
-            #
+
             if b_date != b_date_new or e_date != e_date_new:
                 logger('Datums Filter hat sich verändert',1)
                 switch = 1
@@ -2117,7 +2111,6 @@ def treeview_codex():
             else:
                 # print('nothing new')
                 time.sleep(5.0)
-
 
     def refresh_view():
         global tree_start
@@ -2572,12 +2565,14 @@ def get_info_for_bio_scan(data):
 
 def get_info_for_get_body_name(data):
     funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
 
     starsystem = data.get('StarSystem')
     system_address = data.get('SystemAddress')
     body_ID = data.get('BodyID')
     bodyname = data.get('BodyName')
+
+    logger((funktion + bodyname), log_var)
+
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     cursor.execute("""CREATE table IF NOT EXISTS star_map (
@@ -2652,11 +2647,17 @@ def get_planet_info(data):
         body_pressure = float(data.get('SurfacePressure')) / 100000
         body_distance = int(data.get('DistanceFromArrivalLS'))
         volcanism = data.get('Volcanism')
+        atmosphere_composition = data.get('AtmosphereComposition')
+        composition = []
+        sulphur_concentration = 0
+        for i in atmosphere_composition:
+            # print(body_name, i.get('Name'), i.get('Percent'))
+            if i.get('Name') == 'SulphurDioxide' and i.get('Percent') >= 1:
+                sulphur_concentration = i.get('Percent')
+                logger((body_name, i.get('Name'), (str(sulphur_concentration) + '%')), log_var)
         if volcanism:
-            # print(body_name, 'VOLCANISM Y ')
             volcanism = 'Y'
         else:
-            # print(body_name, 'NO VOLCANISM')
             volcanism = 'N'
         material = []
         materials = ''
@@ -2695,6 +2696,7 @@ def get_planet_info(data):
                                                                     Temperature TEXT,
                                                                     Pressure TEXT,
                                                                     volcanism TEXT,
+                                                                    sulphur_concentration TEXT,
                                                                     Materials)""")
 
         select = cursor.execute("SELECT BodyName FROM planet_infos WHERE BodyName = ? and SystemName = ?"
@@ -2703,9 +2705,10 @@ def get_planet_info(data):
 
         if select == []:
             cursor.execute("""INSERT INTO planet_infos VALUES (?,?,?,?,?,?,
-                                                               ?,?,?,?,?,?) """,
+                                                               ?,?,?,?,?,?,?) """,
                            (system_id, system_name, star_class, body_name, body_distance, planet_type,
-                            body_atmos, body_gravity, body_temp, body_pressure, volcanism, materials))
+                            body_atmos, body_gravity, body_temp, body_pressure, volcanism,
+                            sulphur_concentration,materials))
             connection.commit()
 
 
@@ -2726,6 +2729,7 @@ def get_star_info(data):
         cursor.execute("INSERT INTO stars VALUES (?,?) ", (system_address, star_class))
         connection.commit()
     connection.close()
+
 
 def check_genus(body_name, genus2):
     funktion = inspect.stack()[0][3]
@@ -2752,7 +2756,12 @@ def get_info_scan_planets(data):
     genus = ''
     if data.get('event') == 'SAASignalsFound':
 
-        for i in data.get('Genuses'):
+        for i in data.get('Genuses', {'None'}):
+            if i =='None':
+                # print(data)
+                return
+            # print(i)
+            # print(data)
             geni = i.get('Genus_Localised')
             # print(geni)
             genus = genus + ', ' + geni
@@ -3073,169 +3082,6 @@ def system_scan(journal_file): # Sucht im Logfile nach
                 return systems
 
 
-# def scan_planets(journal_file, current_system):
-#     funktion = inspect.stack()[0][3]
-#     logger(funktion, log_var)
-#     global normal_view
-#     search_string = '"event":"FSSBodySignals"'
-#     data_2 = []
-#     with open(journal_file, 'r', encoding='UTF8') as datei:
-#         for zeile in datei:
-#             if zeile.find(search_string) > -1:
-#                 data = json.loads(zeile)
-#                 body_name = data['BodyName']
-#                 if check_body(body_name) == 1:
-#                     bios = get_species_for_planet(body_name)
-#                     for i in bios:
-#                         bio_scan_count = get_bio_scan_count(i, body_name)
-#                         bio = i.split(' ')
-#                         update_bio_db(body_name, bio_scan_count[1], bio[0], bio[1])
-#                     break
-#                 body_id = data['BodyID']
-#                 system_address = data['SystemAddress']
-#                 if system_address == current_system[1]:
-#                     # print(zeile)
-#                     for signals in data['Signals']:
-#                         count = signals['Count']
-#                         signal_type = signals['Type_Localised']
-#                         if 'Biolo' in signal_type:
-#                             # print(data)
-#                             biological = []
-#                             gpi = get_plant_info(journal_file, body_name)
-#                             logger('gpi', 1)
-#                             logger(gpi, 1)
-#                             cmdr_gp = check_cmdr(journal_file)
-#                             region = (findRegionForBoxel(system_address)['region'][1])
-#                             missing_in_region = (missing_codex(cmdr_gp, region))
-#                             missing_bio = []
-#                             for i in missing_in_region:
-#                                 missing_bio.append(i[3])
-#                             try :
-#                                 body_distance = gpi[2]
-#                             except TypeError:
-#                                 gpi = ['','','']
-#                             star_system = gpi[1]
-#                             for i in gpi[0]:
-#                                 biological.append(i[0])
-#                             normal_view = 4
-#                             data_2.append((body_name, body_distance, count, gpi[3], '', '', '', '', '', region))
-#                             insert_into_planet_bio_db(body_name, gpi[3], body_distance, count, region)
-#
-#                             for count, bio in enumerate(biological):
-#                                 bio_name = bio.split(' ')
-#                                 genus = bio_name[0]
-#                                 species = bio_name[1]
-#                                 distance = (gpi[0][count][1])
-#                                 color = (gpi[0][count][2])
-#                                 temp = genus.capitalize() +' ' + species.capitalize()
-#
-#                                 bio_scan_count = get_bio_scan_count(bio, body_name)
-#
-#                                 mark_missing = 0
-#                                 if temp in missing_bio:
-#                                     mark_missing = 1
-#                                 else:
-#                                     mark_missing = 0
-#                                 insert_into_bio_db(body_name, bio_scan_count[1], genus.capitalize(),
-#                                                    species.capitalize(), color, mark_missing)
-#
-#                                 if count > 0:
-#                                     bio_name = biological[count-1].split(' ')
-#                                     genus2 = bio_name[0]
-#                                     if genus == genus2:
-#                                         genus = ''
-#
-#                                 data_2.append(('', body_name, bio_scan_count[0], genus.capitalize(),
-#                                                species.capitalize(), color, distance,'', str(bio), mark_missing))
-#
-#     if data_2:
-#         # print(data_2, ' data_2')
-#         return data_2
-
-
-# def get_plant_info(journal_file, body_name):
-#     funktion = inspect.stack()[0][3]
-#     logger(funktion, log_var)
-#
-#     search_string = '"ScanType":"Detailed"'
-#     with open(journal_file, 'r', encoding='UTF8') as datei:
-#         for zeile in datei:
-#             if zeile.find(search_string) > -1:
-#                 data = json.loads(zeile)
-#                 body_name_new = data['BodyName']
-#                 if body_name_new == body_name:
-#                     planet_type = data['PlanetClass']
-#                     body_atmos = data['Atmosphere']
-#                     body_gravity = float(data['SurfaceGravity']) / 10
-#                     body_temp = data['SurfaceTemperature']
-#                     body_pressure = float(data['SurfacePressure']) / 100000
-#                     body_distance = int(data['DistanceFromArrivalLS'])
-#                     system = data['SystemAddress']
-#                     system_name = data['StarSystem']
-#                     material = []
-#                     bio_names = []
-#                     body_name_new = body_name_new.replace(system_name, '')
-#                     for i in data['Materials']:
-#                         material.append(i['Name'])
-#                     bcd = []
-#                     no_main_star = 0
-#                     for i in data['Parents']:
-#                         if 'Star' in str(i):
-#                             no_main_star += 1
-#                             star = i['Star']
-#                             star_type = get_star(journal_file, system, star)
-#                             bio_names = select_prediction_db(star_type, planet_type, body_atmos, body_gravity,
-#                                                              body_temp)
-#                             values = (star_type, planet_type, body_atmos, body_gravity, body_pressure,body_temp)
-#                             # logger(values, log_var)
-#                             # logger(bio_names, log_var)
-#                             for i in bio_names:
-#                                 get_cod = get_color_or_distance(i[0], star_type, material)
-#                                 # print(get_cod, i[0], star_type, material)
-#                                 i = (*i, get_cod[0][0][0], get_cod[1])
-#                                 if get_cod[1]:
-#                                     bcd.append(i)
-#                     if no_main_star == 0:
-#                         star = get_startype(journal_file, system)
-#                         if star:
-#                             star_type = get_startype(journal_file, system)
-#                             bio_names = select_prediction_db(star_type, planet_type, body_atmos,
-#                                                              body_gravity, body_temp)
-#                             for i in bio_names:
-#                                 get_cod = get_color_or_distance(i[0], star_type, material)
-#                                 i = (*i, get_cod[0][0][0], get_cod[1])
-#                                 if get_cod[1]:
-#                                     bcd.append(i)
-#                     return bcd, system_name, body_distance, body_name_new
-
-#
-# def get_startype(journal_file, system):
-#     funktion = inspect.stack()[0][3]
-#     logger(funktion, log_var)
-#     search_string = '"event":"StartJump"'
-#     with open(journal_file, 'r', encoding='UTF8') as datei:
-#         for zeile in datei:
-#             if zeile.find(search_string) > -1:
-#                 data = json.loads(zeile)
-#                 if data['JumpType'] == 'Hyperspace':
-#                     if data['SystemAddress'] == system:
-#                         return (data['StarClass'])
-
-#
-# def get_star(journal_file, system, star):
-#     funktion = inspect.stack()[0][3]
-#     logger(funktion, log_var)
-#
-#     search_string = '"event":"Scan"'
-#     with open(journal_file, 'r', encoding='UTF8') as datei:
-#         for zeile in datei:
-#             if zeile.find(search_string) > -1:
-#                 data = json.loads(zeile)
-#                 if data['SystemAddress'] == system:
-#                     if star == data['BodyID']:
-#                         return(data['StarType'])
-
-
 def check_table(var):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -3392,7 +3238,8 @@ def get_color_or_distance(bio_name, star, materials):
     return distance, data
 
 
-def select_prediction_db(star_type, planet_type ,body_atmos, body_gravity, body_temp, body_pressure, volcanism):
+def select_prediction_db(star_type, planet_type ,body_atmos, body_gravity, body_temp, body_pressure,
+                         volcanism, sulphur_concentration):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
@@ -3411,42 +3258,66 @@ def select_prediction_db(star_type, planet_type ,body_atmos, body_gravity, body_
     if volcanism == 'Y':
         select_prediction = []
         select_bacterium = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
-                                                Name like '%bacterium tela%' or  
-                                                Name like '%bacterium cerberus%' and  
-                                                (Planettype = ? and
-                                                Athmospere like ? and
-                                                Gravity_min < ? and Gravity_max > ? and
-                                                Temp_min <= ? and Temp_max >= ? and
-                                                Pressure_min < ? and Pressure_max > ?) """,
+                                            Name like '%bacterium tela%' or  
+                                            Name like '%bacterium cerberus%' and  
+                                            (Planettype = ? and
+                                            Athmospere like ? and
+                                            Gravity_min < ? and Gravity_max > ? and
+                                            Temp_min <= ? and Temp_max >= ? and
+                                            Pressure_min < ? and Pressure_max > ?) """,
                                            (planet_type, body_atmos, body_gravity, body_gravity,
                                             body_temp, body_temp, body_pressure, body_pressure)).fetchall()
-        # print('select_bacterium', select_bacterium)
-        select_bio = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
-                                                        Name not like '%bacterium%' and
-                                                        Planettype = ? and
-                                                        Athmospere like ? and
-                                                        Gravity_min < ? and Gravity_max > ? and
-                                                        Temp_min <= ? and Temp_max >= ? and
-                                                        Pressure_min < ? and Pressure_max > ? """,
+        if sulphur_concentration < 1:
+            select_bio = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
+                                            Name not like '%bacterium%' and
+                                            Name not like '%recepta%' and
+                                            Planettype = ? and
+                                            Athmospere like ? and
+                                            Gravity_min < ? and Gravity_max > ? and
+                                            Temp_min <= ? and Temp_max >= ? and
+                                            Pressure_min < ? and Pressure_max > ? """,
                                           (planet_type, body_atmos, body_gravity, body_gravity,
                                            body_temp, body_temp, body_pressure, body_pressure)).fetchall()
+        else:
+            select_bio = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
+                                            Name not like '%bacterium%' and
+                                            Planettype = ? and
+                                            Athmospere like ? and
+                                            Gravity_min < ? and Gravity_max > ? and
+                                            Temp_min <= ? and Temp_max >= ? and
+                                            Pressure_min < ? and Pressure_max > ? """,
+                                        (planet_type, body_atmos, body_gravity, body_gravity,
+                                         body_temp, body_temp, body_pressure, body_pressure)).fetchall()
         # print('select_bio', select_bio)
 
         for i in select_bacterium:
             select_prediction.append(i)
         for a in select_bio:
             select_prediction.append(a)
-
     else:
-        select_prediction = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
-                                        Planettype = ? and
-                                        Athmospere like ? and
-                                        Gravity_min < ? and Gravity_max > ? and
-                                        Temp_min <= ? and Temp_max >= ? and
-                                        Pressure_min < ? and Pressure_max > ? and 
-                                        Volcanism = ?""",
+        if sulphur_concentration < 1:
+            select_prediction = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
+                                                Name not like '%recepta%' and
+                                                Planettype = ? and
+                                                Athmospere like ? and
+                                                Gravity_min < ? and Gravity_max > ? and
+                                                Temp_min <= ? and Temp_max >= ? and
+                                                Pressure_min < ? and Pressure_max > ? and 
+                                                Volcanism = ?""",
                                        (planet_type, body_atmos, body_gravity, body_gravity,
                                         body_temp, body_temp, body_pressure, body_pressure, volcanism)).fetchall()
+
+        else:
+            select_prediction = cursor.execute("""SELECT DISTINCT Name FROM Bio_prediction where
+                                                Planettype = ? and
+                                                Athmospere like ? and
+                                                Gravity_min < ? and Gravity_max > ? and
+                                                Temp_min <= ? and Temp_max >= ? and
+                                                Pressure_min < ? and Pressure_max > ? and 
+                                                Volcanism = ?""",
+                                       (planet_type, body_atmos, body_gravity, body_gravity,
+                                        body_temp, body_temp, body_pressure, body_pressure, volcanism)).fetchall()
+
     # print(select_prediction)
     return select_prediction
 
@@ -3518,8 +3389,10 @@ def menu(var):
 
     global eddc_modul
     # print(var)
-    menu_var = [0, 'BGS', 'ody_mats', 'MATS', 'CODEX', 'combat', 'thargoid']
-    Filter.delete(0, END)
+    menu_var = [0, 'BGS', 'ody_mats', 'MATS', 'CODEX', 'combat', 'thargoid', 'boxel', 'cube']
+    # eddc_modul     1        2          3       4        5          6          7        8
+
+    # Filter.delete(0, END)
     if var == menu_var[1]:
         check_but.config(state=NORMAL)
         vor_tick.config(state=NORMAL)
@@ -3622,15 +3495,16 @@ def read_codex_entrys():
     # print(filenames)
     count = 1
     for count, filename in enumerate(filenames):
+        # print(filename)
         if count % 10 == 0:
             # time.sleep(0.1)
             system.delete('1.0', END)
             postion = 'File \t' + str(count) + ' of ' + str(len(filenames))
             system.insert(END, str(postion))
-        # time.sleep(0.5)
+        # # time.sleep(0.5)
         read_bio_data(filename)
         read_log_codex(filename)
-        read_player_death(filename)
+        # read_player_death(filename)
         insert_logfile_in_db(filename)
     system.delete('1.0', END)
     postion = 'File \t' + str(count + 1) + ' of ' + str(len(filenames))
@@ -3650,27 +3524,9 @@ def run_once_rce(filenames):
         thread_rce = threading.Thread(target=read_codex_entrys, args=())
         thread_rce.start()
         print('stop run_once')
+        # treeview_codex()
     else:
         read_codex_entrys()
-
-
-def wait_to_finish():
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-    success = 0
-    files = file_names(1)
-    count_files = len(files)
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-    item = cursor.execute("SELECT count(*) FROM logfiles", ()).fetchall()
-    xx = int(item[0][0])
-    while xx < count_files:
-        time.sleep(1)
-        item = cursor.execute("SELECT count(*) FROM logfiles", ()).fetchall()
-        xx = int(item[0][0])
-        # print(count_files, item[0][0])
-        success = 1
-    return success
 
 
 def combat_rank():
@@ -3777,6 +3633,64 @@ def get_filenames_of_last_7_days():
     return filenames
 
 
+def boxel_search(input):
+    if input == ' ' or input == '':
+        print('input-', input, '-')
+    else:
+        url = 'https://www.edsm.net/api-v1/systems?systemName=' + urllib.parse.quote(input) + '&showPrimaryStar=1'
+        show_data_for_system(url)
+
+
+def cube_search(data):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    system.delete(1.0, END)
+    if data == ' ' or data == '':
+        print('input-', data, '-')
+    elif ';' not in data:
+        messagebox.showwarning("Eingabe inkorrekt", "Systemname;Kubus-Größe")
+        return
+    else:
+        input = data.split(';')
+        url = 'https://www.edsm.net/api-v1/cube-systems?systemName=' + urllib.parse.quote(input[0]) + \
+              '&showPrimaryStar=1&size=' + urllib.parse.quote(input[1])
+        show_data_for_system(url)
+
+
+def show_data_for_system(url):
+    data = Filter.get()
+    input = data.split(';')
+    edsm_systems = []
+    with urllib.request.urlopen(url) as f:
+        systems = json.load(f)
+        for i in systems:
+            name = (i.get('name'))
+            _type = (i.get('primaryStar').get('type'))
+            if not _type:
+                _type = 'Unknown'
+            edsm_systems.append((name, _type))
+    if eddc_modul == 7:
+        system.insert(END, ('Es gibt ' + str(len(edsm_systems) + 1) +
+                            ' Einträge zu diesem Boxel in der EDSM DB'))
+    else:
+        system.insert(END, ('Es gibt ' + str(len(edsm_systems) + 1) +
+                            ' Einträge in einem Kubus von ' + str(input[1]) + ' ly auf EDSM'))
+    system.insert(END, ('\n'))
+
+    count = [('Wolf-Rayet', 0), ('Black Hole', 0), ('super giant', 0)]
+    for a in edsm_systems:
+        for index, c in enumerate(count):
+            if c[0] in a[1]:
+                count[index] = c[0], (c[1] + 1)
+    system.insert(END, ('\n'))
+    for element in count:
+        system.insert(END, ((str(element[0])) + ' ' + (str(element[1])) + '\n'))
+    system.insert(END, ('\n'))
+    for i in edsm_systems:
+        system.insert(END, ((str(i[0])) + '\t \t \t' + (str(i[1])) + '\n'))
+
+
 def thargoids():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -3829,6 +3743,17 @@ def auswertung(eddc_modul):
     cursor.execute("DROP TABLE IF EXISTS odyssey")
     cursor.execute("DROP TABLE IF EXISTS vouchers")
     system.delete(.0, END)
+
+    if eddc_modul == 7:  # Boxel Analyser
+        b_filter = Filter.get()
+        boxel_search(b_filter)
+        status.config(text='Boxel Analyse')
+
+    if eddc_modul == 8:  # Sphere Analyser
+        b_filter = Filter.get()
+        cube_search(b_filter)
+        status.config(text='Kubus Analyse')
+
     last_log_file = select_last_log_file()[0]
     # print('the log-file before the last from DB ', last_log_file)
     if last_log_file != '0' or eddc_modul != 4:
@@ -3849,6 +3774,7 @@ def auswertung(eddc_modul):
     if not filenames:
         # Wenn es keine logfiles an diesem Tag gibt, dann
         if eddc_modul == 4:
+            status.config(text='Codex')
             xx = select_last_log_file()[0]
             if xx == '0':
                 filenames = file_names(1)
@@ -3859,6 +3785,7 @@ def auswertung(eddc_modul):
             system.insert(END, 'Keine Log-Files für den Tag vorhanden')
     else:
         if eddc_modul == 1: # BGS Main
+            status.config(text='BGS Mode')
             star_systems_db(filenames)
             filenames = file_names(0)
             for filename in filenames:
@@ -3897,6 +3824,7 @@ def auswertung(eddc_modul):
                     system.insert(END, '\n\tKeine Daten vorhanden')
 
         elif eddc_modul == 3: # Collected Enginieering Material
+            status.config(text='MATS Mode')
             star_systems_db(filenames)
             for filename in filenames:
                 mats_auslesen(filename)
@@ -3913,6 +3841,7 @@ def auswertung(eddc_modul):
             system.insert(END, ('─────────────────────────────────\n'))
 
         elif eddc_modul == 2: # Collected Odyssey on Foot Material
+            status.config(text='Odyssey MATS')
             star_systems_db(filenames)
             logger('ody_mats == 1', 2)
             for filename in filenames:
@@ -3930,16 +3859,20 @@ def auswertung(eddc_modul):
             system.insert(END, ('───────────────────────────\n'))
 
         elif eddc_modul == 4: # Codex Treeview
+            status.config(text='Codex')
             # system.insert(END, 'Codex Daten werden gelesen')
+            # threading.Thread(target=run_once_rce, args=(filenames))
             run_once_rce(filenames)
             last_log_file = select_last_log_file()[0]
             if last_log_file != '0':
                 treeview_codex()
 
         elif eddc_modul == 5: # Kampfrang
+            status.config(text='Combat Rank')
             combat_rank()
 
         elif eddc_modul == 6: # Thargoid
+            status.config(text='Thargoids')
             thargoids()
 
 
@@ -3984,9 +3917,9 @@ def update_db(old_version):
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     # print(old_version)
-    if old_version != '0.7.0.4' and \
-            (old_version == '0.7.0.3' or old_version == '0.7.0.2' or
-             old_version == '0.7.0.1' or old_version == '0.7.0.0'):
+    if old_version != '0.7.0.7' and \
+            (old_version == '0.7.0.4' or old_version == '0.7.0.5' or
+             old_version == '0.7.0.6'):
         # print("ALTER TABLE planet_bio_info ADD bio_genus")
         # cursor.execute("ALTER TABLE planet_bio_info ADD bio_genus")
         connection.commit()
@@ -4010,7 +3943,7 @@ def db_version(): # Programmstand und DB Stand werden mit einander verglichen
         connection.commit()
         connection.close()
         logger('Update Version', 2)
-        update_db(item[0][0])
+        # update_db(item[0][0])
         # connection.commit()
     elif item[0][0] == version_number:
         logger('Same Version', 2)
@@ -4095,6 +4028,7 @@ def create_tables():
                                                                         Temperature TEXT,
                                                                         Pressure TEXT,
                                                                         volcanism TEXT,
+                                                                        sulphur_concentration TEXT,
                                                                         Materials)""")
 
     cursor.execute("""CREATE table IF NOT EXISTS planet_bio_info (
@@ -4168,17 +4102,22 @@ def main():
     root.config(menu=my_menu)
 
     file_menu = Menu(my_menu, tearoff=False)
-    my_menu.add_cascade(label="File", menu=file_menu)
+    my_menu.add_cascade(label="Statistik", menu=file_menu)
     file_menu.add_command(label="BGS", command=lambda: menu('BGS'))
-    file_menu.add_command(label="Codex", command=lambda: menu('CODEX'), accelerator= "Ctrl+q")
     file_menu.add_command(label="MATS", command=lambda: menu('MATS'))
     file_menu.add_command(label="Odyssey", command=lambda: menu('ody_mats'))
     file_menu.add_command(label="Combat Rank", command=lambda: menu('combat'))
     file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
-    # file_menu.add_command(label="Wing_Missions", command=wing_missions)
-    # file_menu.add_command(label="Read Logs", command=start_read_logs)
+
     file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
     file_menu.add_command(label="Exit", command=root.quit)
+
+    exploration_menu = Menu(my_menu, tearoff=False)
+    my_menu.add_cascade(label="Exploration", menu=exploration_menu)
+    exploration_menu.add_command(label="Codex", command=lambda: menu('CODEX'), accelerator= "Ctrl+q")
+    exploration_menu.add_command(label="Boxel Analyse", command=lambda: menu('boxel'))
+    exploration_menu.add_command(label="Kubus Anylyse", command=lambda: menu('cube'))
+
     settings_menu = Menu(my_menu, tearoff=False)
     my_menu.add_cascade(label="Setting", menu=settings_menu)
     about_menu = Menu(my_menu, tearoff=False)
@@ -4351,7 +4290,7 @@ def main():
                        fg='white',
                        command=cp_to_clipboard,
                        font=("Helvetica", 10))
-    clipboard.place(x=175, y=465)
+    clipboard.place(x=130, y=465)
 
     ok_but = Button(root,
                     # width=4,
@@ -4363,6 +4302,17 @@ def main():
                     command=threading_auto,
                     font=("Helvetica", 10))
     ok_but.place(x=368, y=465)
+
+    global status
+    status = Label(root, text='BGS Mode',
+                   activebackground='#000050',
+                   activeforeground='white',
+                   bg='black',
+                   fg='white',
+                   font=("Helvetica", 11),
+                   bd=2,
+                   relief=SUNKEN)
+    status.place(x=255, y=468)
 
     def callback(event):
         funktion = inspect.stack()[0][3]
@@ -4401,6 +4351,8 @@ def main():
 
     settings_menu.add_command(label="Sprache - Deutsch", command=language_de)
     settings_menu.add_command(label="Language - English", command=language_en)
+
+
 
     get_latest_version(1)
     root.mainloop()
