@@ -14,6 +14,8 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 from winreg import *
+import ssl
+import urllib.request
 
 import requests
 from PIL import ImageTk, Image
@@ -51,7 +53,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.7'
+version_number = '0.7.0.8'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -207,7 +209,6 @@ def tail_file(file):
                 data = read_json(zeile)
                 if data == ['']:
                     return
-                print(data)
                 if data.get('event') == 'Commander':
                     cmdr = data['Name']
                 if data.get('event') == 'StartJump'and data.get('JumpType') == "Hyperspace":
@@ -271,6 +272,8 @@ def start_read_logs():
     if data == None and data_old == None:
         data_old = data
     current_system = system_scan(last)
+    if current_system == None:
+        return
     if not isinstance(data, str) and data != None and current_system[0] != None:
         if current_system[0] not in data[0][0]:
             data = None
@@ -1013,11 +1016,15 @@ def insert_codex_db(logtime, codex_name, icd_cmdr, codex_entry, category, region
 
 def read_json(zeile):
     try:
+        if zeile == '\n':
+            print('exit')
+            zeile = '{"timestamp": "2022-11-20T18:49:07Z", "event": "Friends", "Status": "Online"}'
         data = json.loads(zeile)
         return data
     except ValueError:
         logger(('read_json' ,zeile), log_var)
-        data = ['']
+        zeile = '{"timestamp": "2022-11-20T18:49:07Z", "event": "Friends", "Status": "Online"}'
+        data = json.loads(zeile)
         return data
 
 
@@ -1143,9 +1150,12 @@ def read_bio_data(journal_file):
         for i, zeile in enumerate(datei):
             search_string = '"ScanType":"Analyse"'
             if zeile.find(search_string) > -1:
-                data = json.loads(zeile)
-                biodata = (data['Species_Localised'])
-                system_address_bio = data['SystemAddress']
+                data = read_json(zeile)
+                biodata = (data.get('Species_Localised'))
+                system_address_bio = data.get('SystemAddress')
+                if biodata == None or system_address_bio == 0:
+                    print('exit read_bio_data Data corrupt', data)
+                    return
 
                 # find Region with SystemAddress
                 region = (findRegionForBoxel(system_address_bio)['region'][1])
@@ -2497,11 +2507,13 @@ def get_info_for_bio_scan(data):
 
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
-    timestamp = data['timestamp']
-    scantype = data['ScanType']
-    species = data['Species_Localised']
-    system = data['SystemAddress']
-    body = data['Body']
+    timestamp = data.get('timestamp')
+    scantype = data.get('ScanType')
+    species = data.get('Species_Localised')
+    system = data.get('SystemAddress')
+    body = data.get('Body')
+    if system == 0 or body == 0:
+        return
     # print(data)
     cursor.execute("""CREATE table IF NOT EXISTS star_map (
                                                 starsystem TEXT,
@@ -3637,8 +3649,11 @@ def boxel_search(input):
     if input == ' ' or input == '':
         print('input-', input, '-')
     else:
-        url = 'https://www.edsm.net/api-v1/systems?systemName=' + urllib.parse.quote(input) + '&showPrimaryStar=1'
-        show_data_for_system(url)
+        # url2 = 'https://www.edsm.net/api-v1/systems?systemName=' + urllib.parse.quote(input) + '&showPrimaryStar=1'
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url_ssl = 'https://www.edsm.net/api-v1/systems?systemName=' + input + '&showPrimaryStar=1'
+        url_ssl = url_ssl.replace(' ', '%20')
+        show_data_for_system(url_ssl)
 
 
 def cube_search(data):
@@ -3662,6 +3677,8 @@ def show_data_for_system(url):
     data = Filter.get()
     input = data.split(';')
     edsm_systems = []
+    ssl._create_default_https_context = ssl._create_unverified_context
+
     with urllib.request.urlopen(url) as f:
         systems = json.load(f)
         for i in systems:
