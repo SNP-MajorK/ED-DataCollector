@@ -53,7 +53,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.0.8'
+version_number = '0.7.1.0'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -188,7 +188,34 @@ def file_names(var):
         for i in files_tom:
             filenames.append(i)
         # print(filenames)
-    return filenames
+        return filenames
+    elif var == 3: # Lese die Logs von dem Tag ein und wenn vorhanden welche von vortagen.
+        tag2 = Tag.get()
+        tag3 = str(int(tag2)).zfill(2)
+        journal_date = ("20" + str(jahr2) + "-" + str(monat2) + "-" + str(tag3) + "T")
+        files = glob.glob(path + "\\Journal." + journal_date + "*.log")
+        filenames = glob.glob(path + "\\Journal.*.log")
+        lauf=1
+        while files == []:
+            tag3 = str(int(tag2)-lauf).zfill(2)
+            journal_date = ("20" + str(jahr2) + "-" + str(monat2) + "-" + str(tag3) + "T")
+            files = glob.glob(path + "\\Journal." + journal_date + "*.log")
+            lauf+=1
+            if lauf == 5:
+                break
+        if files == []:
+            return []
+        last = files[len(files) - 1]
+        index = (filenames.index(last))
+        i = 0
+        data = []
+        while index >= i and i != 5:
+            # print(filenames[index-i])
+            data.append(filenames[index - i])
+            i += 1
+        print('Files - 5 ',data)
+        return(data)
+
 
 global linenr
 linenr = 0
@@ -237,9 +264,10 @@ data_old = None
 
 def start_read_logs():
     funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
+    logger(funktion, 2)
 
     files = file_names(2)
+
     if len(files) > 0:
         last = files[len(files) - 1]
     else:
@@ -1017,7 +1045,7 @@ def insert_codex_db(logtime, codex_name, icd_cmdr, codex_entry, category, region
 def read_json(zeile):
     try:
         if zeile == '\n':
-            print('exit')
+            print('exit - leerzeile')
             zeile = '{"timestamp": "2022-11-20T18:49:07Z", "event": "Friends", "Status": "Online"}'
         data = json.loads(zeile)
         return data
@@ -1651,12 +1679,12 @@ def get_biodata_from_planet(cmdr, select):
         return data_2
 
 
-def read_data_from_last_system(file): #NEEDS REVIEW
+def read_data_from_last_system(file, mission_id): #NEEDS REVIEW
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
     starsystem = ''
-    cmdr = ''
+    go = 0
 
     with open(file, 'r', encoding='UTF8') as datei:
         for zeile in datei.readlines():
@@ -1666,23 +1694,22 @@ def read_data_from_last_system(file): #NEEDS REVIEW
                 with open(file, 'r', encoding='UTF8') as datei_2:
                     for zeile in datei_2.readlines()[::-1]:  # Read File line by line reversed!
                         data = read_json(zeile)
-                        if data['event'] == 'Location':
-                            starsystem = data['StarSystem']
-                        if data['event'] == 'Disembark':
-                            starsystem = data['StarSystem']
-                        if data['event']== 'FSDJump':
-                            starsystem = data['StarSystem']
-                        if starsystem != '':
-                            # print(starsystem)
-                            with sqlite3.connect(database) as connection:
-                                cursor = connection.cursor()
-                                select = cursor.execute("SELECT * FROM planet_infos WHERE SystemName = ?",
-                                                        (starsystem,)).fetchall()
-                                if select:
-                                    # print(select)
-                                    data = get_biodata_from_planet(cmdr, select)
-                                    return data
-                            break
+
+                        if data['event'] == 'MissionAccepted':
+                            mission = data.get('MissionID')
+                            if mission == mission_id:
+                                go = 1
+                        if go == 1:
+                            if data['event']== 'Docked':
+                                starsystem = data['StarSystem']
+                            if data['event'] == 'Location':
+                                starsystem = data['StarSystem']
+                            if data['event'] == 'Disembark':
+                                starsystem = data['StarSystem']
+                            if data['event']== 'FSDJump':
+                                starsystem = data['StarSystem']
+                            if starsystem != '':
+                                return starsystem
 
 
 def treeview_codex():
@@ -1690,7 +1717,7 @@ def treeview_codex():
     logger(funktion, log_var)
     global filter_region, filter_cmdr, filter_bdata, combo_cmdr, combo_region, \
         combo_bio_data, b_data, regions, cmdr, tree, normal_view, death_frame, \
-        death_date_combo, sell_combo, begin_time, end_time, sorting, refresher
+        death_date_combo, sell_combo, begin_time, end_time, sorting, refresher, my_codex_preview
     refresher = 0
     sorting = IntVar()
     normal_view = 4
@@ -1701,7 +1728,7 @@ def treeview_codex():
     tree.title('Display Codex Data')
     tree.geometry("1200x570")
     tree.minsize(1200, 570)
-    tree.maxsize(1200, 570)
+    tree.maxsize(1200, 1080)
     tree.after(1, lambda: tree.focus_force())
     try:
         img = resource_path("eddc.ico")
@@ -1720,9 +1747,9 @@ def treeview_codex():
               background=[('selected', "#CDB872")])
     bg_treeview = resource_path("bg_treeview.png")
     background_image = PhotoImage(file=bg_treeview)
-    background_label = Label(tree, image=background_image)
-    background_label.place(x=0, y=0, relwidth=1, relheight=1)
-
+    background_label = Label(tree, image=background_image, bg='black', anchor='s')
+    background_label.place(relwidth=1, relheight=1)
+    # background_label.pack()
 
     def switch_view():
         global normal_view
@@ -1768,7 +1795,6 @@ def treeview_codex():
         codex_tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set, selectmode="extended", height=13)
         tree_scroll.config(command=codex_tree.yview)
 
-
     def selected(event):
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
@@ -1780,7 +1806,6 @@ def treeview_codex():
         filter_bdata = combo_bio_data.get()
         refresh_combo()
         refresh_view()
-
 
     def read_codex_data(rcd_cmdr, rcd_region):
         funktion = inspect.stack()[0][3]
@@ -1810,7 +1835,6 @@ def treeview_codex():
                                         " ORDER by date_log DESC, time_log DESC", ).fetchall()
         # print(select)
         return select
-
 
     def check_planets():
         funktion = inspect.stack()[0][3]
@@ -2352,8 +2376,8 @@ def treeview_codex():
         sort_button.pack(side=LEFT, padx=10)
         sort_button.select()
 
-        codex_frame = Frame(tree, highlightbackground="blue", highlightthickness=1, bd=10)
-        codex_frame.pack()
+        # codex_frame = Frame(tree, highlightbackground="blue", highlightthickness=1, bd=10)
+        # codex_frame.pack()
         connection.close()
 
     global tree_start
@@ -2364,7 +2388,7 @@ def treeview_codex():
     codex_treeview()
 
     def selected_record(e): # Shows Picture of selected Item
-        global my_img, my_label
+        global my_img, my_codex_preview
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
         selected_tree = codex_tree.focus()
@@ -2413,8 +2437,9 @@ def treeview_codex():
                 my_img = ImageTk.PhotoImage(image)
         else:
             return
-        my_label = Label(tree, image=my_img)
-        my_label.place(x=837, y=400)
+        my_codex_preview = Label(tree, image=my_img)
+        my_codex_preview.place(x=837, y=400)
+        # my_codex_preview.place()
 
     codex_tree.bind("<ButtonRelease-1>", selected_record)
     # connection.close()
@@ -3069,19 +3094,16 @@ def check_cmdr(journal_file):
             search_string = '"event":"Commander"'
             if zeile.find(search_string) > -1:
                 data = json.loads(zeile)
-                cc_cmdr = data['Name']
+                cc_cmdr = data.get('Name', 'UNKNOWN')
                 break
-    # print(cmdr)
     return cc_cmdr
 
 
 def system_scan(journal_file): # Sucht im Logfile nach
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    # search_string = 'FSSDiscoveryScan'
     with open(journal_file, 'r', encoding='UTF8') as datei:
         for zeile in datei.readlines()[::-1]:  # Read File line by line reversed!
-        # for zeile in datei:
             data = read_json(zeile)
             if data.get('event') == 'Location' or data.get('event') == "FSSDiscoveryScan":
                 body_count = data.get('BodyCount')
@@ -3229,12 +3251,14 @@ def get_color_or_distance(bio_name, star, materials):
     mats = []
     distance = cursor.execute("""SELECT DISTINCT distance from bio_color where name = ?""",
                          (bio_name2,)).fetchall()
-    if select[0][0] == 'Star':
+    if select == [] or NONE:
+        data = 'Unknown'
+        logger((bio_name, distance, data), 2)
+    elif select[0][0] == 'Star':
         data = cursor.execute("""SELECT COLOR from bio_color where name = ? and Criterium = ?""",
                                 (bio_name2, star)).fetchall()
         if data != []:
             data = data[0]
-
     else:
         data = []
         for mat in materials:
@@ -3246,7 +3270,7 @@ def get_color_or_distance(bio_name, star, materials):
                     data.append(i[0])
     if data == []:
         data = 'Unknown'
-    logger((bio_name,distance, data), log_var)
+        logger((bio_name,distance, data), 2)
     return distance, data
 
 
@@ -3396,13 +3420,193 @@ def cp_to_clipboard():
     root.update()
 
 
+def war_cargo(file):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    with open(file, 'r', encoding='UTF8') as datei:
+        for zeile in datei:
+            data = read_json(zeile)
+            if 'Mission_TW_Collect' in data.get('Name', 'Kein'):
+                if data.get('event') == 'MissionAccepted':
+                    mission_id = data.get('MissionID')
+                    cargo_count = data.get('Count')
+                    destination = data.get('DestinationSystem')
+                    update_cargo_db("", "", mission_id, cargo_count, 0, destination)
+                if data.get('event') == 'MissionCompleted':
+                    logtime = data.get('timestamp')
+                    icd_log_time = (log_date(logtime))
+                    date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
+                    time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+                    mission_id = data.get('MissionID')
+                    update_cargo_db(date_log, time_log, mission_id, "", "", 1)
+
+
+def update_cargo_db(date_log, time_log, mission_id, cargo_count, destination, completed):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+    cursor.execute("""CREATE table IF NOT EXISTS cargomissions 
+                        (date_log date, 
+                        time_log timestamp, 
+                        missionID INTEGER, 
+                        cargocount INTEGER,
+                        completed INTEGER,
+                        system TEXT 
+                        )""")
+
+    select = cursor.execute("SELECT * from cargomissions where missionID = ?",(mission_id,)).fetchall()
+    if select == []:
+        cursor.execute("INSERT INTO cargomissions VALUES (?,?,?,?,?,?)",
+                       ("", "", mission_id, cargo_count, completed, destination))
+        connection.commit()
+
+    if completed == 1:
+        cursor.execute("""UPDATE cargomissions set date_log = ?, time_log = ?, 
+                       completed = ? where missionID = ? """,
+                       (date_log, time_log, completed, mission_id))
+        connection.commit()
+
+
+def read_passengers(file):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    with open(file, 'r', encoding='UTF8') as datei:
+        for zeile in datei:
+            data = read_json(zeile)
+            if 'Mission_TW_Passenger' in data.get('Name', 'Kein'):
+                if data.get('event') == 'MissionAccepted':
+                    mission_id = data.get('MissionID')
+                    passengercount = data.get('PassengerCount')
+                    faction = data.get('Faction')
+                    system_name = read_data_from_last_system(file, mission_id)
+                    update_pass_db("", "", mission_id, passengercount, system_name, 0)
+                if data.get('event') == 'MissionCompleted':
+                    logtime = data.get('timestamp')
+                    icd_log_time = (log_date(logtime))
+                    date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
+                    time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+                    mission_id = data.get('MissionID')
+                    update_pass_db(date_log, time_log, mission_id, 0, "", 1)
+
+
+def update_pass_db(date_log, time_log, mission_id, passengercount, system_name, completed):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+    cursor.execute("""CREATE table IF NOT EXISTS passengermissions 
+                        (date_log date, 
+                        time_log timestamp, 
+                        missionID INTEGER, 
+                        passengercount INTEGER, 
+                        completed INTEGER, 
+                        system TEXT)""")
+
+    select = cursor.execute("SELECT * from passengermissions where missionID = ?",(mission_id,)).fetchall()
+    if select == []:
+        cursor.execute("INSERT INTO passengermissions VALUES (?,?,?,?,?,?)",
+                       ("", "", mission_id, passengercount, completed, system_name))
+        connection.commit()
+
+    if completed == 1:
+        cursor.execute("""UPDATE passengermissions set date_log = ?, time_log = ?, 
+                       completed = ? where missionID =?""",
+                       (date_log, time_log, completed, mission_id))
+        connection.commit()
+
+
+def ausgabe_pass():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+
+    cursor.execute("""CREATE table IF NOT EXISTS cargomissions 
+                         (date_log date, 
+                         time_log timestamp, 
+                         missionID INTEGER, 
+                         cargocount INTEGER,
+                         system TEXT, 
+                         completed INTEGER 
+                         )""")
+
+    cursor.execute("""CREATE table IF NOT EXISTS passengermissions 
+                        (date_log date, 
+                        time_log timestamp, 
+                        missionID INTEGER, 
+                        passengercount INTEGER, 
+                        completed INTEGER, 
+                        system TEXT)""")
+
+    tag = Tag.get()
+    monat = Monat.get()
+    jahr = '20' + Jahr.get()
+    date_ed = jahr + '-' + monat +'-' + tag
+    select_pass = cursor.execute("SELECT DISTINCT system from passengermissions where date_log = ? and completed = 1",
+                            (date_ed,)).fetchall()
+    select_cargo = cursor.execute("SELECT DISTINCT system from cargomissions where date_log = ? and completed = 1",
+                                 (date_ed,)).fetchall()
+
+    summe_cargo = []
+
+    for i in select_cargo:
+        system_se = i[0]
+        anzahl = cursor.execute("SELECT SUM(cargocount) from cargomissions where system = ?",
+                                (system_se,)).fetchone()
+        summe_cargo.append((system_se, anzahl[0]))
+
+    system.insert(END, (('Cargo transfered \t \t \t \n')))
+    system.insert(END, ('\n'))
+    gesamt_cargo = 0
+    if summe_cargo != []:
+        for i in summe_cargo:
+            system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
+            gesamt_cargo += int(i[1])
+    system.insert(END, ('───────────────────────────\n'))
+    system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt_cargo)) + 't \n'))
+    system.insert(END, ('\n'))
+
+    summe_pass = []
+    for i in select_pass:
+        system_se = i[0]
+        anzahl = cursor.execute("SELECT SUM(passengercount) from passengermissions where system = ?",
+                                (system_se,)).fetchone()
+        summe_pass.append((system_se, anzahl[0]))
+
+    system.insert(END, (('Passengers rescued \t \t \t \n')))
+    system.insert(END, ('\n'))
+    gesamt = 0
+    if summe_pass != []:
+        for i in summe_pass:
+            system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + ' \n')))
+            gesamt += int(i[1])
+    system.insert(END, ('───────────────────────────\n'))
+    system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt)) + ' \n'))
+
+
+def war():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+    files = file_names(3)
+    for journal_file in files:
+        read_passengers(journal_file)
+        war_cargo(journal_file)
+    ausgabe_pass()
+
+
 def menu(var):
     # Dem Modul entsprechenden werden GUI Elemente aus- bzw eingeschaltet oder de- bzw. aktiviert.
 
     global eddc_modul
     # print(var)
-    menu_var = [0, 'BGS', 'ody_mats', 'MATS', 'CODEX', 'combat', 'thargoid', 'boxel', 'cube']
-    # eddc_modul     1        2          3       4        5          6          7        8
+    menu_var = [0, 'BGS', 'ody_mats', 'MATS', 'CODEX', 'combat', 'thargoid', 'boxel', 'cube', 'war', 'test']
+    # eddc_modul     1        2          3       4        5          6          7        8      9       10
 
     # Filter.delete(0, END)
     if var == menu_var[1]:
@@ -3766,6 +3970,10 @@ def auswertung(eddc_modul):
         boxel_search(b_filter)
         status.config(text='Boxel Analyse')
 
+    elif eddc_modul == 9: # Thargoid WAR
+        status.config(text='Thargoid-War')
+        war()
+
     if eddc_modul == 8:  # Sphere Analyser
         b_filter = Filter.get()
         cube_search(b_filter)
@@ -3891,6 +4099,9 @@ def auswertung(eddc_modul):
         elif eddc_modul == 6: # Thargoid
             status.config(text='Thargoids')
             thargoids()
+
+
+
 
 
 def set_language_db(var):
@@ -4086,7 +4297,7 @@ def create_tables():
 
 
 # noinspection PyGlobalUndefined
-def main():
+def main_old():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
     global system, root, Tag, Monat, Jahr, tick_hour_label, tick_minute_label, eddc_modul, ody_mats, \
@@ -4374,6 +4585,291 @@ def main():
     get_latest_version(1)
     root.mainloop()
 
+
+def main():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    global system, root, Tag, Monat, Jahr, tick_hour_label, tick_minute_label, eddc_modul, ody_mats, \
+        vor_tick, nach_tick, Filter, tree, check_but  # , label_tag, label_monat, label_jahr
+
+    create_tables()
+    select = set_language_db('leer')
+    if not select or select[0][0] == 'german' or select == 'leer':
+        text = ['Tag', 'Monat', 'Jahr', 'Der letzte Tick war um:', 'vor dem Tick', 'nach dem Tick']
+    else:
+        text = ['Day', 'Month', 'Year', 'Last BGS TICK was at  ', 'before Tick', 'after Tick']
+
+    # ------- root -----
+    root = Tk()
+    root.title('Elite Dangerous Data Collector')
+    try:
+        img = resource_path("eddc.ico")
+        root.iconbitmap(img)
+    except TclError:
+        logger(('Icon not found)'),1)
+    root.configure(background='black')
+    root.minsize(415, 500)
+    root.maxsize(415, 1000)
+    snpx = resource_path("SNPX.png")
+    horizon = resource_path("Horizon.png")
+    bg = PhotoImage(file=snpx)
+    bg2 = PhotoImage(file=horizon)
+
+    # ------------- menu Leiste -----------------
+    my_menu = Menu(root)
+    root.config(menu=my_menu)
+
+    file_menu = Menu(my_menu, tearoff=False)
+    my_menu.add_cascade(label="Statistik", menu=file_menu)
+    file_menu.add_command(label="BGS", command=lambda: menu('BGS'))
+    file_menu.add_command(label="MATS", command=lambda: menu('MATS'))
+    file_menu.add_command(label="Odyssey", command=lambda: menu('ody_mats'))
+    file_menu.add_command(label="Combat Rank", command=lambda: menu('combat'))
+    file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
+    file_menu.add_command(label="Beitrag zum Krieg", command=lambda: menu('war'))
+    # file_menu.add_command(label="Test", command=lambda: menu('test'))
+    file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
+    file_menu.add_command(label="Exit", command=root.quit)
+
+    exploration_menu = Menu(my_menu, tearoff=False)
+    my_menu.add_cascade(label="Exploration", menu=exploration_menu)
+    exploration_menu.add_command(label="Codex", command=lambda: menu('CODEX'), accelerator= "Ctrl+q")
+    exploration_menu.add_command(label="Boxel Analyse", command=lambda: menu('boxel'))
+    exploration_menu.add_command(label="Kubus Anylyse", command=lambda: menu('cube'))
+
+    settings_menu = Menu(my_menu, tearoff=False)
+    my_menu.add_cascade(label="Setting", menu=settings_menu)
+    about_menu = Menu(my_menu, tearoff=False)
+    my_menu.add_cascade(label="About", menu=about_menu)
+    about_menu.add_command(label="Version Check", command=lambda: get_latest_version(0))
+    about_menu.add_command(label="Delete all Data in DB", command=lambda: delete_all_tables())
+
+    top_blank = Label(root, bg='black', height=5)
+    top_blank.pack(padx=20, pady=10, fill=X)
+
+    top_text = Label(root, bg='black', height=5)
+    top_text.pack(padx=20, pady=5, fill=X)
+    #
+    my_text_box = Frame(top_text, bg='black')
+    my_text_box.grid(column=0, row=0)
+
+    my_check_box = Frame(top_text, bg='black')
+    my_check_box.grid(column=1, row=0)
+
+    my_top_logo = Label(root, image=bg, bg='black')
+    my_top_logo.place(x=15, y=0)
+
+    # --------------------------------- my_time_label -----------------------------------
+
+    my_time_label = Frame(my_text_box, bg='black')
+    my_time_label.pack(pady=5, fill=X)
+    my_time_label.config(highlightbackground='black')
+
+    label_tag = Label(my_time_label, text=text[0], bg='black', fg='white', font=("Helvetica", 12))
+    label_tag.grid(column=0, row=0)
+    Tag = Entry(my_time_label, width=2, font=("Helvetica", 12))
+    Tag.insert(0, Day)
+    Tag.grid(column=1, row=0, padx=5)
+    label_monat = Label(my_time_label, text=text[1], bg='black', fg='white', font=("Helvetica", 12))
+    label_monat.grid(column=2, row=0, padx=5)
+    Monat = Entry(my_time_label, width=2, font=("Helvetica", 12))
+    Monat.insert(0, Month)
+    Monat.grid(column=3, row=0, padx=5)
+
+    label_jahr = Label(my_time_label, text="Jahr:", bg='black', fg='white', font=("Helvetica", 12))
+    label_jahr.grid(column=4, row=0, padx=5)
+    Jahr = Entry(my_time_label, width=2, font=("Helvetica", 12))
+    Jahr.insert(0, Year)
+    Jahr.grid(column=5, row=0, padx=5)
+
+    global check_auto_refresh, last_tick_label
+
+    bgs_tick_frame = Frame(my_text_box, bg='black', borderwidth=2)
+    # bgs_tick_frame = Frame(my_text_box, bg='black')
+    bgs_tick_frame.pack(side=LEFT, pady=5)
+    last_tick_label = Label(bgs_tick_frame, text=text[3], bg='black', fg='white', font=("Helvetica", 12), justify=LEFT)
+    last_tick_label.grid(column=0, row=0)
+
+    # my_tick
+
+    my_tick = Frame(bgs_tick_frame, bg='black')
+    my_tick.grid(column=1, row=0)
+
+    tick_hour_label = Entry(my_tick, width=2, font=("Helvetica", 12))
+    tick_hour_label.insert(0, str(t_hour))
+    tick_hour_label.grid(column=0, row=0)
+    label_colon = Label(my_tick,
+                        text=""":""", bg='black', fg='white', font=("Helvetica", 12),
+                        justify=LEFT)
+    label_colon.grid(column=2, row=0)
+
+    tick_minute_label = Entry(my_tick, width=2, font=("Helvetica", 12))
+    tick_minute_label.insert(0, str(t_minute))
+    tick_minute_label.grid(column=3, row=0)
+
+    my_boxes = Frame(my_check_box, bg='black', borderwidth=2)
+    my_boxes.pack(padx=20)
+    check_auto_refresh = IntVar()
+
+    check_but = Checkbutton(my_boxes, text="Autorefresh    ",
+                            variable=check_auto_refresh,
+                            bg='black',
+                            fg='white',
+                            selectcolor='black',
+                            activebackground='black',
+                            activeforeground='white',
+                            command=threading_auto,
+                            font=("Helvetica", 10))
+    check_but.grid(column=0, row=0, sticky=W)
+
+    v = IntVar()
+    vor_tick = Radiobutton(my_boxes,
+                           text=text[4], bg='black', fg='white', selectcolor='black',
+                           activebackground='black', activeforeground='white',
+                           # padx=10,
+                           variable=v,
+                           value=1, command=tick_false)
+    vor_tick.grid(column=0, row=1, sticky=W)
+
+    nach_tick = Radiobutton(my_boxes,
+                            text=text[5], bg='black', fg='white', selectcolor='black',
+                            activebackground='black', activeforeground='white',
+                            # padx=10,
+                            variable=v,
+                            value=2, command=tick_true)
+    nach_tick.grid(column=0, row=2, sticky=W)
+    nach_tick.select()
+
+    my_folder = Frame(root, bg='black', border=2)
+    my_folder.pack(fill=X, padx=20)
+    myfolder_grid = Frame(my_folder, bg='black')
+    myfolder_grid.grid(sticky=W)
+
+    label_filter = Label(myfolder_grid,
+                         text="Filter:",
+                         bg='black',
+                         fg='white',
+                         font=("Helvetica", 12))
+    label_filter.grid(column=0, row=0, sticky=W)
+    Filter = Entry(myfolder_grid, width=37, font=("Helvetica", 10))
+
+    Filter.insert(0, filter_name)
+    Filter.grid(column=0, row=0)
+
+    folder = Entry(myfolder_grid, width=60, bg='black', fg='white', font=("Helvetica", 8))
+    folder.insert(END, path)
+    folder.grid(column=0, row=1, pady=5)
+
+    system = Text(root, height=10, width=10, bg='black', fg='white', font=("Helvetica", 10))
+    system.pack(padx=10, expand=True, fill="both")
+
+    bottom_grid = Frame(root,bg='black')
+    bottom_grid.pack(pady=10)
+
+    version_but = Button(bottom_grid,
+                         text=current_version,
+                         activebackground='#000050',
+                         activeforeground='white',
+                         bg='black',
+                         fg='white',
+                         command=logging,
+                         font=("Helvetica", 10))
+    version_but.grid(column=0, row=0, sticky=W, padx=5)
+
+    def cp_to_clipboard():
+        funktion = inspect.stack()[0][3]
+        logger(funktion, log_var)
+
+        root.clipboard_clear()
+        if eddc_modul == 1:
+            root.clipboard_append(voucher.get_string(sortby="System"))
+            root.clipboard_append('\n')
+            root.clipboard_append('\n')
+            root.clipboard_append(bgs.get_string(sortby="System"))
+        elif eddc_modul == 3:
+            root.clipboard_append(mats_table.get_string(sortby="Materials"))
+        elif eddc_modul == 2:
+            root.clipboard_append(mats_table.get_string(sortby="Materials"))
+        root.update()
+
+    clipboard = Button(bottom_grid,
+                       text='Copy to Clipboard',
+                       activebackground='#000050',
+                       activeforeground='white',
+                       bg='black',
+                       fg='white',
+                       command=cp_to_clipboard,
+                       font=("Helvetica", 10))
+    clipboard.grid(column=1, row=0, sticky=W, padx=5)
+
+    global status
+    status = Label(bottom_grid, text='BGS Mode',
+                   activebackground='#000050',
+                   activeforeground='white',
+                   width=12,
+                   border=10,
+                   bg='black',
+                   fg='yellow',
+                   font=("Helvetica", 11, 'bold'),
+                   bd=2)
+                   # relief=SUNKEN)
+    status.grid(column=2, row=0, sticky=W, padx=5)
+
+    ok_but = Button(bottom_grid,
+                    # width=4,
+                    activebackground='#000050',
+                    activeforeground='white',
+                    text='OK',
+                    bg='black',
+                    fg='white',
+                    command=threading_auto,
+                    font=("Helvetica", 10))
+    ok_but.grid(column=3, row=0, sticky=W, padx=5)
+
+    def callback(event):
+        funktion = inspect.stack()[0][3]
+        logger(funktion, 1)
+        logger(event,1)
+        threading_auto()
+
+    root.bind('<Return>', callback)
+
+    def refresh_label(data):
+        # label_tag.config(text=data[0])
+        # label_monat.config(text=data[1])
+        # label_jahr.config(text=data[2])
+        # last_tick_label.config(text=data[3])
+        # vor_tick.config(text=data[4])
+        # nach_tick.config(text=data[5])
+        print('Hallo')
+        root.destroy()
+        main()
+        # my_boxes.config(state=DISABLED)
+
+    def set_language(language):
+        if language == 1:
+            data = ['Tag', 'Monat', 'Jahr', 'Der letzte TICK war um ', 'vor dem Tick', 'nach dem Tick']
+            set_language_db('german')
+        # elif language == 2:
+        else:
+            data = ['Day', 'Month', 'Year', 'Last BGS TICK was at ', 'before Tick', 'after Tick']
+            set_language_db('english')
+        refresh_label(data)
+        # return data
+
+    def language_de():
+        language = 1
+        set_language(language)
+
+    def language_en():
+        language = 2
+        set_language(language)
+
+    settings_menu.add_command(label="Sprache - Deutsch", command=language_de)
+    settings_menu.add_command(label="Language - English", command=language_en)
+    get_latest_version(1)
+    root.mainloop()
 
 
 last_tick()
