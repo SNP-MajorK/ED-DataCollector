@@ -53,7 +53,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.1.0'
+version_number = '0.7.1.1'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
@@ -1712,6 +1712,14 @@ def read_data_from_last_system(file, mission_id): #NEEDS REVIEW
                                 return starsystem
 
 
+# def test():
+#     funktion = inspect.stack()[0][3]
+#     logger(funktion, log_var)
+#
+#     print(get_color_or_distance('Crystalline Shards', 'M', 'Cobalt'))
+#     print(get_color_or_distance('Bacterium Scopulum', 'M', ['tin','Mercury']))
+
+
 def treeview_codex():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -3247,14 +3255,15 @@ def get_color_or_distance(bio_name, star, materials):
     bio_name = bio_name.split()
     bio_name2 = bio_name[0].capitalize() + ' ' + bio_name[1].capitalize()
     select = cursor.execute("""SELECT DISTINCT criteria, distance from bio_color where name = ?""",
-                                (bio_name2,)).fetchall()
+                                (bio_name2,)).fetchone()
+    if select == None:
+        data = 'Unknown'
+        return data
     mats = []
     distance = cursor.execute("""SELECT DISTINCT distance from bio_color where name = ?""",
                          (bio_name2,)).fetchall()
-    if select == [] or NONE:
-        data = 'Unknown'
-        logger((bio_name, distance, data), 2)
-    elif select[0][0] == 'Star':
+
+    if select[0] == 'Star':
         data = cursor.execute("""SELECT COLOR from bio_color where name = ? and Criterium = ?""",
                                 (bio_name2, star)).fetchall()
         if data != []:
@@ -3420,26 +3429,22 @@ def cp_to_clipboard():
     root.update()
 
 
-def war_cargo(file):
+def war_cargo(data):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    with open(file, 'r', encoding='UTF8') as datei:
-        for zeile in datei:
-            data = read_json(zeile)
-            if 'Mission_TW_Collect' in data.get('Name', 'Kein'):
-                if data.get('event') == 'MissionAccepted':
-                    mission_id = data.get('MissionID')
-                    cargo_count = data.get('Count')
-                    destination = data.get('DestinationSystem')
-                    update_cargo_db("", "", mission_id, cargo_count, 0, destination)
-                if data.get('event') == 'MissionCompleted':
-                    logtime = data.get('timestamp')
-                    icd_log_time = (log_date(logtime))
-                    date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-                    time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
-                    mission_id = data.get('MissionID')
-                    update_cargo_db(date_log, time_log, mission_id, "", "", 1)
+    if data.get('event') == 'MissionAccepted':
+        mission_id = data.get('MissionID')
+        cargo_count = data.get('Count')
+        destination = data.get('DestinationSystem')
+        update_cargo_db("", "", mission_id, cargo_count, 0, destination)
+    if data.get('event') == 'MissionCompleted':
+        logtime = data.get('timestamp')
+        icd_log_time = (log_date(logtime))
+        date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
+        time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+        mission_id = data.get('MissionID')
+        update_cargo_db(date_log, time_log, mission_id, "", "", 1)
 
 
 def update_cargo_db(date_log, time_log, mission_id, cargo_count, destination, completed):
@@ -3470,27 +3475,23 @@ def update_cargo_db(date_log, time_log, mission_id, cargo_count, destination, co
         connection.commit()
 
 
-def read_passengers(file):
+def read_passengers(data, file):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    with open(file, 'r', encoding='UTF8') as datei:
-        for zeile in datei:
-            data = read_json(zeile)
-            if 'Mission_TW_Passenger' in data.get('Name', 'Kein'):
-                if data.get('event') == 'MissionAccepted':
-                    mission_id = data.get('MissionID')
-                    passengercount = data.get('PassengerCount')
-                    faction = data.get('Faction')
-                    system_name = read_data_from_last_system(file, mission_id)
-                    update_pass_db("", "", mission_id, passengercount, system_name, 0)
-                if data.get('event') == 'MissionCompleted':
-                    logtime = data.get('timestamp')
-                    icd_log_time = (log_date(logtime))
-                    date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-                    time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
-                    mission_id = data.get('MissionID')
-                    update_pass_db(date_log, time_log, mission_id, 0, "", 1)
+    if data.get('event') == 'MissionAccepted':
+        mission_id = data.get('MissionID')
+        passengercount = data.get('PassengerCount')
+        faction = data.get('Faction')
+        system_name = read_data_from_last_system(file, mission_id)
+        update_pass_db("", "", mission_id, passengercount, system_name, 0)
+    if data.get('event') == 'MissionCompleted':
+        logtime = data.get('timestamp')
+        icd_log_time = (log_date(logtime))
+        date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
+        time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+        mission_id = data.get('MissionID')
+        update_pass_db(date_log, time_log, mission_id, 0, "", 1)
 
 
 def update_pass_db(date_log, time_log, mission_id, passengercount, system_name, completed):
@@ -3520,12 +3521,68 @@ def update_pass_db(date_log, time_log, mission_id, passengercount, system_name, 
         connection.commit()
 
 
+def war_rescue(data, file):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    if data.get('event') == 'MissionAccepted':
+        mission_id = data.get('MissionID')
+        cargo_count = data.get('Count')
+        system_name = read_data_from_last_system(file, mission_id)
+        update_rescue_db("", "", mission_id, cargo_count, 0, system_name)
+    if data.get('event') == 'MissionCompleted':
+        logtime = data.get('timestamp')
+        icd_log_time = (log_date(logtime))
+        date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
+        time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+        mission_id = data.get('MissionID')
+        update_rescue_db(date_log, time_log, mission_id, "", 1, "")
+
+
+def update_rescue_db(date_log, time_log, mission_id, cargo_count, completed, system_name):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    # print(date_log, time_log, mission_id, cargo_count, completed, system_name)
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+    cursor.execute("""CREATE table IF NOT EXISTS rescuemissions 
+                        (date_log date, 
+                        time_log timestamp, 
+                        missionID INTEGER, 
+                        cargocount INTEGER,
+                        completed INTEGER,
+                        system TEXT 
+                        )""")
+
+    select = cursor.execute("SELECT * from rescuemissions where missionID = ?",(mission_id,)).fetchall()
+    if select == []:
+        cursor.execute("INSERT INTO rescuemissions VALUES (?,?,?,?,?,?)",
+                       ("", "", mission_id, cargo_count, completed, system_name))
+        connection.commit()
+
+    if completed == 1:
+        cursor.execute("""UPDATE rescuemissions set date_log = ?, time_log = ?, 
+                       completed = ? where missionID = ? """,
+                       (date_log, time_log, completed, mission_id))
+        connection.commit()
+
+
 def ausgabe_pass():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
+
+    cursor.execute("""CREATE table IF NOT EXISTS rescuemissions 
+                        (date_log date, 
+                        time_log timestamp, 
+                        missionID INTEGER, 
+                        cargocount INTEGER,
+                        completed INTEGER,
+                        system TEXT 
+                        )""")
 
     cursor.execute("""CREATE table IF NOT EXISTS cargomissions 
                          (date_log date, 
@@ -3548,17 +3605,21 @@ def ausgabe_pass():
     monat = Monat.get()
     jahr = '20' + Jahr.get()
     date_ed = jahr + '-' + monat +'-' + tag
+
     select_pass = cursor.execute("SELECT DISTINCT system from passengermissions where date_log = ? and completed = 1",
                             (date_ed,)).fetchall()
     select_cargo = cursor.execute("SELECT DISTINCT system from cargomissions where date_log = ? and completed = 1",
                                  (date_ed,)).fetchall()
+    select_rescue = cursor.execute("SELECT DISTINCT system from rescuemissions where date_log = ? and completed = 1",
+                                 (date_ed,)).fetchall()
+
 
     summe_cargo = []
 
     for i in select_cargo:
         system_se = i[0]
-        anzahl = cursor.execute("SELECT SUM(cargocount) from cargomissions where system = ?",
-                                (system_se,)).fetchone()
+        anzahl = cursor.execute("SELECT SUM(cargocount) from cargomissions where system = ? and date_log = ?",
+                                (system_se,date_ed)).fetchone()
         summe_cargo.append((system_se, anzahl[0]))
 
     system.insert(END, (('Cargo transfered \t \t \t \n')))
@@ -3568,15 +3629,33 @@ def ausgabe_pass():
         for i in summe_cargo:
             system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
             gesamt_cargo += int(i[1])
-    system.insert(END, ('───────────────────────────\n'))
+    system.insert(END, ('─────────────────────────────\n'))
     system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt_cargo)) + 't \n'))
+    system.insert(END, ('\n'))
+
+    summe_rescue = []
+    for i in select_rescue:
+        system_se = i[0]
+        anzahl = cursor.execute("SELECT SUM(cargocount) from rescuemissions where system = ? and date_log = ?",
+                                (system_se,date_ed)).fetchone()
+        summe_rescue.append((system_se, anzahl[0]))
+
+    system.insert(END, (('Escape Pods rescued \t \t \t \n')))
+    system.insert(END, ('\n'))
+    gesamt_rescue = 0
+    if summe_rescue != []:
+        for i in summe_rescue:
+            system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
+            gesamt_rescue += int(i[1])
+    system.insert(END, ('─────────────────────────────\n'))
+    system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt_rescue)) + 't \n'))
     system.insert(END, ('\n'))
 
     summe_pass = []
     for i in select_pass:
         system_se = i[0]
-        anzahl = cursor.execute("SELECT SUM(passengercount) from passengermissions where system = ?",
-                                (system_se,)).fetchone()
+        anzahl = cursor.execute("SELECT SUM(passengercount) from passengermissions where system = ? and date_log = ?",
+                                (system_se,date_ed)).fetchone()
         summe_pass.append((system_se, anzahl[0]))
 
     system.insert(END, (('Passengers rescued \t \t \t \n')))
@@ -3586,7 +3665,7 @@ def ausgabe_pass():
         for i in summe_pass:
             system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + ' \n')))
             gesamt += int(i[1])
-    system.insert(END, ('───────────────────────────\n'))
+    system.insert(END, ('─────────────────────────────\n'))
     system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt)) + ' \n'))
 
 
@@ -3595,8 +3674,15 @@ def war():
     logger(funktion, log_var)
     files = file_names(3)
     for journal_file in files:
-        read_passengers(journal_file)
-        war_cargo(journal_file)
+        with open(journal_file, 'r', encoding='UTF8') as datei:
+            for zeile in datei:
+                data = read_json(zeile)
+                if 'Mission_TW_Rescue' in data.get('Name', 'Kein'):
+                    war_rescue(data, journal_file)
+                elif 'Mission_TW_Passenger' in data.get('Name', 'Kein'):
+                    read_passengers(data, journal_file)
+                elif 'Mission_TW_Collect' in data.get('Name', 'Kein'):
+                    war_cargo(data)
     ausgabe_pass()
 
 
@@ -3964,6 +4050,12 @@ def auswertung(eddc_modul):
     cursor.execute("DROP TABLE IF EXISTS odyssey")
     cursor.execute("DROP TABLE IF EXISTS vouchers")
     system.delete(.0, END)
+
+    if eddc_modul == 10:  # Boxel Analyser
+        b_filter = Filter.get()
+        test()
+        status.config(text='Boxel Analyse')
+
 
     if eddc_modul == 7:  # Boxel Analyser
         b_filter = Filter.get()
