@@ -53,12 +53,16 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.1.1'
+version_number = '0.7.1.2'
 current_version = ('Version ' + str(version_number))
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
 global status
 mats_table = PrettyTable(['Materials', 'Count'])
+
+tw_pass_table = PrettyTable(['System','Passengers'])
+tw_rescue_table = PrettyTable(['System','Rescued'])
+tw_cargo_table = PrettyTable(['System','Cargo'])
 
 # Set Program Path Data to random used Windows temp folder.
 with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
@@ -936,51 +940,59 @@ def create_codex_entry():
     # type 0 = geo; 1 = bio ; 2 = space
     global bio_worth
 
-    bio_worth = [('Albidum Sinuous Tubers', '111,300'), ('Aleoida Arcus', '379,300'), ('Aleoida Coronamus', '339,100'),
-                 ('Aleoida Gravis', '596,500'), ('Aleoida Laminiae', '208,900'), ('Aleoida Spica', '208,900'),
-                 ('Amphora Plant', '117,900'), ('Aureum Brain Tree', '115,900'), ('Bacterium Acies', '50,000'),
-                 ('Bacterium Alcyoneum', '119,500'), ('Bacterium Aurasus', '78,500'), ('Bacterium Bullaris', '89,900'),
-                 ('Bacterium Cerbrus', '121,300'), ('Bacterium Informem', '426,200'), ('Bacterium Nebulus', '296,300'),
-                 ('Bacterium Omentum', '267,400'), ('Bacterium Scopulum', '280,600'), ('Bacterium Tela', '135,600'),
-                 ('Bacterium Verrata', '233,300'), ('Bacterium Vesicula', '56,100'), ('Bacterium Volu', '400,500'),
-                 ('Bark Mounds', '108,900'), ('Blatteum Bioluminescent Anemone', '110,500'),
-                 ('Blatteum Sinuous Tubers', '111,300'), ('Cactoida Cortexum', '222,500'),
-                 ('Cactoida Lapis', '164,000'), ('Cactoida Peperatis', '164,000'),
-                 ('Cactoida Pullulanta', '222,500'), ('Cactoida Vermis', '711,500'),
-                 ('Caeruleum Sinuous Tubers', '111,300'), ('Clypeus Lacrimam', '426,200'),
-                 ('Clypeus Margaritus', '557,800'), ('Clypeus Speculumi', '711,500'),
-                 ('Concha Aureolas', '400,500'), ('Concha Biconcavis', '806,300'), ('Concha Labiata', '157,100'),
-                 ('Concha Renibus', '264,300'), ('Croceum Anemone', '110,500'), ('Crystalline Shards', '117,900'),
-                 ('Electricae Pluma', '339,100'), ('Electricae Radialem', '339,100'),
-                 ('Fonticulua Campestris', '63,600'),
-                 ('Fonticulua Digitos', '127,700'), ('Fonticulua Fluctus', '900,000'), ('Fonticulua Lapida', '195,600'),
-                 ('Fonticulua Segmentatus', '806,300'), ('Fonticulua Upupam', '315,300'), ('Frutexa Acus', '400,500'),
-                 ('Frutexa Collum', '118,500'), ('Frutexa Fera', '118,100'), ('Frutexa Flabellum', '127,900'),
-                 ('Frutexa Flammasis', '500,100'), ('Frutexa Metallicum', '118,100'), ('Frutexa Sponsae', '326,500'),
-                 ('Fumerola Aquatis', '339,100'), ('Fumerola Carbosis', '339,100'), ('Fumerola Extremus', '711,500'),
-                 ('Fumerola Nitris', '389,400'), ('Fungoida Bullarum', '224,100'), ('Fungoida Gelata', '206,300'),
-                 ('Fungoida Setisis', '120,200'), ('Fungoida Stabitis', '174,000'), ('Gypseeum Brain Tree', '115,900'),
-                 ('Lindigoticum Brain Tree', '115,900'), ('Lindigoticum Sinuous Tubers', '111,300'),
-                 ('Lividum Brain Tree', '115,900'), ('Luteolum Anemone', '110,500'),
-                 ('Osseus Cornibus', '109,500'), ('Osseus Discus', '596,500'),
-                 ('Osseus Fractus', '239,400'), ('Osseus Pellebantus', '477,700'), ('Osseus Pumice', '197,800'),
-                 ('Osseus Spiralis', '159,900'), ('Ostrinum Brain Tree', '115,900'),
+    bio_worth = [('Albidum Sinuous Tubers', '111,300'), ('Aleoida Arcus', '7252,500'),
+                 ('Aleoida Coronamus', '6,284,600'), ('Aleoida Gravis', '12,934,900'),
+                 ('Aleoida Laminiae', '3,385,200'), ('Aleoida Spica', '3,385,200'),
+                 ('Amphora Plant', '117,900'), ('Aureum Brain Tree', '115,900'),
+                 ('Bacterium Acies', '1,000,000'), ('Bacterium Alcyoneum', '1,658,500'),
+                 ('Bacterium Aurasus', '1,000,000'), ('Bacterium Bullaris', '1,152,500'),
+                 ('Bacterium Cerbrus', '1,689,800'), ('Bacterium Informem', '8,418,000'),
+                 ('Bacterium Nebulus', '5,289,900'), ('Bacterium Omentum', '4,638,900'),
+                 ('Bacterium Scopulum', '4,934,500'), ('Bacterium Tela', '1,949,000'),
+                 ('Bacterium Verrata', '3,897,000'), ('Bacterium Vesicula', '1,000,000'),
+                 ('Bacterium Volu', '7,774,700'), ('Bark Mounds', '108,900'),
+                 ('Blatteum Bioluminescent Anemone', '110,500'), ('Blatteum Sinuous Tubers', '111,300'),
+                 ('Cactoida Cortexum', '3,667,600'), ('Cactoida Lapis', '2,483,600'),
+                 ('Cactoida Peperatis', '2,483,600'), ('Cactoida Pullulanta', '3,667,600'),
+                 ('Cactoida Vermis', '16,202,800'), ('Caeruleum Sinuous Tubers', '111,300'),
+                 ('Clypeus Lacrimam', '8,418,000'), ('Clypeus Margaritus', '11,873,200'),
+                 ('Clypeus Speculumi', '16,202,800'), ('Concha Aureolas', '7,774,700'),
+                 ('Concha Biconcavis', '19,010,800'), ('Concha Labiata', '2,352,400'),
+                 ('Concha Renibus', '4,572,400'), ('Croceum Anemone', '110,500'),
+                 ('Crystalline Shards', '117,900'), ('Electricae Pluma', '6,284,600'),
+                 ('Electricae Radialem', '6,284,600'), ('Fonticulua Campestris', '1,000,000'),
+                 ('Fonticulua Digitos', '1,804,100'), ('Fonticulua Fluctus', '20,000,000'),
+                 ('Fonticulua Lapida', '3,111,000'), ('Fonticulua Segmentatus', '19,010,800'),
+                 ('Fonticulua Upupam', '5,727,600'), ('Frutexa Acus', '7,774,700'),
+                 ('Frutexa Collum', '1,639,800'), ('Frutexa Fera', '1,632,500'),
+                 ('Frutexa Flabellum', '1,808,900'), ('Frutexa Flammasis', '10,326,000'),
+                 ('Frutexa Metallicum', '1,632,500'), ('Frutexa Sponsae', '5,988,000'),
+                 ('Fumerola Aquatis', '6,284,600'), ('Fumerola Carbosis', '6,284,600'),
+                 ('Fumerola Extremus', '16,202,800'), ('Fumerola Nitris', '7,500,900'),
+                 ('Fungoida Bullarum', '3,703,200'),  ('Fungoida Gelata', '3,330,300'),
+                 ('Fungoida Setisis', '1,670,100'), ('Fungoida Stabitis', '2,680,300'),
+                 ('Gypseeum Brain Tree', '115,900'), ('Lindigoticum Brain Tree', '115,900'),
+                 ('Lindigoticum Sinuous Tubers', '111,300'), ('Lividum Brain Tree', '115,900'),
+                 ('Luteolum Anemone', '110,500'),  ('Osseus Cornibus', '1,483,000'), ('Osseus Discus', '12,934,900'),
+                 ('Osseus Fractus', '4,027,800'), ('Osseus Pellebantus', '9,739,000'), ('Osseus Pumice', '3,156,300'),
+                 ('Osseus Spiralis', '2,404,700'), ('Ostrinum Brain Tree', '115,900'),
                  ('Prasinum Bioluminescent Anemone', '110,500'), ('Prasinum Sinuous Tubers', '111,300'),
                  ('Puniceum Anemone', '110,500'), ('Puniceum Brain Tree', '115,900'),
-                 ('Recepta Conditivus', '645,700'), ('Recepta Deltahedronix', '711,500'),
-                 ('Recepta Umbrux', '596,500'), ('Roseum Anemone', '110,500'),
+                 ('Recepta Conditivus', '14,313,700'), ('Recepta Deltahedronix', '16,202,800'),
+                 ('Recepta Umbrux', '12,934,900'), ('Roseum Anemone', '110,500'),
                  ('Roseum Bioluminescent Anemone', '110,500'), ('Roseum Brain Tree', '115,900'),
                  ('Roseum Sinuous Tubers', '111,300'), ('Rubeum Bioluminescent Anemone', '110,500'),
-                 ('Stratum Araneamus', '162,200'), ('Stratum Cucumisis', '711,500'),
-                 ('Stratum Excutitus', '162,200'), ('Stratum Frigus', '171,900'),
-                 ('Stratum Laminamus', '179,500'), ('Stratum Limaxus', '102,500'), ('Stratum Paleas', '102,500'),
-                 ('Stratum Tectonicas', '806,300'), ('Tubus Cavas', '171,900'), ('Tubus Compagibus', '102,700'),
-                 ('Tubus Conifer', '315,300'), ('Tubus Rosarium', '400,500'), ('Tubus Sororibus', '557,800'),
-                 ('Tussock Albata', '202,500'), ('Tussock Capillum', '370,000'), ('Tussock Caputus', '213,100'),
-                 ('Tussock Catena', '125,600'), ('Tussock Cultro', '125,600'), ('Tussock Divisa', '125,600'),
-                 ('Tussock Ignis', '130,100'), ('Tussock Pennata', '320,700'), ('Tussock Pennatis', '59,600'),
-                 ('Tussock Propagito', '71,300'), ('Tussock Serrati', '258,700'), ('Tussock Stigmasis', '806,300'),
-                 ('Tussock Triticum', '400,500'), ('Tussock Ventusa', '201,300'), ('Tussock Virgam', '645,700'),
+                 ('Stratum Araneamus', '2,448,900'), ('Stratum Cucumisis', '16,202,800'),
+                 ('Stratum Excutitus', '2,448,900'), ('Stratum Frigus', '2,637,500'),
+                 ('Stratum Laminamus', '2,788,300'), ('Stratum Limaxus', '1,362,000'), ('Stratum Paleas', '1,362,000'),
+                 ('Stratum Tectonicas', '19,010,800'), ('Tubus Cavas', '11,873,200'), ('Tubus Compagibus', '7,774,700'),
+                 ('Tubus Conifer', '2,415,500'), ('Tubus Rosarium', '2,637,500'), ('Tubus Sororibus', '5,727,600'),
+                 ('Tussock Albata', '3,252,500'), ('Tussock Capillum', '7,025,800'), ('Tussock Caputus', '3,472,400'),
+                 ('Tussock Catena', '1,766,600'), ('Tussock Cultro', '1,766,600'), ('Tussock Divisa', '1,766,600'),
+                 ('Tussock Ignis', '1,849,000'), ('Tussock Pennata', '5,853,800'), ('Tussock Pennatis', '1,000,000'),
+                 ('Tussock Propagito', '1,000,000'), ('Tussock Serrati', '4,447,100'),
+                 ('Tussock Stigmasis', '19,010,800'),  ('Tussock Triticum', '7,774,700'),
+                 ('Tussock Ventusa', '3,227,700'), ('Tussock Virgam', '14,313,700'),
                  ('Violaceum Sinuous Tubers', '111,300'), ('Viride Brain Tree', '115,900'),
                  ('Viride Sinuous Tubers', '111,300')]
 
@@ -3412,32 +3424,39 @@ def print_engi_stuff_db(filter_b):
     return ody_select
 
 
-def cp_to_clipboard():
+# def cp_to_clipboard():
+#     funktion = inspect.stack()[0][3]
+#     logger(funktion, 5)
+#
+#     root.clipboard_clear()
+#     if eddc_modul == 1:
+#         root.clipboard_append(voucher.get_string(sortby="System"))
+#         root.clipboard_append('\n')
+#         root.clipboard_append('\n')
+#         root.clipboard_append(bgs.get_string(sortby="System"))
+#     elif eddc_modul == 3:
+#         root.clipboard_append(mats_table.get_string(sortby="Materials"))
+#     elif eddc_modul == 2:
+#         root.clipboard_append(mats_table.get_string(sortby="Materials"))
+#     elif eddc_modul == 9:
+#         print(tw_pass_table)
+#         root.clipboard_append(tw_pass_table.get_string())
+#     root.update()
+
+
+def war_cargo(data, file):
     funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
+    logger(funktion, 5)
 
-    root.clipboard_clear()
-    if eddc_modul == 1:
-        root.clipboard_append(voucher.get_string(sortby="System"))
-        root.clipboard_append('\n')
-        root.clipboard_append('\n')
-        root.clipboard_append(bgs.get_string(sortby="System"))
-    elif eddc_modul == 3:
-        root.clipboard_append(mats_table.get_string(sortby="Materials"))
-    elif eddc_modul == 2:
-        root.clipboard_append(mats_table.get_string(sortby="Materials"))
-    root.update()
-
-
-def war_cargo(data):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
+    print(data)
 
     if data.get('event') == 'MissionAccepted':
         mission_id = data.get('MissionID')
         cargo_count = data.get('Count')
         destination = data.get('DestinationSystem')
-        update_cargo_db("", "", mission_id, cargo_count, 0, destination)
+        system_name = read_data_from_last_system(file, mission_id)
+        print(system_name)
+        update_cargo_db("", "", mission_id, cargo_count, system_name, 0)
     if data.get('event') == 'MissionCompleted':
         logtime = data.get('timestamp')
         icd_log_time = (log_date(logtime))
@@ -3628,6 +3647,7 @@ def ausgabe_pass():
     if summe_cargo != []:
         for i in summe_cargo:
             system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
+            tw_cargo_table.add_row((i[0], i[1]))
             gesamt_cargo += int(i[1])
     system.insert(END, ('─────────────────────────────\n'))
     system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt_cargo)) + 't \n'))
@@ -3646,6 +3666,7 @@ def ausgabe_pass():
     if summe_rescue != []:
         for i in summe_rescue:
             system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
+            tw_rescue_table.add_row((i[0], i[1]))
             gesamt_rescue += int(i[1])
     system.insert(END, ('─────────────────────────────\n'))
     system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt_rescue)) + 't \n'))
@@ -3664,6 +3685,7 @@ def ausgabe_pass():
     if summe_pass != []:
         for i in summe_pass:
             system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + ' \n')))
+            tw_pass_table.add_row((i[0], i[1]))
             gesamt += int(i[1])
     system.insert(END, ('─────────────────────────────\n'))
     system.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt)) + ' \n'))
@@ -3672,6 +3694,14 @@ def ausgabe_pass():
 def war():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
+    try:
+        tw_pass_table.clear_rows()
+        tw_cargo_table.clear_rows()
+        tw_rescue_table.clear_rows()
+        print('test')
+    except AttributeError:
+        logger('NoData in tw rows', log_var)
+
     files = file_names(3)
     for journal_file in files:
         with open(journal_file, 'r', encoding='UTF8') as datei:
@@ -3682,7 +3712,7 @@ def war():
                 elif 'Mission_TW_Passenger' in data.get('Name', 'Kein'):
                     read_passengers(data, journal_file)
                 elif 'Mission_TW_Collect' in data.get('Name', 'Kein'):
-                    war_cargo(data)
+                    war_cargo(data, journal_file)
     ausgabe_pass()
 
 
@@ -4226,7 +4256,6 @@ def set_language_db(var):
         cursor.execute("UPDATE lan_db SET lang = ?", (var,))
         connection.commit()
         connection.close()
-    # print('after ', var)
     return var
 
 
@@ -4234,16 +4263,12 @@ def update_db(old_version):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-    # print(old_version)
-    if old_version != '0.7.0.7' and \
-            (old_version == '0.7.0.4' or old_version == '0.7.0.5' or
-             old_version == '0.7.0.6'):
-        # print("ALTER TABLE planet_bio_info ADD bio_genus")
-        # cursor.execute("ALTER TABLE planet_bio_info ADD bio_genus")
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        cursor.execute("DROP TABLE IF EXISTS codex_entry")
         connection.commit()
-        connection.close()
+    print('update DB')
+    create_tables()
 
 
 def db_version(): # Programmstand und DB Stand werden mit einander verglichen
@@ -4263,7 +4288,7 @@ def db_version(): # Programmstand und DB Stand werden mit einander verglichen
         connection.commit()
         connection.close()
         logger('Update Version', 2)
-        # update_db(item[0][0])
+        update_db(item[0][0])
         # connection.commit()
     elif item[0][0] == version_number:
         logger('Same Version', 2)
@@ -4389,293 +4414,297 @@ def create_tables():
 
 
 # noinspection PyGlobalUndefined
-def main_old():
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-    global system, root, Tag, Monat, Jahr, tick_hour_label, tick_minute_label, eddc_modul, ody_mats, \
-        vor_tick, nach_tick, Filter, tree, check_but  # , label_tag, label_monat, label_jahr
-
-    create_tables()
-    select = set_language_db('leer')
-    if not select or select[0][0] == 'german' or select == 'leer':
-        text = ['Tag', 'Monat', 'Jahr', 'Der letzte Tick war um:', 'vor dem Tick', 'nach dem Tick']
-    else:
-        text = ['Day', 'Month', 'Year', 'Last BGS TICK was at  ', 'before Tick', 'after Tick']
-
-    root = Tk()
-    root.title('Elite Dangerous Data Collector')
-    try:
-        img = resource_path("eddc.ico")
-        root.iconbitmap(img)
-    except TclError:
-        logger(('Icon not found)'),1)
-
-    root.configure(background='black')
-    root.minsize(415, 500)
-    root.maxsize(415, 500)
-    snpx = resource_path("SNPX.png")
-    horizon = resource_path("Horizon.png")
-    bg = PhotoImage(file=snpx)
-    bg2 = PhotoImage(file=horizon)
-
-    my_menu = Menu(root)
-    root.config(menu=my_menu)
-
-    file_menu = Menu(my_menu, tearoff=False)
-    my_menu.add_cascade(label="Statistik", menu=file_menu)
-    file_menu.add_command(label="BGS", command=lambda: menu('BGS'))
-    file_menu.add_command(label="MATS", command=lambda: menu('MATS'))
-    file_menu.add_command(label="Odyssey", command=lambda: menu('ody_mats'))
-    file_menu.add_command(label="Combat Rank", command=lambda: menu('combat'))
-    file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
-
-    file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
-    file_menu.add_command(label="Exit", command=root.quit)
-
-    exploration_menu = Menu(my_menu, tearoff=False)
-    my_menu.add_cascade(label="Exploration", menu=exploration_menu)
-    exploration_menu.add_command(label="Codex", command=lambda: menu('CODEX'), accelerator= "Ctrl+q")
-    exploration_menu.add_command(label="Boxel Analyse", command=lambda: menu('boxel'))
-    exploration_menu.add_command(label="Kubus Anylyse", command=lambda: menu('cube'))
-
-    settings_menu = Menu(my_menu, tearoff=False)
-    my_menu.add_cascade(label="Setting", menu=settings_menu)
-    about_menu = Menu(my_menu, tearoff=False)
-    my_menu.add_cascade(label="About", menu=about_menu)
-    about_menu.add_command(label="Version Check", command=lambda: get_latest_version(0))
-    about_menu.add_command(label="Delete all Data in DB", command=lambda: delete_all_tables())
-
-    my_top_logo = Label(root, image=bg, bg='black')
-    my_top_logo.pack(fill=X)
-    my_bottom_logo = Label(root, image=bg2, bg='black')
-    my_bottom_logo.place(x=0, y=100)
-    # --------------------------------- my_text_box -----------------------------------
-    my_text_box = Label(root, bg='black', borderwidth=2)
-    my_text_box.config(width=280)
-    # my_text_box = Label(root)
-    my_text_box.place(x=25, y=100)
-
-    # --------------------------------- my_time_label -----------------------------------
-
-    # my_time_label = Frame(my_text_box, bg='black')
-    my_time_label = Frame(my_text_box, bg='black', borderwidth=2)
-    my_text_box.config(width=250)
-    my_time_label.pack(pady=5)
-    my_time_label.config(highlightbackground='black')
-
-    label_tag = Label(my_time_label, text=text[0], bg='black', fg='white', font=("Helvetica", 12))
-    label_tag.grid(column=0, row=0)
-    Tag = Entry(my_time_label, width=2, font=("Helvetica", 12))
-    Tag.insert(0, Day)
-    Tag.grid(column=1, row=0, padx=5)
-    label_monat = Label(my_time_label, text=text[1], bg='black', fg='white', font=("Helvetica", 12))
-    label_monat.grid(column=2, row=0, padx=5)
-    Monat = Entry(my_time_label, width=2, font=("Helvetica", 12))
-    Monat.insert(0, Month)
-    Monat.grid(column=3, row=0, padx=5)
-
-    label_jahr = Label(my_time_label, text="Jahr:", bg='black', fg='white', font=("Helvetica", 12))
-    label_jahr.grid(column=4, row=0, padx=5)
-    Jahr = Entry(my_time_label, width=2, font=("Helvetica", 12))
-    Jahr.insert(0, Year)
-    Jahr.grid(column=5, row=0, padx=5)
-
-    # my_time_label
-
-    global check_auto_refresh
-
-    # bgs_tick_frame
-    global last_tick_label
-
-    bgs_tick_frame = Frame(my_text_box, bg='black', borderwidth=2)
-    # bgs_tick_frame = Frame(my_text_box, bg='black')
-    bgs_tick_frame.pack(side=LEFT, pady=5)
-    last_tick_label = Label(bgs_tick_frame, text=text[3], bg='black', fg='white', font=("Helvetica", 12), justify=LEFT)
-    last_tick_label.grid(column=0, row=0)
-
-    # my_tick
-
-    my_tick = Frame(bgs_tick_frame, bg='black')
-    my_tick.grid(column=1, row=0)
-
-    tick_hour_label = Entry(my_tick, width=2, font=("Helvetica", 12))
-    tick_hour_label.insert(0, str(t_hour))
-    tick_hour_label.grid(column=0, row=0)
-    label_colon = Label(my_tick,
-                        text=""":""", bg='black', fg='white', font=("Helvetica", 12),
-                        justify=LEFT)
-    label_colon.grid(column=2, row=0)
-
-    tick_minute_label = Entry(my_tick, width=2, font=("Helvetica", 12))
-    tick_minute_label.insert(0, str(t_minute))
-    tick_minute_label.grid(column=3, row=0)
-
-    # my_tick
-    my_check_box_place = Frame(root, bg='black', borderwidth=2)
-    my_check_box_place.place(x=300, y=100)
-    check_auto_refresh = IntVar()
-    #
-    check_but = Checkbutton(my_check_box_place, text="Autorefresh    ",
-                            variable=check_auto_refresh,
-                            bg='black',
-                            fg='white',
-                            selectcolor='black',
-                            activebackground='black',
-                            activeforeground='white',
-                            command=threading_auto,
-                            font=("Helvetica", 10))
-    check_but.pack()
-
-    # my_boxes
-
-    my_boxes = Frame(root, bg='black', borderwidth=2)
-    my_boxes.place(x=300, y=125)
-
-    v = IntVar()
-    vor_tick = Radiobutton(my_boxes,
-                           text=text[4], bg='black', fg='white', selectcolor='black',
-                           activebackground='black', activeforeground='white',
-                           # padx=10,
-                           variable=v,
-                           value=1, command=tick_false)
-    vor_tick.grid(column=0, row=0, sticky=W)
-
-    nach_tick = Radiobutton(my_boxes,
-                            text=text[5], bg='black', fg='white', selectcolor='black',
-                            activebackground='black', activeforeground='white',
-                            # padx=10,
-                            variable=v,
-                            value=2, command=tick_true)
-    nach_tick.grid(column=0, row=1, sticky=W)
-    nach_tick.select()
-
-    # my_folder
-
-    my_folder = Frame(root, bg='black')
-    my_folder.place(x=15, y=180)
-    myfolder_grid = Frame(my_folder, bg='black')
-    myfolder_grid.grid()
-
-    label_filter = Label(myfolder_grid,
-                         text="Filter:",
-                         bg='black',
-                         fg='white',
-                         font=("Helvetica", 12))
-    label_filter.grid(column=0, row=0, sticky=W)
-    Filter = Entry(myfolder_grid, width=37, font=("Helvetica", 10))
-
-    Filter.insert(0, filter_name)
-    Filter.grid(column=0, row=0)
-
-    folder = Entry(myfolder_grid, width=62, bg='black', fg='white', font=("Helvetica", 8))
-    folder.insert(END, path)
-    folder.grid(column=0, row=1, pady=5)
-    # my_folder
-
-    system = Text(root, height=14, width=54, bg='black', fg='white', font=("Helvetica", 10))
-    system.place(x=15, y=235)
-
-    version_but = Button(root,
-                         text=current_version,
-                         activebackground='#000050',
-                         activeforeground='white',
-                         bg='black',
-                         fg='white',
-                         command=logging,
-                         font=("Helvetica", 10))
-    version_but.place(x=15, y=465)
-
-    def cp_to_clipboard():
-        funktion = inspect.stack()[0][3]
-        logger(funktion, log_var)
-
-        root.clipboard_clear()
-        if eddc_modul == 1:
-            root.clipboard_append(voucher.get_string(sortby="System"))
-            root.clipboard_append('\n')
-            root.clipboard_append('\n')
-            root.clipboard_append(bgs.get_string(sortby="System"))
-        elif eddc_modul == 3:
-            root.clipboard_append(mats_table.get_string(sortby="Materials"))
-        elif eddc_modul == 2:
-            root.clipboard_append(mats_table.get_string(sortby="Materials"))
-        root.update()
-
-
-    clipboard = Button(root,
-                       text='Copy to Clipboard',
-                       activebackground='#000050',
-                       activeforeground='white',
-                       bg='black',
-                       fg='white',
-                       command=cp_to_clipboard,
-                       font=("Helvetica", 10))
-    clipboard.place(x=130, y=465)
-
-    ok_but = Button(root,
-                    # width=4,
-                    activebackground='#000050',
-                    activeforeground='white',
-                    text='OK',
-                    bg='black',
-                    fg='white',
-                    command=threading_auto,
-                    font=("Helvetica", 10))
-    ok_but.place(x=368, y=465)
-
-    global status
-    status = Label(root, text='BGS Mode',
-                   activebackground='#000050',
-                   activeforeground='white',
-                   bg='black',
-                   fg='white',
-                   font=("Helvetica", 11),
-                   bd=2,
-                   relief=SUNKEN)
-    status.place(x=255, y=468)
-
-    def callback(event):
-        funktion = inspect.stack()[0][3]
-        logger(funktion, 1)
-        logger(event,1)
-        threading_auto()
-
-    root.bind('<Return>', callback)
-
-    def refresh_label(data):
-        label_tag.config(text=data[0])
-        label_monat.config(text=data[1])
-        label_jahr.config(text=data[2])
-        last_tick_label.config(text=data[3])
-        vor_tick.config(text=data[4])
-        nach_tick.config(text=data[5])
-
-    def set_language(language):
-        if language == 1:
-            data = ['Tag', 'Monat', 'Jahr', 'Der letzte TICK war um ', 'vor dem Tick', 'nach dem Tick']
-            set_language_db('german')
-        # elif language == 2:
-        else:
-            data = ['Day', 'Month', 'Year', 'Last BGS TICK was at ', 'before Tick', 'after Tick']
-            set_language_db('english')
-        refresh_label(data)
-        # return data
-
-    def language_de():
-        language = 1
-        set_language(language)
-
-    def language_en():
-        language = 2
-        set_language(language)
-
-    settings_menu.add_command(label="Sprache - Deutsch", command=language_de)
-    settings_menu.add_command(label="Language - English", command=language_en)
-
-
-
-    get_latest_version(1)
-    root.mainloop()
+# def main_old():
+#     funktion = inspect.stack()[0][3]
+#     logger(funktion, log_var)
+#     global system, root, Tag, Monat, Jahr, tick_hour_label, tick_minute_label, eddc_modul, ody_mats, \
+#         vor_tick, nach_tick, Filter, tree, check_but  # , label_tag, label_monat, label_jahr
+#
+#     create_tables()
+#     select = set_language_db('leer')
+#     if not select or select[0][0] == 'german' or select == 'leer':
+#         text = ['Tag', 'Monat', 'Jahr', 'Der letzte Tick war um:', 'vor dem Tick', 'nach dem Tick']
+#     else:
+#         text = ['Day', 'Month', 'Year', 'Last BGS TICK was at  ', 'before Tick', 'after Tick']
+#
+#     root = Tk()
+#     root.title('Elite Dangerous Data Collector')
+#     try:
+#         img = resource_path("eddc.ico")
+#         root.iconbitmap(img)
+#     except TclError:
+#         logger(('Icon not found)'),1)
+#
+#     root.configure(background='black')
+#     root.minsize(415, 500)
+#     root.maxsize(415, 500)
+#     snpx = resource_path("SNPX.png")
+#     horizon = resource_path("Horizon.png")
+#     bg = PhotoImage(file=snpx)
+#     bg2 = PhotoImage(file=horizon)
+#
+#     my_menu = Menu(root)
+#     root.config(menu=my_menu)
+#
+#     file_menu = Menu(my_menu, tearoff=False)
+#     my_menu.add_cascade(label="Statistik", menu=file_menu)
+#     file_menu.add_command(label="BGS", command=lambda: menu('BGS'))
+#     file_menu.add_command(label="MATS", command=lambda: menu('MATS'))
+#     file_menu.add_command(label="Odyssey", command=lambda: menu('ody_mats'))
+#     file_menu.add_command(label="Combat Rank", command=lambda: menu('combat'))
+#     file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
+#
+#     file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
+#     file_menu.add_command(label="Exit", command=root.quit)
+#
+#     exploration_menu = Menu(my_menu, tearoff=False)
+#     my_menu.add_cascade(label="Exploration", menu=exploration_menu)
+#     exploration_menu.add_command(label="Codex", command=lambda: menu('CODEX'), accelerator= "Ctrl+q")
+#     exploration_menu.add_command(label="Boxel Analyse", command=lambda: menu('boxel'))
+#     exploration_menu.add_command(label="Kubus Anylyse", command=lambda: menu('cube'))
+#
+#     settings_menu = Menu(my_menu, tearoff=False)
+#     my_menu.add_cascade(label="Setting", menu=settings_menu)
+#     about_menu = Menu(my_menu, tearoff=False)
+#     my_menu.add_cascade(label="About", menu=about_menu)
+#     about_menu.add_command(label="Version Check", command=lambda: get_latest_version(0))
+#     about_menu.add_command(label="Delete all Data in DB", command=lambda: delete_all_tables())
+#
+#     my_top_logo = Label(root, image=bg, bg='black')
+#     my_top_logo.pack(fill=X)
+#     my_bottom_logo = Label(root, image=bg2, bg='black')
+#     my_bottom_logo.place(x=0, y=100)
+#     # --------------------------------- my_text_box -----------------------------------
+#     my_text_box = Label(root, bg='black', borderwidth=2)
+#     my_text_box.config(width=280)
+#     # my_text_box = Label(root)
+#     my_text_box.place(x=25, y=100)
+#
+#     # --------------------------------- my_time_label -----------------------------------
+#
+#     # my_time_label = Frame(my_text_box, bg='black')
+#     my_time_label = Frame(my_text_box, bg='black', borderwidth=2)
+#     my_text_box.config(width=250)
+#     my_time_label.pack(pady=5)
+#     my_time_label.config(highlightbackground='black')
+#
+#     label_tag = Label(my_time_label, text=text[0], bg='black', fg='white', font=("Helvetica", 12))
+#     label_tag.grid(column=0, row=0)
+#     Tag = Entry(my_time_label, width=2, font=("Helvetica", 12))
+#     Tag.insert(0, Day)
+#     Tag.grid(column=1, row=0, padx=5)
+#     label_monat = Label(my_time_label, text=text[1], bg='black', fg='white', font=("Helvetica", 12))
+#     label_monat.grid(column=2, row=0, padx=5)
+#     Monat = Entry(my_time_label, width=2, font=("Helvetica", 12))
+#     Monat.insert(0, Month)
+#     Monat.grid(column=3, row=0, padx=5)
+#
+#     label_jahr = Label(my_time_label, text="Jahr:", bg='black', fg='white', font=("Helvetica", 12))
+#     label_jahr.grid(column=4, row=0, padx=5)
+#     Jahr = Entry(my_time_label, width=2, font=("Helvetica", 12))
+#     Jahr.insert(0, Year)
+#     Jahr.grid(column=5, row=0, padx=5)
+#
+#     # my_time_label
+#
+#     global check_auto_refresh
+#
+#     # bgs_tick_frame
+#     global last_tick_label
+#
+#     bgs_tick_frame = Frame(my_text_box, bg='black', borderwidth=2)
+#     # bgs_tick_frame = Frame(my_text_box, bg='black')
+#     bgs_tick_frame.pack(side=LEFT, pady=5)
+#     last_tick_label = Label(bgs_tick_frame, text=text[3], bg='black', fg='white', font=("Helvetica", 12), justify=LEFT)
+#     last_tick_label.grid(column=0, row=0)
+#
+#     # my_tick
+#
+#     my_tick = Frame(bgs_tick_frame, bg='black')
+#     my_tick.grid(column=1, row=0)
+#
+#     tick_hour_label = Entry(my_tick, width=2, font=("Helvetica", 12))
+#     tick_hour_label.insert(0, str(t_hour))
+#     tick_hour_label.grid(column=0, row=0)
+#     label_colon = Label(my_tick,
+#                         text=""":""", bg='black', fg='white', font=("Helvetica", 12),
+#                         justify=LEFT)
+#     label_colon.grid(column=2, row=0)
+#
+#     tick_minute_label = Entry(my_tick, width=2, font=("Helvetica", 12))
+#     tick_minute_label.insert(0, str(t_minute))
+#     tick_minute_label.grid(column=3, row=0)
+#
+#     # my_tick
+#     my_check_box_place = Frame(root, bg='black', borderwidth=2)
+#     my_check_box_place.place(x=300, y=100)
+#     check_auto_refresh = IntVar()
+#     #
+#     check_but = Checkbutton(my_check_box_place, text="Autorefresh    ",
+#                             variable=check_auto_refresh,
+#                             bg='black',
+#                             fg='white',
+#                             selectcolor='black',
+#                             activebackground='black',
+#                             activeforeground='white',
+#                             command=threading_auto,
+#                             font=("Helvetica", 10))
+#     check_but.pack()
+#
+#     # my_boxes
+#
+#     my_boxes = Frame(root, bg='black', borderwidth=2)
+#     my_boxes.place(x=300, y=125)
+#
+#     v = IntVar()
+#     vor_tick = Radiobutton(my_boxes,
+#                            text=text[4], bg='black', fg='white', selectcolor='black',
+#                            activebackground='black', activeforeground='white',
+#                            # padx=10,
+#                            variable=v,
+#                            value=1, command=tick_false)
+#     vor_tick.grid(column=0, row=0, sticky=W)
+#
+#     nach_tick = Radiobutton(my_boxes,
+#                             text=text[5], bg='black', fg='white', selectcolor='black',
+#                             activebackground='black', activeforeground='white',
+#                             # padx=10,
+#                             variable=v,
+#                             value=2, command=tick_true)
+#     nach_tick.grid(column=0, row=1, sticky=W)
+#     nach_tick.select()
+#
+#     # my_folder
+#
+#     my_folder = Frame(root, bg='black')
+#     my_folder.place(x=15, y=180)
+#     myfolder_grid = Frame(my_folder, bg='black')
+#     myfolder_grid.grid()
+#
+#     label_filter = Label(myfolder_grid,
+#                          text="Filter:",
+#                          bg='black',
+#                          fg='white',
+#                          font=("Helvetica", 12))
+#     label_filter.grid(column=0, row=0, sticky=W)
+#     Filter = Entry(myfolder_grid, width=37, font=("Helvetica", 10))
+#
+#     Filter.insert(0, filter_name)
+#     Filter.grid(column=0, row=0)
+#
+#     folder = Entry(myfolder_grid, width=62, bg='black', fg='white', font=("Helvetica", 8))
+#     folder.insert(END, path)
+#     folder.grid(column=0, row=1, pady=5)
+#     # my_folder
+#
+#     system = Text(root, height=14, width=54, bg='black', fg='white', font=("Helvetica", 10))
+#     system.place(x=15, y=235)
+#
+#     version_but = Button(root,
+#                          text=current_version,
+#                          activebackground='#000050',
+#                          activeforeground='white',
+#                          bg='black',
+#                          fg='white',
+#                          command=logging,
+#                          font=("Helvetica", 10))
+#     version_but.place(x=15, y=465)
+#
+#     def cp_to_clipboard():
+#         funktion = inspect.stack()[0][3]
+#         logger(funktion, 5)
+#
+#         root.clipboard_clear()
+#         if eddc_modul == 1:
+#             root.clipboard_append(voucher.get_string(sortby="System"))
+#             root.clipboard_append('\n')
+#             root.clipboard_append('\n')
+#             root.clipboard_append(bgs.get_string(sortby="System"))
+#         elif eddc_modul == 3:
+#             root.clipboard_append(mats_table.get_string(sortby="Materials"))
+#         elif eddc_modul == 2:
+#             root.clipboard_append(mats_table.get_string(sortby="Materials"))
+#         elif eddc_modul == 9:
+#             print(tw_pass_table)
+#             root.clipboard_append(tw_pass_table.get_string())
+#
+#         root.update()
+#
+#
+#     clipboard = Button(root,
+#                        text='Copy to Clipboard',
+#                        activebackground='#000050',
+#                        activeforeground='white',
+#                        bg='black',
+#                        fg='white',
+#                        command=cp_to_clipboard,
+#                        font=("Helvetica", 10))
+#     clipboard.place(x=130, y=465)
+#
+#     ok_but = Button(root,
+#                     # width=4,
+#                     activebackground='#000050',
+#                     activeforeground='white',
+#                     text='OK',
+#                     bg='black',
+#                     fg='white',
+#                     command=threading_auto,
+#                     font=("Helvetica", 10))
+#     ok_but.place(x=368, y=465)
+#
+#     global status
+#     status = Label(root, text='BGS Mode',
+#                    activebackground='#000050',
+#                    activeforeground='white',
+#                    bg='black',
+#                    fg='white',
+#                    font=("Helvetica", 11),
+#                    bd=2,
+#                    relief=SUNKEN)
+#     status.place(x=255, y=468)
+#
+#     def callback(event):
+#         funktion = inspect.stack()[0][3]
+#         logger(funktion, 1)
+#         logger(event,1)
+#         threading_auto()
+#
+#     root.bind('<Return>', callback)
+#
+#     def refresh_label(data):
+#         label_tag.config(text=data[0])
+#         label_monat.config(text=data[1])
+#         label_jahr.config(text=data[2])
+#         last_tick_label.config(text=data[3])
+#         vor_tick.config(text=data[4])
+#         nach_tick.config(text=data[5])
+#
+#     def set_language(language):
+#         if language == 1:
+#             data = ['Tag', 'Monat', 'Jahr', 'Der letzte TICK war um ', 'vor dem Tick', 'nach dem Tick']
+#             set_language_db('german')
+#         # elif language == 2:
+#         else:
+#             data = ['Day', 'Month', 'Year', 'Last BGS TICK was at ', 'before Tick', 'after Tick']
+#             set_language_db('english')
+#         refresh_label(data)
+#         # return data
+#
+#     def language_de():
+#         language = 1
+#         set_language(language)
+#
+#     def language_en():
+#         language = 2
+#         set_language(language)
+#
+#     settings_menu.add_command(label="Sprache - Deutsch", command=language_de)
+#     settings_menu.add_command(label="Language - English", command=language_en)
+#
+#
+#
+#     get_latest_version(1)
+#     root.mainloop()
 
 
 def main():
@@ -4871,7 +4900,7 @@ def main():
 
     def cp_to_clipboard():
         funktion = inspect.stack()[0][3]
-        logger(funktion, log_var)
+        logger(funktion, 5)
 
         root.clipboard_clear()
         if eddc_modul == 1:
@@ -4883,6 +4912,12 @@ def main():
             root.clipboard_append(mats_table.get_string(sortby="Materials"))
         elif eddc_modul == 2:
             root.clipboard_append(mats_table.get_string(sortby="Materials"))
+        elif eddc_modul == 9:
+            root.clipboard_append(tw_cargo_table.get_string())
+            root.clipboard_append('\n')
+            root.clipboard_append(tw_pass_table.get_string())
+            root.clipboard_append('\n')
+            root.clipboard_append(tw_rescue_table.get_string())
         root.update()
 
     clipboard = Button(bottom_grid,
