@@ -3608,8 +3608,8 @@ def ausgabe_pass():
                          time_log timestamp, 
                          missionID INTEGER, 
                          cargocount INTEGER,
-                         system TEXT, 
-                         completed INTEGER 
+                         completed INTEGER, 
+                         system TEXT 
                          )""")
 
     cursor.execute("""CREATE table IF NOT EXISTS passengermissions 
