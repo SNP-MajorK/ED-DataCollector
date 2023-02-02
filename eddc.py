@@ -4254,11 +4254,7 @@ def show_data_for_system(url):
     if check_but == 0:
         for i in edsm_systems:
             system.insert(END, ((str(i[0])) + '\t \t \t' + (str(i[1])) + '\n'))
-            temp1 = i[0]
-            temp2 = i[1]
-            print(temp1)
-            boxel_table.add_row((temp1, temp2))
-            # boxel_table.add_row((data + (str(new)), ''))
+            boxel_table.add_row(((str(i[0])), (str(i[1]))))
     else:
         system.insert(END, ('Folgende Systeme sind bei EDSM nicht bekannt !!! \n'))
         for new in new_edsm:
