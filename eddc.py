@@ -64,6 +64,7 @@ mats_table = PrettyTable(['Materials', 'Count'])
 tw_pass_table = PrettyTable(['System', 'Passengers'])
 tw_rescue_table = PrettyTable(['System', 'Rescued'])
 tw_cargo_table = PrettyTable(['System', 'Cargo'])
+thargoid_table = PrettyTable(['Interceptor', 'Kills', 'Credits'])
 
 # Set Program Path Data to random used Windows temp folder.
 with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
@@ -859,7 +860,7 @@ def threading_auto():
         for record in tree.get_children():
             tree.delete(record)
         auswertung(eddc_modul)
-    elif check_auto_refresh.get() != 0:
+    elif check_auto_refresh.get() != 0 and eddc_modul != 7 and eddc_modul != 8:
         threading.Thread(target=auto_refresh).start()
     else:
         threading.Thread(target=refreshing).start()
@@ -4288,16 +4289,38 @@ def show_data_for_system(url):
     system.insert(END, ('\n'))
 
     count = [('Wolf-Rayet', 0), ('Black Hole', 0), ('super giant', 0)]
-    for a in edsm_systems:
+    boxel_nr = []
+    for edsm_system in edsm_systems:
+        boxel_nr.append(int(str(edsm_system[0]).replace(data, '')))
+
         for index, c in enumerate(count):
-            if c[0] in a[1]:
+            if c[0] in edsm_system[1]:
                 count[index] = c[0], (c[1] + 1)
     system.insert(END, ('\n'))
+
+    boxel_nr.sort()
+    # length = (len(boxel_nr)-1)
+    last = (boxel_nr[(len(boxel_nr)-1)])
+    x = 0
+    new_edsm = []
+    while x <= last:
+        if x not in boxel_nr:
+            new_edsm.append(x)
+        x += 1
+
     for element in count:
         system.insert(END, ((str(element[0])) + ' ' + (str(element[1])) + '\n'))
     system.insert(END, ('\n'))
-    for i in edsm_systems:
-        system.insert(END, ((str(i[0])) + '\t \t \t' + (str(i[1])) + '\n'))
+
+    check_but = check_auto_refresh.get()
+
+    if check_but == 0:
+        for i in edsm_systems:
+            system.insert(END, ((str(i[0])) + '\t \t \t' + (str(i[1])) + '\n'))
+    else:
+        system.insert(END, ('Folgende Systeme sind bei EDSM nicht bekannt !!! \n'))
+        for new in new_edsm:
+            system.insert(END, (data + (str(new)) + '\n'))
 
 
 def thargoids():
@@ -4328,14 +4351,19 @@ def thargoids():
                             wert += 1
                             thargoid_rewards[count] = thargoid_rewards[count][0], thargoid_rewards[count][1], wert
     summe = 0
+    kills = 0
     for i in thargoid_rewards:
         if (i[2]) != 0:
             system.insert(END, ((str(i[0])) + '\t \t \t \t' + (str(i[2])) + '\n'))
+            thargoid_table.add_row((i[0], i[2], (i[1]*i[2])))
             summe += int(i[1]) * int(i[2])
+            kills += int(i[2])
+
     summe = format(summe, ',d')
     s = 'Summe', 0, summe
     system.insert(END, ('───────────────────────────\n'))
     system.insert(END, ((str(s[0])) + '\t \t \t' + (str(s[2])) + ' \n'))
+    thargoid_table.add_row((s[0], kills, s[2]))
     system.insert(END, ('───────────────────────────\n'))
     return
 
@@ -4592,6 +4620,7 @@ def auswertung(eddc_modul):
     cursor.execute("DROP TABLE IF EXISTS odyssey")
     cursor.execute("DROP TABLE IF EXISTS vouchers")
     system.delete(.0, END)
+    check_but.config(text='Autorefresh    ')
 
     if eddc_modul == 10:  # Test
         b_filter = Filter.get()
@@ -4607,6 +4636,8 @@ def auswertung(eddc_modul):
 
     if eddc_modul == 7:  # Boxel Analyser
         b_filter = Filter.get()
+        check_but.config(text='reverse         ')
+        # check_but.deselect()
         boxel_search(b_filter)
         status.config(text='Boxel Analyse')
         return
@@ -4618,6 +4649,7 @@ def auswertung(eddc_modul):
 
     if eddc_modul == 8:  # Sphere Analyser
         b_filter = Filter.get()
+        check_but.config(text='reverse         ')
         cube_search(b_filter)
         status.config(text='Kubus Analyse')
         return
@@ -5159,6 +5191,9 @@ def main():
             root.clipboard_append(mats_table.get_string(sortby="Materials"))
         elif eddc_modul == 2:
             root.clipboard_append(mats_table.get_string(sortby="Materials"))
+        elif eddc_modul == 6:
+            root.clipboard_append(thargoid_table.get_string())
+            root.clipboard_append('\n')
         elif eddc_modul == 9:
             root.clipboard_append(tw_cargo_table.get_string())
             root.clipboard_append('\n')
