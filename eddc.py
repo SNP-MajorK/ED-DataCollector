@@ -56,15 +56,15 @@ docked = ''
 bio_worth = []
 version_number = '0.7.1.4'
 current_version = ('Version ' + str(version_number))
+global status
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
 voucher = PrettyTable(['Voucher', 'System', 'Faction', 'Credits'])
-global status
 mats_table = PrettyTable(['Materials', 'Count'])
-
 tw_pass_table = PrettyTable(['System', 'Passengers'])
 tw_rescue_table = PrettyTable(['System', 'Rescued'])
 tw_cargo_table = PrettyTable(['System', 'Cargo'])
 thargoid_table = PrettyTable(['Interceptor', 'Kills', 'Credits'])
+boxel_table = PrettyTable(['Systemname', 'MainStar'])
 
 # Set Program Path Data to random used Windows temp folder.
 with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
@@ -834,20 +834,17 @@ def refreshing():
         time.sleep(0.4)
         system.insert(INSERT, '.')
         i += 1
-    try:
-        bgs.clear_rows()
-    except AttributeError:
-        logger('NoData in bgs.row', log_var)
-    try:
-        voucher.clear_rows()
-    except AttributeError:
-        logger('NoData in voucher.row', log_var)
-    try:
-        mats_table.clear_rows()
-    except AttributeError:
-        logger('NoData in voucher.row', log_var)
+    tables =[bgs, voucher, mats_table, tw_pass_table, tw_rescue_table, tw_cargo_table,
+             thargoid_table, boxel_table]
+    for table in tables:
+        try:
+            table.clear_rows()
+        except AttributeError:
+            logger(('NoData in ' + str(table)), 2)
+
     if eddc_modul != 4:
         auswertung(eddc_modul)
+
 
 
 def threading_auto():
@@ -4317,10 +4314,16 @@ def show_data_for_system(url):
     if check_but == 0:
         for i in edsm_systems:
             system.insert(END, ((str(i[0])) + '\t \t \t' + (str(i[1])) + '\n'))
+            temp1 = i[0]
+            temp2 = i[1]
+            print(temp1)
+            boxel_table.add_row((temp1, temp2))
+            # boxel_table.add_row((data + (str(new)), ''))
     else:
         system.insert(END, ('Folgende Systeme sind bei EDSM nicht bekannt !!! \n'))
         for new in new_edsm:
             system.insert(END, (data + (str(new)) + '\n'))
+            boxel_table.add_row((data + (str(new)), ''))
 
 
 def thargoids():
@@ -4628,7 +4631,7 @@ def auswertung(eddc_modul):
         status.config(text='Test')
         return
 
-    if eddc_modul == 11:  # Boxel Analyser
+    if eddc_modul == 11:  # Zusammenfassung
         b_filter = Filter.get()
         summary()
         status.config(text='Test')
@@ -5193,6 +5196,9 @@ def main():
             root.clipboard_append(mats_table.get_string(sortby="Materials"))
         elif eddc_modul == 6:
             root.clipboard_append(thargoid_table.get_string())
+            root.clipboard_append('\n')
+        elif eddc_modul == 7 or eddc_modul == 8:
+            root.clipboard_append(boxel_table.get_string())
             root.clipboard_append('\n')
         elif eddc_modul == 9:
             root.clipboard_append(tw_cargo_table.get_string())
