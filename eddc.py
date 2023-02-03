@@ -64,6 +64,9 @@ tw_rescue_table = PrettyTable(['System', 'Rescued'])
 tw_cargo_table = PrettyTable(['System', 'Cargo'])
 thargoid_table = PrettyTable(['Interceptor', 'Kills', 'Credits'])
 boxel_table = PrettyTable(['Systemname', 'MainStar'])
+codex_bio_table = PrettyTable(['ID', 'Datum', 'Zeit', 'CMDR', 'Bio', 'Farbe','Credits', 'System', 'Body', 'Sektor'])
+codex_stars_table = PrettyTable(['ID', 'Datum', 'Zeit', 'CMDR', 'Codex Eintrag', 'Typ','', 'System', ' ', 'Sektor'])
+system_scanner_table = PrettyTable(['ID', 'Datum', 'Zeit', 'CMDR', 'Bio', 'Farbe','Credits', 'System', 'Body', 'Sektor'])
 
 # Set Program Path Data to random used Windows temp folder.
 with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
@@ -1843,7 +1846,7 @@ def treeview_codex():
         refresh_combo()
         refresh_view()
 
-    def read_codex_data(rcd_cmdr, rcd_region):
+    def read_codex_data(rcd_cmdr, rcd_region): #Data for Codex_stars
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
 
@@ -1853,7 +1856,11 @@ def treeview_codex():
         with sqlite3.connect(database) as connection:
             cursor = connection.cursor()
 
-            sql_beginn = "SELECT * FROM codex_data WHERE "
+            b_date = begin_time.get()
+            e_date = end_time.get()
+
+            sql_beginn = "SELECT * FROM codex_data WHERE date_log >= '"+ str(b_date) \
+                         +"' and date_log <= '"+ str(e_date) +"' and "
             sql_end = "category not like '%Organic_Structures%' ORDER by date_log DESC, time_log DESC"
             part = ''
             if rcd_region:
@@ -1994,10 +2001,7 @@ def treeview_codex():
                 update = 3  # Nach Datum sortiert
             else:
                 update = 0  # Nach Biologischen Daten sortiert
-            t1 = get_time()
             data = select_filter(filter_cmdr, filter_region, filter_bdata, update)
-            t2 = get_time()
-            print('select_filter   ' + str(timedelta.total_seconds(t2 - t1)))
 
         elif normal_view == 1:
             data = missing_codex(filter_cmdr, filter_region)
@@ -2512,11 +2516,26 @@ def treeview_codex():
         global my_img, my_codex_preview
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
+
         selected_tree = codex_tree.focus()
         values = codex_tree.item(selected_tree, 'values')
+        tables = [codex_bio_table, codex_stars_table, system_scanner_table]
+        for table in tables:
+            try:
+                table.clear_rows()
+            except AttributeError:
+                logger(('NoData in ' + str(table)), 2)
+        root.clipboard_clear()
+        table = [codex_bio_table, codex_bio_table, '',codex_stars_table, system_scanner_table]
+
+        if values:
+            (table[normal_view]).add_row(values)
+            root.clipboard_append((table[normal_view]).get_string())
+            root.clipboard_append('\n')
+
         if values == ('0', 'DATE', 'TIME', 'COMMANDER', 'SPECIES', 'VARIANT', '', 'SYSTEM', 'BODY', 'REGION') \
-                or \
-                values == ('0', 'DATE', 'TIME', 'COMMANDER', 'SPECIES', 'VARIANT', '0', 'SYSTEM', 'BODY', 'In REGION '):
+            or values == ('0', 'DATE', 'TIME', 'COMMANDER', 'SPECIES', 'VARIANT', '0', 'SYSTEM', 'BODY', 'In REGION ') \
+            or values == ('0', 'Body', 'Distance', 'Count', 'Genus', 'Family', '', 'Value', 'Color', 'No Data'):
             return
         my_img = ''
         if values:
@@ -2551,7 +2570,7 @@ def treeview_codex():
                 # print("File exist")
             else:
                 logger("File not found", log_var)
-                logger(png, log_var)
+                logger(png, 2)
                 file = resource_path("images/Kein_Bild.png")
                 image = Image.open(file)
                 image = image.resize((320, 145))
