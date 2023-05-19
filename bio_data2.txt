@@ -6,8 +6,8 @@ aleoida spica;a,b,f,k,m,n,l,t,y;high metal content body,rocky body;0, 0.013;0.03
 bacterium acies;k,m,l,t,y;icy body,rocky ice body;0.001, 0.079;0.26, 0.73;thin neon;20, 140;N
 bacterium alcyoneum;o,b,a,f,g,k,m,l,t,w,d,n,;high metal content body,rocky body;0.001, 0.014;0.04, 0.37;thin ammonia;152, 177;N
 bacterium aurasus;o,b,a,f,g,k,m,l,t,w,d,n,;high metal content body,rocky body;0.001, 0.099;0.04, 0.6;thin carbon dioxide;145, 400;N
-bacterium bullaris;f,g,k,l,m,t,y;icy body;0.001, 0.099;0.03, 0.6;thin methane;65, 110;N
-bacterium bullaris;f,g,k,l,m,t,y;icy body;0.001, 0.099;0.03, 0.6;thin methane-rich;73, 130;N
+bacterium bullaris;f,g,k,l,m,t,y;rocky body,icy body;0.001, 0.099;0.03, 0.6;thin methane;65, 110;N
+bacterium bullaris;f,g,k,l,m,t,y;rocky body,icy body;0.001, 0.099;0.03, 0.6;thin methane-rich;73, 130;N
 bacterium cerbrus;o,b,a,f,g,k,m,l,t,w,d,n,;high metal content body,rocky body,rocky ice body;0.001, 0.099;0.04, 0.6;thin sulfur dioxide;130, 500;N
 bacterium cerbrus;o,b,a,f,g,k,m,l,t,w,d,n,;high metal content body,rocky body,rocky ice body;0.001, 0.099;0.04, 0.6;thin water;390, 455;N
 bacterium informem;a,black hole,f,g,herbig ae/be,k,l,m,neutron star,t,white dwarf,y;high metal content body,icy body,rocky body,rocky ice body;0.001, 0.098;0.13, 0.59;thin nitrogen;40, 150;N
