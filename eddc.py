@@ -1,6 +1,7 @@
 # Created by MajorK https://github.com/SNP-MajorK/ED-DataCollector
 
 import glob
+import snp_server
 # import inspect
 # import os
 # import sqlite3
@@ -9,6 +10,7 @@ import time
 import random
 import webbrowser
 import psycopg2
+import plotly.express as px
 from builtins import print
 from datetime import date, timedelta, datetime
 from pathlib import Path
@@ -54,7 +56,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.5.0'
+version_number = '0.7.6.0'
 current_version = ('Version ' + str(version_number))
 global status
 fully = 0
@@ -73,16 +75,6 @@ system_scanner_table = PrettyTable(['ID', 'Datum', 'Zeit', 'CMDR', 'Bio', 'Farbe
                                     'Credits', 'System', 'Body', 'Sektor'])
 eddc_user = 'anonym'
 
-# enter your server IP address/domain name
-db_host = ""  # or "domain.com"
-# database name, if you want just to connect to MySQL server, leave it empty
-db_name = ""
-# this is the user you create
-db_user = ""
-# user password
-db_pass = ""  # eddc
-
-
 def get_time():
     return datetime.now()
 
@@ -98,9 +90,7 @@ global path
 # path = ''
 db_file = Path(database)
 
-if db_file.is_file():
-    print('database found')
-else:
+if not db_file.is_file():
     print('create db')
     create_codex_entry()
     create_DB_Bio_prediction()
@@ -108,8 +98,13 @@ else:
 
 
 def create_tables():
+    funktion = inspect.stack()[0][3]
+    # print(funktion)
+
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
+
+        cursor.execute("DROP TABLE IF EXISTS odyssey")
 
         cursor.execute("CREATE TABLE IF NOT EXISTS logfiles (Name TEXT, explorer INTEGER, "
                        "bgs INTEGER, CMDR TEXT, last_line INTEGER)")
@@ -317,7 +312,7 @@ def get_latest_version(var):
         online_version = online_version.replace('.', '')
         cur_version = version_number.replace('.', '')
         if cur_version == online_version:
-            logger('no update needed', 1)
+            # logger('no update needed', 1)
             if var != 1:
                 messagebox.showinfo("No Update available", ("Already newest Version " + online_version))
         elif int(online_version) > int(cur_version):
@@ -337,7 +332,7 @@ def server_settings():
         result = cursor.fetchall()
         # print(result)
         if result != []:
-            print(result[0][1])
+            # print(result[0][1])
             if result[0][1] != ('' or None):
                 web_hock_user = result[0][1]
             else:
@@ -656,7 +651,7 @@ global data_old
 
 def start_read_logs():
     funktion = inspect.stack()[0][3]
-    logger(funktion, 2)
+    logger(funktion, log_var)
 
     global data_old
     files = file_names(2)
@@ -672,7 +667,6 @@ def start_read_logs():
         tail_file(last)
 
     data = get_data_from_DB(last)
-    print(data)
 
     logger(last, log_var)
 
@@ -690,7 +684,6 @@ def start_read_logs():
             data = None
     else:  # Wenn Data ein string ist, setze es auf None
         data = None
-    print(current_system)
     return data
 
 
@@ -740,8 +733,8 @@ def print_influence_db(filter_b):
               'voucher_type = "influence" and ' + se + ' order by 1'
         new_data = cursor.execute(sql).fetchall()
         for i in new_data:
-            sql = 'SELECT SUM(amount) FROM influence_db where voucher_type = "influence" and SystemName = "' + i[0] + \
-                  '" and faction = "' + i[1] + '" and ' + se
+            sql = 'SELECT SUM(amount) FROM influence_db where voucher_type = "influence" and SystemName = "' + str(i[0]) + \
+                  '" and faction = "' + str(i[1]) + '" and ' + se
             cursor.execute(sql)
             result = cursor.fetchall()
             data_tup = (i[0], i[1], result[0][0])
@@ -952,6 +945,170 @@ def check_tick_time(zeile, ea_tick):
     return tick_okay
 
 
+def insert_war_data(date_log, time_log, system_address, system_name, current_state, war_progress):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        cursor.execute("""CREATE TABLE IF NOT EXISTS thargoid_war_data 
+        (date_log date, 
+        time_log timestamp, 
+        system_address TEXT, 
+        system_name TEXT, 
+        current_state TEXT, 
+        war_progress REAL, 
+        upload INTEGER)""")
+
+        cursor.execute("""SELECT * FROM thargoid_war_data where date_log= ? and time_log = ? and 
+                            system_address = ? and system_name = ?""",
+                       (date_log, time_log, system_address, system_name))
+        result = cursor.fetchall()
+
+        if not result:
+            cursor.execute("INSERT INTO thargoid_war_data VALUES (?, ?, ?, ?, ?, ?, ?)",
+                       (date_log, time_log, system_address, system_name, current_state, war_progress, 0))
+
+
+def war_data_to_online_db():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+    sql = "SELECT * FROM thargoid_war_data where upload = 0"
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        select = cursor.execute(sql).fetchall()
+        if select != []:
+            for i in select:
+                date_log = i[0]
+                time_log = i[1]
+                timestamp = str(date_log) + ' ' + str(time_log)
+                system_address = i[2]
+                system_name = i[3]
+                current_state = i[4]
+                war_progress  = i[5]
+
+                with psycopg2.connect(dbname=snp_server.db_name, user=snp_server.db_user, password=snp_server.db_pass,
+                                      host=snp_server.db_host, port=5432) as psql_conn:
+                    psql = psql_conn.cursor()
+                    p_select = "SELECT * FROM thargoid_war where " \
+                               "datetime = \'" + str(timestamp) + "\' and SystemAddress = '" + str(system_address) \
+                               +"' and " "SystemName = '" + system_name + "'"
+                    psql.execute(p_select)
+                    result = psql.fetchall()
+                    if result == []:
+                        insert = 'INSERT INTO thargoid_war (datetime, SystemAddress, SystemName, current_state, ' \
+                                 'war_progress) VALUES (timestamp \'' + str(timestamp) + '\', ' + str(system_address) \
+                                 + ' , \'' + system_name + '\' , \'' + current_state +'\' , '  + str(war_progress) + ')'
+                        psql.execute(insert)
+                        psql_conn.commit()
+
+                update = "UPDATE thargoid_war_data SET upload = 1 where date_log = ? and time_log = ? " \
+                         "and system_address = ? and system_name = ? and current_state = ? and war_progress = ?"
+                cursor.execute(update, (date_log, time_log, system_address, system_name,current_state, war_progress))
+                connection.commit()
+
+
+def thargoid_war_data(data):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    war_data = data.get('ThargoidWar')
+
+    if not war_data:
+        return
+    else:
+        timestamp = data.get('timestamp')
+        log_time = (log_date(timestamp))
+        date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
+        time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
+
+        system_address = data.get('SystemAddress')
+        system_name = data.get('StarSystem')
+
+        current_state = war_data.get('CurrentState')
+        next_success_state = war_data.get('NextStateSuccess')
+        next_fail_state = war_data.get('NextStateFailure')
+        success_state = war_data.get('SuccessStateReached')
+        war_progress = war_data.get('WarProgress')
+
+        insert_war_data(date_log, time_log, system_address, system_name, current_state, war_progress)
+        return (date_log, time_log, system_address, system_name, current_state, war_progress)
+
+
+def update_thargoid_war():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+    result = []
+    with psycopg2.connect(dbname=snp_server.db_name, user=snp_server.db_user, password=snp_server.db_pass,
+                          host=snp_server.db_host, port=5432) as psql_conn:
+        psql = psql_conn.cursor()
+        select = "SELECT * FROM thargoid_war"
+        psql.execute(select)
+        result = psql.fetchall()
+    for i in result:
+        timestamp = i[0]
+        timestamp = str(timestamp).split(' ')
+
+        date_log = timestamp[0]
+        time_log = timestamp[1]
+        system_address = i[1]
+        system_name = i[2]
+        current_state = i[3]
+        war_progress = i[4]
+
+        sql = "select * from thargoid_war_data where date_log = '" + str(date_log) + "' and time_log = '" \
+                 + str(time_log) + "' and system_address = "  + str(system_address) + " and system_name = '" \
+                 + str(system_name) +"' and war_progress = " + str(war_progress)
+        with sqlite3.connect(database) as connection:
+            cursor = connection.cursor()
+            select = cursor.execute(sql).fetchall()
+            if select == []:
+                insert = "INSERT INTO thargoid_war_data VALUES ('" + str(date_log) + "', '" + str(time_log) + "', " \
+                         + str(system_address) + ", '" + str(system_name) + "', '" + str(current_state) \
+                         + "', " + str(war_progress) + ", 1)"
+                cursor.execute(insert)
+                connection.commit()
+
+
+def show_war_data():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        sql = "SELECT DISTINCT(system_name) FROM thargoid_war_data where date_log BETWEEN '2023-04-22' and '2023-05-25'"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        system.insert(END, (('Folgende Systeme sind in der Datenbank vorhanden: \n')))
+        for i in result:
+            system.insert(END, ((str(i[0]) +'\n')))
+
+
+def auswertung_thargoid_war(b_filter):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+    timestamp = []
+    war_progress = []
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+
+        sql = "SELECT date_log, time_log, war_progress FROM thargoid_war_data where " \
+              "system_name = \'" + b_filter + "\' ORDER BY 1, 2"
+        result = cursor.execute(sql).fetchall()
+        if result != []:
+            for i in result:
+                zeit = (i[0] + ' ' + i[1])
+                timestamp.append(zeit)
+                war_progress.append(i[2])
+    if timestamp != [] or war_progress != []:
+        title = "War Progress of System " + b_filter
+        fig = px.line(x = timestamp, y = war_progress, title = title, labels = {'x': 'Datum', 'y':'War Progress'},
+                      markers = True)
+        fig.show()
+    else:
+        system.insert(END, (('Das System ' + b_filter + ' wurde nicht in Datenbank gefunden: \n')))
+        system.insert(END, (('\n')))
+
+
 def multi_sell_exploration_data(journal_file):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -1126,16 +1283,16 @@ def update_eddc_db():
             timestamp = date_log + ' ' + time_log
             system_name = system_name.replace("'", "''")
             faction = faction.replace("'", "''")
-            with psycopg2.connect(dbname=db_name, user=db_user, password=db_pass, host=db_host, port=5432) as psql_conn:
+            with psycopg2.connect(dbname=snp_server.db_name, user=snp_server.db_user,
+                                  password=snp_server.db_pass, host=snp_server.db_host, port=5432) as psql_conn:
                 psql = psql_conn.cursor()
                 select = 'select * from influence_db where datetime = \'' + str(timestamp) + '\' ' \
-                                                                                             'and name = \'' + eddc_user + '\' ' \
-                                                                                                                           'and voucher_type = \'' + voucher_type + '\' ' \
-                                                                                                                                                                    'and systemname = \'' + system_name + '\' ' \
-                                                                                                                                                                                                          'and systemaddress = ' + str(
-                    system_address) + \
-                         ' and faction = \'' + faction + '\' ' \
-                                                         'and amount = ' + str(amount) + ';'
+                        'and name = \'' + eddc_user + '\' ' \
+                        'and voucher_type = \'' + voucher_type + '\' ' \
+                        'and systemname = \'' + system_name + '\' ' \
+                        'and systemaddress = ' + str(system_address) + \
+                        ' and faction = \'' + faction + '\' ' \
+                        'and amount = ' + str(amount) + ';'
                 psql.execute(select)
                 result = psql.fetchall()
                 if result == []:
@@ -1318,7 +1475,7 @@ def combat_window(data):
         data.append(new_var)
 
         combat_windows.destroy()
-        print(data)
+        # print(data)
 
     save_but = Button(combat_windows,
                       text='Speichern',
@@ -1522,15 +1679,13 @@ def logging():
 def mats_auslesen(journal_file):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-
+    mats = []
     mats_table.clear_rows()
     with open(journal_file, 'r', encoding='UTF8') as datei:
         for zeile in datei:
             search_string = 'MaterialCollected'
             if (zeile.find(search_string)) > -1:
-                # data = json.loads(zeile)
                 data = read_json(zeile)
-                # print(data)
                 state = 1
                 extract_engi_stuff(data, state)
 
@@ -1539,24 +1694,23 @@ def ody_mats_auslesen(journal_file):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
     mats_table.clear_rows()
+    test_data = []
     with open(journal_file, 'r', encoding='UTF8') as datei:
         for zeile in datei:
             search_string = 'BackpackChange'
             if (zeile.find(search_string)) > -1:
-                # data = json.loads(zeile)
                 data = read_json(zeile)
-                # print(data)
                 try:
                     for xx in data['Added']:
-                        # print(xx)
                         state = 1
                         extract_engi_stuff(xx, state)
+                        test_data.append(xx.get('Name_Localised'))
                 except KeyError:
                     state = (-1)
                     for xx in data['Removed']:
                         extract_engi_stuff(xx, state)
-                    logger('failed', 10)
-
+                        test_data.append(xx.get('Name_Localised'))
+    return test_data
 
 
 def insert_codex_db(logtime, codex_name, icd_cmdr, codex_entry, category, region, icd_system):
@@ -2129,7 +2283,7 @@ def update_bio_db(body_name, bio_scan_count, genus, species):
 
 def get_data_from_DB(file):
     funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
+    logger(funktion, 2)
 
     # current_system = system_scan(file)
     current_system = get_last_system_in_DB()
@@ -2144,7 +2298,6 @@ def get_data_from_DB(file):
         cmdr = check_cmdr(file, '')
     if select == []:
         return ' '
-    # print(select)
     new = []
     active_body = activ_planet_scan(file)
     first = []
@@ -2440,11 +2593,13 @@ def get_last_system_in_DB():
 
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
-        select = cursor.execute("""SELECT SystemName FROM flight_log where 
-                                    date_log = (SELECT date_log FROM flight_log ORDER BY date_log DESC LIMIT 1) 
+        select = cursor.execute("""SELECT SystemName FROM flight_log where
+                                    date_log = (SELECT date_log FROM flight_log ORDER BY date_log DESC LIMIT 1)
                                     ORDER BY time_log DESC LIMIT 1""").fetchall()
+    #
+    #     select = cursor.execute("""SELECT SystemName FROM flight_log where systemname = 'Hyades Sector GH-V d2-97'"""
+    #                             ).fetchall()
         if select:
-            # print(select)
             return select[0]
 
 
@@ -2463,23 +2618,22 @@ def read_data_from_last_system(file, mission_id):  # NEEDS REVIEW
                 with open(file, 'r', encoding='UTF8') as datei_2:
                     for zeile in datei_2.readlines()[::-1]:  # Read File line by line reversed!
                         data = read_json(zeile)
-
                         if data['event'] == 'MissionAccepted':
                             mission = data.get('MissionID')
                             if mission == mission_id:
                                 go = 1
-                            else:
-                                go = 0
                         if go == 1:
                             if data['event'] == 'Docked':
                                 starsystem = data['StarSystem']
+                                return starsystem
                             if data['event'] == 'Location':
                                 starsystem = data['StarSystem']
+                                return starsystem
                             if data['event'] == 'Disembark':
                                 starsystem = data['StarSystem']
+                                return starsystem
                             if data['event'] == 'FSDJump':
                                 starsystem = data['StarSystem']
-                            if starsystem != '':
                                 return starsystem
 
 
@@ -2499,15 +2653,71 @@ def send_to_discord(content):
                 }
                 post(webhook_url, data=data)
 
+def points():
 
-def test():
+    system.insert(END, (('.')))
+    time.sleep(1)
+
+
+def war_progress():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-
     t1 = get_time()
-    file = 'C:\\Users\\jiyon\\Saved Games\\Frontier Developments\\Elite Dangerous\\' \
-           'Journal.2023-05-14T200353.01.log'
-    tail_file(file)
+
+    system.insert(END, (('Daten werden eingelesen \n')))
+    filenames = file_names(2)
+    for file in filenames:
+        with open(file, 'r', encoding='UTF8') as datei:
+            for line_nr, zeile in enumerate(datei):
+                data = read_json(zeile)
+                event = data.get('event')
+                match event:
+                    case 'Location':
+                        thargoid_war_data(data)
+                    case 'FSDJump':
+                        thargoid_war_data(data)
+    system.delete('1.0', END)
+
+    war_data_to_online_db()
+    update_thargoid_war()
+    b_filter = Filter.get()
+    if b_filter:
+        auswertung_thargoid_war(b_filter)
+    show_war_data()
+    t2 = get_time()
+    print('war_progress ' + str(timedelta.total_seconds(t2 - t1)))
+
+#
+# def test():
+#     funktion = inspect.stack()[0][3]
+#     logger(funktion, log_var)
+#     t1 = get_time()
+#
+#     system.insert(END, (('Daten werden eingelesen \n')))
+#     file = file_names(2)
+#
+#     with open(file, 'r', encoding='UTF8') as datei:
+#         for line_nr, zeile in enumerate(datei):
+#             data = read_json(zeile)
+#             event = data.get('event')
+#             match event:
+#                 case 'Location':
+#                     thargoid_war_data(data)
+#                 case 'FSDJump':
+#                     thargoid_war_data(data)
+#     system.delete('1.0', END)
+#
+#     system.delete('1.0', END)
+#     war_data_to_online_db()
+#     update_thargoid_war()
+#     b_filter = Filter.get()
+#     if b_filter:
+#         auswertung_thargoid_war(b_filter)
+#     show_war_data()
+#     # if b
+    # auswertung_thargoid_war('HIP 6913')
+
+
     # state = 'explorer'
     # zeile = ('[{ "timestamp":"2021-05-21T06:36:14Z", "event":"CodexEntry", "EntryID":2370206, "Name":"$Codex_Ent_Fonticulus_02_K_Name;", "Name_Localised":"Fonticulua Campestris - Emerald", "SubCategory":"$Codex_SubCategory_Organic_Structures;", "SubCategory_Localised":"Organic structures", "Category":"$Codex_Category_Biology;", "Category_Localised":"Biological and Geological", "Region":"$Codex_RegionName_18;", "Region_Localised":"Inner Orion Spur", "System":"Synuefai JO-K c11-5", "SystemAddress":1457436693090, "NearestDestination":"", "Latitude":38.732994, "Longitude":86.740067, "IsNewEntry":true }]')
     # zdata = json.loads(zeile)
@@ -2528,6 +2738,7 @@ def treeview_codex():
         death_date_combo, sell_combo, begin_time, end_time, sorting, refresher, my_codex_preview
     refresher = 0
     sorting = IntVar()
+    # normal_view = 1
     normal_view = 4
     filter_region = ''
     filter_cmdr = ''
@@ -2688,6 +2899,7 @@ def treeview_codex():
             select = cursor.execute(sql_beginn + part + sql_end).fetchall()
             return select
 
+
     def check_planets():
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
@@ -2695,6 +2907,8 @@ def treeview_codex():
         data = []
         data = start_read_logs()
         if not data:
+            # file = [('C:\\Users\\jiyon\\Saved Games\\Frontier Developments\\Elite Dangerous\\Journal.2023-05-12T203603.01.log'),]
+            # data = get_data_from_DB(file[0])
             logger('No Data - check_planet', 2)
             data = [('Body', 'Distance', 'Count', 'Genus',
                      'Family', 'Value', 'Color', "Distance", "Region", "No Data")]
@@ -2762,6 +2976,7 @@ def treeview_codex():
     def codex_treeview():
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
+        t1 = get_time()
         summe = 0
         data = ['']
         update = 0
@@ -2773,7 +2988,10 @@ def treeview_codex():
             data = select_filter(filter_cmdr, filter_region, filter_bdata, update)
 
         elif normal_view == 1:
+            t1 = get_time()
             data = missing_codex(filter_cmdr, filter_region)
+            t2 = get_time()
+            print('missing_codex  ' + str(timedelta.total_seconds(t2 - t1)))
             update = 0
             set_main_column_and_heading()
 
@@ -2792,12 +3010,12 @@ def treeview_codex():
 
         if not data:
             data = [('DATE', 'TIME', 'COMMANDER', 'SPECIES',
-                     'VARIANT', 'SYSTEM', 'BODY', "In REGION ", 1, 1)]
+                     'VARIANT', 'SYSTEM', 'BODY', "In REGION ", 3, 3)]
             summe = 0
         elif normal_view == 2 or normal_view == 0:
             summe = 0
-            # for i in data:
-            #     summe += worth_it(i)
+            for i in data:
+                summe += worth_it(i)
 
         # creating treeview
         set_main_column_and_heading()
@@ -2822,6 +3040,7 @@ def treeview_codex():
         def treeview_insert(record, parent, count, open, tag):
             funktion = inspect.stack()[0][3]
             logger(funktion, log_var)
+            # print(record, parent, count, open, tag)
             codex_tree.insert(parent=parent, index='end', iid=str(count), open=open, text="",
                               values=(count, record[0], record[1], record[2], record[3], record[4],
                                       worth, record[5], record[6], record[7]), tags=(tag,))
@@ -2833,9 +3052,10 @@ def treeview_codex():
                     record[7])
                 tag = 'oddrow'
                 treeview_insert(record, '', count, open, tag)
-            # if normal_view == 2 or normal_view == 0:
-            #     worth = worth_it(record)
-            #     worth = format(worth, ',d')
+                break
+            if normal_view == 2 or normal_view == 0:
+                worth = worth_it(record)
+                worth = format(worth, ',d')
 
             if update == 3:
                 # Wenn nach Datum sortiert wird darf kein Subrow erstellt werden!
@@ -2860,8 +3080,8 @@ def treeview_codex():
                 # set_system_scanner_treeview()
                 new = record[8] + ' ' + record[4]
                 search = 0, 1, 2, new
-                # worth = worth_it(search)
-                # worth = format(worth, ',d')
+                worth = worth_it(search)
+                worth = format(worth, ',d')
                 if record[0] != '':  # Im Record sind Planeten Infos
                     record = (
                         record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[9], 1,
@@ -2935,7 +3155,8 @@ def treeview_codex():
             summen_text = ('Summe  - Anzahl Einträge : ' + str(count) + '     Wertigkeit :  ' + str(f"{summe:,}"))
             summe = Label(tree_frame, text=summen_text, bg='black', fg='white')
             summe.pack(fill=X, side=RIGHT)
-
+        t2 = get_time()
+        print('codex_treeview  ' + str(timedelta.total_seconds(t2 - t1)))
         # End of codex_treeview()
 
     def read_files():  # Gibt es was neues?
@@ -3004,7 +3225,7 @@ def treeview_codex():
                 refresh_view()
                 refresh_combo()
             else:
-                print('nothing new')
+                # print('nothing new')
                 full_scan()
                 time.sleep(5.0)
 
@@ -3404,14 +3625,20 @@ def missing_codex(filter_cmdr, filter_region):
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
         cmdrs = cursor.execute("SELECT DISTINCT cmdr FROM codex").fetchall()
-        # print(cmdrs)
         cursor.execute("DROP TABLE IF EXISTS codex_show")
+        cursor.execute("""CREATE table IF NOT EXISTS codex_show (
+                                cmdr TEXT,
+                                data TEXT,
+                                region TEXT)
+                                """)
         connection.commit()
 
+        bio_worth = cursor.execute("SELECT DISTINCT data FROM codex_entry").fetchall()
+
         region = RegionMapData.regions
-        # del region[0]
 
         select_show = cursor.execute("SELECT * from codex_show").fetchall()
+        # print(select_show)
         if not select_show:
             for cmdr in cmdrs:
                 for a in region:
@@ -3429,7 +3656,6 @@ def missing_codex(filter_cmdr, filter_region):
                 delete_cmdr = str(i[0])
                 delete_bio = str(cmdr_select[0][0])
                 delete_region = str(cmdr_select[0][3])
-                # Deletes Entrys from codex_show
                 cursor.execute("DELETE FROM codex_show WHERE cmdr = ? AND data = ? AND region = ?",
                                (delete_cmdr, delete_bio, delete_region))
             connection.commit()
@@ -3482,8 +3708,8 @@ def get_info_for_bio_scan(data):
         if select != []:
             body_name = select[0][0]
         else:
-            print(data)
-            print('Error body not in starmap')
+            # print(data)
+            # print('Error body not in starmap')
             select = cursor.execute("""SELECT bodyname from planet_infos where 
                                                                 systemid = ? and
                                                                 bodyID = ?""",
@@ -4343,7 +4569,9 @@ def extract_engi_stuff(data, state):
     name = data.get('Name_Localised', 0)
     if name == 0:
         name = data.get('Name', 0)
-    engi_stuff_ody_db(str(name), int(data['Count']), state)
+    count = data.get('Count',0)
+    engi_stuff_ody_db(str(name), int(count), state)
+    return (str(name), int(data['Count']), state)
 
 
 def engi_stuff_ody_db(name, count, state):
@@ -4365,6 +4593,7 @@ def engi_stuff_ody_db(name, count, state):
         cursor.execute("UPDATE odyssey SET Count = ? where Name = ?", (count, name))
         connection.commit()
     connection.close()
+
 
 
 def print_engi_stuff_db(filter_b):
@@ -4391,8 +4620,8 @@ def war_cargo(data, file):
         cargo_count = data.get('Count')
         destination = data.get('DestinationSystem')
         system_name = read_data_from_last_system(file, mission_id)
-        # print(system_name)
         update_cargo_db("", "", mission_id, cargo_count, system_name, 0)
+        return ("", "", mission_id, cargo_count, system_name, 0)
     if data.get('event') == 'MissionCompleted':
         logtime = data.get('timestamp')
         icd_log_time = (log_date(logtime))
@@ -4400,6 +4629,7 @@ def war_cargo(data, file):
         time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
         mission_id = data.get('MissionID')
         update_cargo_db(date_log, time_log, mission_id, "", "", 1)
+        return (date_log, time_log, mission_id, "", "", 1)
 
 
 def update_cargo_db(date_log, time_log, mission_id, cargo_count, destination, completed):
@@ -4439,7 +4669,10 @@ def read_passengers(data, file):
         passengercount = data.get('PassengerCount')
         faction = data.get('Faction')
         system_name = read_data_from_last_system(file, mission_id)
+        if system_name == '':
+            print(data)
         update_pass_db("", "", mission_id, passengercount, system_name, 0)
+        return ("", "", mission_id, passengercount, system_name, 0)
     if data.get('event') == 'MissionCompleted':
         logtime = data.get('timestamp')
         icd_log_time = (log_date(logtime))
@@ -4447,6 +4680,7 @@ def read_passengers(data, file):
         time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
         mission_id = data.get('MissionID')
         update_pass_db(date_log, time_log, mission_id, 0, "", 1)
+        return (date_log, time_log, mission_id, 0, "", 1)
 
 
 def update_pass_db(date_log, time_log, mission_id, passengercount, system_name, completed):
@@ -4470,7 +4704,7 @@ def update_pass_db(date_log, time_log, mission_id, passengercount, system_name, 
         connection.commit()
 
     if completed == 1:
-        cursor.execute("""UPDATE passengermissions set date_log = ?, time_log = ?, 
+        cursor.execute("""UPDATE passengermissions set date_log = ?, time_log = ?,
                        completed = ? where missionID =?""",
                        (date_log, time_log, completed, mission_id))
         connection.commit()
@@ -4485,6 +4719,7 @@ def war_rescue(data, file):
         cargo_count = data.get('Count')
         system_name = read_data_from_last_system(file, mission_id)
         update_rescue_db("", "", mission_id, cargo_count, 0, system_name)
+        return ("", "", mission_id, cargo_count, 0, system_name)
     if data.get('event') == 'MissionCompleted':
         logtime = data.get('timestamp')
         icd_log_time = (log_date(logtime))
@@ -4492,6 +4727,7 @@ def war_rescue(data, file):
         time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
         mission_id = data.get('MissionID')
         update_rescue_db(date_log, time_log, mission_id, "", 1, "")
+        return (date_log, time_log, mission_id, "", 1, "")
 
 
 def update_rescue_db(date_log, time_log, mission_id, cargo_count, completed, system_name):
@@ -4569,7 +4805,7 @@ def ausgabe_pass():
                                    (date_ed,)).fetchall()
 
     summe_cargo = []
-
+    system.delete('1.0', END)
     for i in select_cargo:
         system_se = i[0]
         anzahl = cursor.execute("SELECT SUM(cargocount) from cargomissions where system = ? and date_log = ?",
@@ -4598,7 +4834,7 @@ def ausgabe_pass():
     system.insert(END, (('Escape Pods rescued \t \t \t \n')))
     system.insert(END, ('\n'))
     gesamt_rescue = 0
-    if summe_rescue != []:
+    if summe_rescue:
         for i in summe_rescue:
             system.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
             tw_rescue_table.add_row((i[0], i[1]))
@@ -4637,6 +4873,7 @@ def war():
         logger('NoData in tw rows', 2)
 
     files = file_names(3)
+    # print(files)
     if files is not None:
         for journal_file in files:
             with open(journal_file, 'r', encoding='UTF8') as datei:
@@ -4656,8 +4893,10 @@ def menu(var):
 
     global eddc_modul
     # print(var)
-    menu_var = [0, 'BGS', 'ody_mats', 'MATS', 'CODEX', 'combat', 'thargoid', 'boxel', 'cube', 'war', 'test', 'summary']
+    menu_var = [0, 'BGS', 'ody_mats', 'MATS', 'CODEX', 'combat', 'thargoid', 'boxel', 'cube', 'war', 'test', 'summary',
+                'war_progress']
     # eddc_modul     1        2          3       4        5          6          7        8      9       10      11
+    # eddc_modul     12
 
     # Filter.delete(0, END)
     if var == menu_var[1]:
@@ -4756,7 +4995,7 @@ def read_codex_entrys():
     system.insert(END, str(postion))
     system.insert(END, '\nDaten wurden eingelesen')
     t2 = get_time()
-    print('read_codex_entrys   ' + str(timedelta.total_seconds(t2 - t1)))
+    # print('read_codex_entrys   ' + str(timedelta.total_seconds(t2 - t1)))
 
 
 def run_once_rce(filenames):
@@ -4777,10 +5016,9 @@ def run_once_rce(filenames):
         # break
 
 
-
 def combat_rank():
     funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
+    logger(funktion, 2)
     system.delete(1.0, END)
     b_target = ''
     b_total_reward = ''
@@ -4844,7 +5082,7 @@ def combat_rank():
                         if cr_success == 0:
                             ranking.append((pilot_rank, pilot_rank, 1))
                             # print(ranking)
-    # print(ranking)
+    print(ranking)
     select = set_language_db('leer')
     searcher = 1
     for a in ranking:
@@ -4903,9 +5141,12 @@ def show_data_for_system(url):
     edsm_systems = []
     ssl._create_default_https_context = ssl._create_unverified_context
     system.delete(1.0, END)
-
     with urllib.request.urlopen(url) as f:
         systems = json.load(f)
+        if systems == {} or systems == []:
+            system.delete(1.0, END)
+            system.insert(END, ('EDSM hat keine Einträge in der Nähe gefunden'))
+            return
         for i in systems:
             name = (i.get('name'))
             _type = (i.get('primaryStar').get('type'))
@@ -4916,29 +5157,20 @@ def show_data_for_system(url):
         system.insert(END, ('Es gibt ' + str(len(edsm_systems) + 1) +
                             ' Einträge zu diesem Boxel in der EDSM DB'))
     else:
-        system.insert(END, ('Es gibt ' + str(len(edsm_systems) + 1) +
+        system.insert(END, ('Es gibt ' + str(len(edsm_systems)) +
                             ' Einträge in einem Kubus von ' + str(input[1]) + ' ly auf EDSM'))
     system.insert(END, ('\n'))
 
     count = [('Wolf-Rayet', 0), ('Black Hole', 0), ('super giant', 0)]
     boxel_nr = []
-
     for edsm_system in edsm_systems:
-        boxel_nr.append(int(str(edsm_system[0]).replace(data, '')))
+        if eddc_modul == 7:
+            boxel_nr.append(int(str(edsm_system[0]).replace(data, '')))
         for index, c in enumerate(count):
             if c[0] in edsm_system[1]:
                 count[index] = c[0], (c[1] + 1)
     system.insert(END, ('\n'))
 
-    boxel_nr.sort()
-    # length = (len(boxel_nr)-1)
-    last = (boxel_nr[(len(boxel_nr) - 1)])
-    x = 0
-    new_edsm = []
-    while x <= last:
-        if x not in boxel_nr:
-            new_edsm.append(x)
-        x += 1
 
     for element in count:
         system.insert(END, ((str(element[0])) + ' ' + (str(element[1])) + '\n'))
@@ -4951,10 +5183,23 @@ def show_data_for_system(url):
             system.insert(END, ((str(i[0])) + '\t \t \t' + (str(i[1])) + '\n'))
             boxel_table.add_row(((str(i[0])), (str(i[1]))))
     else:
+        if boxel_nr == []:
+            system.delete(1.0, END)
+            system.insert(END, ('EDSM hat keine Einträge in der Nähe gefunden'))
+            return
+        boxel_nr.sort()
+        last = (boxel_nr[(len(boxel_nr) - 1)])
+        x = 0
+        new_edsm = []
+        while x <= last:
+            if x not in boxel_nr:
+                new_edsm.append(x)
+            x += 1
         system.insert(END, ('Folgende Systeme sind bei EDSM nicht bekannt !!! \n'))
         for new in new_edsm:
             system.insert(END, (data + (str(new)) + '\n'))
             boxel_table.add_row((data + (str(new)), ''))
+    return 1
 
 
 def thargoids():
@@ -5418,6 +5663,8 @@ def summary():
 def auswertung(eddc_modul):
     funktion = inspect.stack()[0][3] + ' eddc_modul ' + str(eddc_modul)
     logger(funktion, log_var)
+
+
     create_tables()
     # system.delete(.0, END)
     check_but.config(text='Autorefresh    ')
@@ -5436,6 +5683,16 @@ def auswertung(eddc_modul):
         summary()
         status.config(text='Test')
         return
+
+    if eddc_modul == 12:  # Test
+        b_filter = Filter.get()
+        t1 = get_time()
+        war_progress()
+        t2 = get_time()
+        print('test   ' + str(timedelta.total_seconds(t2 - t1)))
+        status.config(text='War Progress')
+        return
+
 
     if eddc_modul == 7:  # Boxel Analyser
         b_filter = Filter.get()
@@ -5561,6 +5818,7 @@ def auswertung(eddc_modul):
             b_filter = Filter.get()
             data = print_engi_stuff_db(b_filter)
             summe = 0
+            system.delete(.0, END)
             for i in data:
                 system.insert(END, ((str(i[0]).capitalize()) + '\t \t \t \t \t' + (str(i[1])) + '\n'))
                 mats_table.add_row((i[0], i[1]))
@@ -5573,12 +5831,12 @@ def auswertung(eddc_modul):
         elif eddc_modul == 2:  # Collected Odyssey on Foot Material
             status.config(text='Odyssey MATS')
             star_systems_db(filenames)
-            logger('ody_mats == 1', 2)
             for filename in filenames:
                 ody_mats_auslesen(filename)
             b_filter = Filter.get()
             data = print_engi_stuff_db(b_filter)
             summe = 0
+            system.delete(.0, END)
             for i in data:
                 system.insert(END, ((str(i[0])) + '\t \t \t \t' + (str(i[1])) + '\n'))
                 mats_table.add_row((i[0], i[1]))
@@ -5590,11 +5848,8 @@ def auswertung(eddc_modul):
 
         elif eddc_modul == 4:  # Codex Treeview
             status.config(text='Codex')
-            print('Test')
             run_once_rce(filenames)
-            # last_log_file = select_last_log_file()[0]
-            # if last_log_file != '0':
-            #     treeview_codex()
+
         elif eddc_modul == 5:  # Kampfrang
             status.config(text='Combat Rank')
             combat_rank()
@@ -5677,7 +5932,7 @@ def db_version():  # Programmstand und DB Stand werden mit einander verglichen
             update_db(item[0][0])
             # connection.commit()
         elif item[0][0] == version_number:
-            logger('Same Version', 2)
+            logger('Same Version', log_var)
 
 
 def delete_all_tables():
@@ -5743,6 +5998,7 @@ def main():
     my_menu = Menu(root)
     root.config(menu=my_menu)
 
+    # Menü Leiste
     file_menu = Menu(my_menu, tearoff=False)
     my_menu.add_cascade(label="Statistik", menu=file_menu)
     file_menu.add_command(label="BGS", command=lambda: menu('BGS'))
@@ -5751,6 +6007,7 @@ def main():
     file_menu.add_command(label="Combat Rank", command=lambda: menu('combat'))
     file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
     file_menu.add_command(label="Beitrag zum Krieg", command=lambda: menu('war'))
+    file_menu.add_command(label="War Progress", command=lambda: menu('war_progress'))
     # file_menu.add_command(label="Test", command=lambda: menu('test'))
     file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
     file_menu.add_command(label="Exit", command=root.quit)
