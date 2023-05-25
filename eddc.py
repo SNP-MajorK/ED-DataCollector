@@ -56,7 +56,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.6.0'
+version_number = '0.7.6.1'
 current_version = ('Version ' + str(version_number))
 global status
 fully = 0
@@ -1029,7 +1029,9 @@ def thargoid_war_data(data):
         next_fail_state = war_data.get('NextStateFailure')
         success_state = war_data.get('SuccessStateReached')
         war_progress = war_data.get('WarProgress')
-
+        if war_progress == 0:
+            return
+        war_progress = war_progress * 100
         insert_war_data(date_log, time_log, system_address, system_name, current_state, war_progress)
         return (date_log, time_log, system_address, system_name, current_state, war_progress)
 
@@ -2667,6 +2669,7 @@ def war_progress():
     system.insert(END, (('Daten werden eingelesen \n')))
     filenames = file_names(2)
     for file in filenames:
+        print(file)
         with open(file, 'r', encoding='UTF8') as datei:
             for line_nr, zeile in enumerate(datei):
                 data = read_json(zeile)
