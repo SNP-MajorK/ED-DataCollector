@@ -2,9 +2,9 @@
 
 import glob
 import snp_server
-# import inspect
-# import os
-# import sqlite3
+import inspect
+import os
+import sqlite3
 import threading
 import time
 import random
@@ -25,8 +25,8 @@ import urllib.request
 from PIL import ImageTk, Image, ImageDraw, ImageFont
 from prettytable import PrettyTable
 from urllib.parse import urlparse
-# import RegionMapData
-# from RegionMap import *
+import RegionMapData
+from RegionMap import *
 from bio_data import *
 
 filter_name = ''
@@ -2700,7 +2700,6 @@ def points():
 def war_progress():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    t1 = get_time()
 
     system.insert(END, (('Daten werden eingelesen \n')))
     filenames = file_names(2)
@@ -2723,10 +2722,8 @@ def war_progress():
     if b_filter:
         auswertung_thargoid_war(b_filter)
     show_war_data()
-    t2 = get_time()
-    print('war_progress ' + str(timedelta.total_seconds(t2 - t1)))
 
-#
+
 def test():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -2769,7 +2766,7 @@ def test():
     system.insert(END, ('───────────────────────────\n'))
     t2 = get_time()
     print('test ' + str(timedelta.total_seconds(t2 - t1)))
-    # return
+    return
 
 
 def treeview_codex():
@@ -5247,11 +5244,9 @@ def show_data_for_system(url):
 def thargoids():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    t1 = get_time()
     system.delete(1.0, END)
     b_filter = Filter.get()
     filenames = file_names(0)
-    # print(filenames)
     thargoid_rewards = [('Thargoid Scout 1', 65000, 0),
                         ('Thargoid Scout 2', 75000, 0),
                         ('Thargoid Cyclops', 6500000, 0),
@@ -5264,12 +5259,9 @@ def thargoids():
         with open(filename, 'r', encoding='UTF8') as datei:
             for zeile in datei:
                 search_string = 'VictimFaction":"$faction_Thargoid'
-                # search_string2 = '"event":"FactionKillBond"'
-                # if (zeile.find(search_string2)) > -1 and (zeile.find(search_string)) > -1:
                 if (zeile.find(search_string)) > -1:
                     data = read_json(zeile)
                     reward = data['Reward']
-                    # print(reward)
                     for count, i in enumerate(thargoid_rewards):
                         if (i[1]) == reward:
                             wert = int(thargoid_rewards[count][2])
@@ -5281,12 +5273,10 @@ def thargoids():
             system.insert(END, ((str(i[0])) + '\t \t \t \t' + (str(i[2])) + '\n'))
             summe += int(i[1]) * int(i[2])
     summe = format(summe, ',d')
-    s = 'Summe', 0, summe
+    s = 'Summe', summe
     system.insert(END, ('───────────────────────────\n'))
-    system.insert(END, ((str(s[0])) + '\t \t \t' + (str(s[2])) + ' \n'))
+    system.insert(END, ((str(s[0])) + '\t \t \t' + (str(s[1])) + ' \n'))
     system.insert(END, ('───────────────────────────\n'))
-    t2 = get_time()
-    logger('thargoids ' + str(timedelta.total_seconds(t2 - t1)), log_var)
     return
 
 
@@ -5730,10 +5720,9 @@ def auswertung(eddc_modul):
         t1 = get_time()
         war_progress()
         t2 = get_time()
-        print('test   ' + str(timedelta.total_seconds(t2 - t1)))
+        print('war_progress   ' + str(timedelta.total_seconds(t2 - t1)))
         status.config(text='War Progress')
         return
-
 
     if eddc_modul == 7:  # Boxel Analyser
         b_filter = Filter.get()
@@ -6049,7 +6038,7 @@ def main():
     file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
     file_menu.add_command(label="Beitrag zum Krieg", command=lambda: menu('war'))
     file_menu.add_command(label="War Progress", command=lambda: menu('war_progress'))
-    file_menu.add_command(label="Test", command=lambda: menu('test'))
+    # file_menu.add_command(label="Test", command=lambda: menu('test'))
     file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
     file_menu.add_command(label="Exit", command=root.quit)
 
