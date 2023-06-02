@@ -56,7 +56,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.7.6.1'
+version_number = '0.7.6.2'
 current_version = ('Version ' + str(version_number))
 global status
 fully = 0
@@ -105,6 +105,15 @@ def create_tables():
         cursor = connection.cursor()
 
         cursor.execute("DROP TABLE IF EXISTS odyssey")
+
+        cursor.execute("""CREATE TABLE IF NOT EXISTS thargoid_war_data 
+                                (date_log date, 
+                                time_log timestamp, 
+                                system_address TEXT, 
+                                system_name TEXT, 
+                                current_state TEXT, 
+                                war_progress REAL, 
+                                upload INTEGER)""")
 
         cursor.execute("CREATE TABLE IF NOT EXISTS logfiles (Name TEXT, explorer INTEGER, "
                        "bgs INTEGER, CMDR TEXT, last_line INTEGER)")
@@ -972,10 +981,21 @@ def insert_war_data(date_log, time_log, system_address, system_name, current_sta
 def war_data_to_online_db():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
+
+
     sql = "SELECT * FROM thargoid_war_data where upload = 0"
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
         select = cursor.execute(sql).fetchall()
+
+        cursor.execute("""CREATE TABLE IF NOT EXISTS thargoid_war_data 
+                                (date_log date, 
+                                time_log timestamp, 
+                                system_address TEXT, 
+                                system_name TEXT, 
+                                current_state TEXT, 
+                                war_progress REAL, 
+                                upload INTEGER)""")
         if select != []:
             for i in select:
                 date_log = i[0]
@@ -1005,6 +1025,7 @@ def war_data_to_online_db():
                          "and system_address = ? and system_name = ? and current_state = ? and war_progress = ?"
                 cursor.execute(update, (date_log, time_log, system_address, system_name,current_state, war_progress))
                 connection.commit()
+
 
 
 def thargoid_war_data(data):
@@ -1077,12 +1098,27 @@ def show_war_data():
 
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
-        sql = "SELECT DISTINCT(system_name) FROM thargoid_war_data where date_log BETWEEN '2023-04-22' and '2023-05-25'"
+        oneweek = str(datetime.now() - timedelta(days=7))[0:10]
+        today = str(datetime.now())[0:10]
+        sql = "SELECT system_name, date_log, time_log, war_progress  FROM thargoid_war_data where date_log BETWEEN '" \
+              + oneweek + "' and '"+ today +"' ORDER by 2 DESC, 3 DESC"
         cursor.execute(sql)
         result = cursor.fetchall()
-        system.insert(END, (('Folgende Systeme sind in der Datenbank vorhanden: \n')))
+        systems = []
+        dates = []
+        progress = []
+        system.insert(END, (('Folgende Systeme sind in der Datenbank vorhanden: \n\n')))
         for i in result:
-            system.insert(END, ((str(i[0]) +'\n')))
+            if i[0] not in systems:
+                systems.append(i[0])
+                wp_date = str(i[1]).split('-')
+                new_date = wp_date[2] + '.' + wp_date[1] + '.' + wp_date[0]
+                dates.append(new_date)
+                prog = str(i[3]).split('.')
+                progress.append(prog[0])
+        for count, s in enumerate(systems):
+            system.insert(END, ((str(systems[count]) + '\t\t\t\t '+ str(dates[count]) + '\t\t '
+                                 + str(progress[count]) + '\n')))
 
 
 def auswertung_thargoid_war(b_filter):
@@ -2691,46 +2727,49 @@ def war_progress():
     print('war_progress ' + str(timedelta.total_seconds(t2 - t1)))
 
 #
-# def test():
-#     funktion = inspect.stack()[0][3]
-#     logger(funktion, log_var)
-#     t1 = get_time()
-#
-#     system.insert(END, (('Daten werden eingelesen \n')))
-#     file = file_names(2)
-#
-#     with open(file, 'r', encoding='UTF8') as datei:
-#         for line_nr, zeile in enumerate(datei):
-#             data = read_json(zeile)
-#             event = data.get('event')
-#             match event:
-#                 case 'Location':
-#                     thargoid_war_data(data)
-#                 case 'FSDJump':
-#                     thargoid_war_data(data)
-#     system.delete('1.0', END)
-#
-#     system.delete('1.0', END)
-#     war_data_to_online_db()
-#     update_thargoid_war()
-#     b_filter = Filter.get()
-#     if b_filter:
-#         auswertung_thargoid_war(b_filter)
-#     show_war_data()
-#     # if b
-    # auswertung_thargoid_war('HIP 6913')
+def test():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+    t1 = get_time()
+    system.delete(1.0, END)
+    b_filter = Filter.get()
+    filenames = file_names(0)
+    # print(filenames)
+    thargoid_rewards = [('Thargoid Scout 1', 65000, 0),
+                        ('Thargoid Scout 2', 75000, 0),
+                        ('Thargoid Cyclops', 6500000, 0),
+                        ('Thargoid Basilisk', 20000000, 0),
+                        ('Thargoid Medusa', 34000000, 0),
+                        ('Thargoid Orthrus', 40000000, 0),
+                        ('Thargoid Hydra', 50000000, 0)]
 
-
-    # state = 'explorer'
-    # zeile = ('[{ "timestamp":"2021-05-21T06:36:14Z", "event":"CodexEntry", "EntryID":2370206, "Name":"$Codex_Ent_Fonticulus_02_K_Name;", "Name_Localised":"Fonticulua Campestris - Emerald", "SubCategory":"$Codex_SubCategory_Organic_Structures;", "SubCategory_Localised":"Organic structures", "Category":"$Codex_Category_Biology;", "Category_Localised":"Biological and Geological", "Region":"$Codex_RegionName_18;", "Region_Localised":"Inner Orion Spur", "System":"Synuefai JO-K c11-5", "SystemAddress":1457436693090, "NearestDestination":"", "Latitude":38.732994, "Longitude":86.740067, "IsNewEntry":true }]')
-    # zdata = json.loads(zeile)
-    # print(zdata)
-    # for data in zdata:
-    #     logtime = data.get('timestamp')
-    #     system_address = data.get('SystemAddress')
-    #     print(get_body_from_sc(logtime, system_address, file))
+    for filename in filenames:
+        with open(filename, 'r', encoding='UTF8') as datei:
+            for zeile in datei:
+                search_string = 'VictimFaction":"$faction_Thargoid'
+                # search_string2 = '"event":"FactionKillBond"'
+                if (zeile.find(search_string)) > -1:
+                    data = read_json(zeile)
+                    reward = data['Reward']
+                    # print(reward)
+                    for count, i in enumerate(thargoid_rewards):
+                        if (i[1]) == reward:
+                            wert = int(thargoid_rewards[count][2])
+                            wert += 1
+                            thargoid_rewards[count] = thargoid_rewards[count][0], thargoid_rewards[count][1], wert
+    summe = 0
+    for i in thargoid_rewards:
+        if (i[2]) != 0:
+            system.insert(END, ((str(i[0])) + '\t \t \t \t' + (str(i[2])) + '\n'))
+            summe += int(i[1]) * int(i[2])
+    summe = format(summe, ',d')
+    s = 'Summe', 0, summe
+    system.insert(END, ('───────────────────────────\n'))
+    system.insert(END, ((str(s[0])) + '\t \t \t' + (str(s[2])) + ' \n'))
+    system.insert(END, ('───────────────────────────\n'))
     t2 = get_time()
-    print('tail_file ' + str(timedelta.total_seconds(t2 - t1)))
+    print('test ' + str(timedelta.total_seconds(t2 - t1)))
+    # return
 
 
 def treeview_codex():
@@ -5208,17 +5247,13 @@ def show_data_for_system(url):
 def thargoids():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
+    t1 = get_time()
     system.delete(1.0, END)
     b_filter = Filter.get()
     filenames = file_names(0)
     # print(filenames)
     thargoid_rewards = [('Thargoid Scout 1', 65000, 0),
                         ('Thargoid Scout 2', 75000, 0),
-                        ('Thargoid Scout old', 80000, 0),
-                        ('Thargoid Cyclops old', 8000000, 0),
-                        ('Thargoid Basilisk old', 24000000, 0),
-                        ('Thargoid Medusa old', 40000000, 0),
-                        ('Thargoid Hydra old', 60000000, 0),
                         ('Thargoid Cyclops', 6500000, 0),
                         ('Thargoid Basilisk', 20000000, 0),
                         ('Thargoid Medusa', 34000000, 0),
@@ -5228,9 +5263,10 @@ def thargoids():
     for filename in filenames:
         with open(filename, 'r', encoding='UTF8') as datei:
             for zeile in datei:
-                search_string = 'VictimFaction_Localised":"Thargoids'
-                search_string2 = '"event":"FactionKillBond"'
-                if (zeile.find(search_string2)) > -1 and (zeile.find(search_string)) > -1:
+                search_string = 'VictimFaction":"$faction_Thargoid'
+                # search_string2 = '"event":"FactionKillBond"'
+                # if (zeile.find(search_string2)) > -1 and (zeile.find(search_string)) > -1:
+                if (zeile.find(search_string)) > -1:
                     data = read_json(zeile)
                     reward = data['Reward']
                     # print(reward)
@@ -5249,6 +5285,8 @@ def thargoids():
     system.insert(END, ('───────────────────────────\n'))
     system.insert(END, ((str(s[0])) + '\t \t \t' + (str(s[2])) + ' \n'))
     system.insert(END, ('───────────────────────────\n'))
+    t2 = get_time()
+    logger('thargoids ' + str(timedelta.total_seconds(t2 - t1)), log_var)
     return
 
 
@@ -6011,7 +6049,7 @@ def main():
     file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
     file_menu.add_command(label="Beitrag zum Krieg", command=lambda: menu('war'))
     file_menu.add_command(label="War Progress", command=lambda: menu('war_progress'))
-    # file_menu.add_command(label="Test", command=lambda: menu('test'))
+    file_menu.add_command(label="Test", command=lambda: menu('test'))
     file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
     file_menu.add_command(label="Exit", command=root.quit)
 
