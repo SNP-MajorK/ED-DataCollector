@@ -57,7 +57,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.8.0.0'
+version_number = '0.8.0.1'
 current_version = ('Version ' + str(version_number))
 global status
 # data_old = StringVar()
@@ -806,10 +806,10 @@ def print_influence_db(filter_b):
 def einfluss_auslesen(journal_file):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    tick_hour = tick_hour_label.get()
-    tick_minute = tick_minute_label.get()
-    tick_time[3] = tick_hour[0:2]
-    tick_time[4] = tick_minute[0:2]
+    # tick_hour = tick_hour_label.get()
+    # tick_minute = tick_minute_label.get()
+    # tick_time[3] = tick_hour[0:2]
+    # tick_time[4] = tick_minute[0:2]
     t1 = get_time()
     line = 0
     with open(journal_file, 'r', encoding='UTF8') as datei:
@@ -977,6 +977,7 @@ def check_tick_time(zeile, ea_tick):
     timestamp = str(data['timestamp'])
     ctt_log_time = log_date(timestamp)
     tick_okay = False
+    tick_time = last_tick()
     log_time_new = datetime(int(ctt_log_time[0]), int(ctt_log_time[1]), int(ctt_log_time[2]),
                             int(ctt_log_time[3]), int(ctt_log_time[4]))
     tick_time_new = datetime(int(jahr2), int(monat2), int(tag2), int(tick_time[3]), int(tick_time[4]))
