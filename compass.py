@@ -145,7 +145,6 @@ def create_popup(message, timeout=10000):
 
     if popup_open:
         popup.after(5000, lambda: refresh_popup(compas_label))
-
         def on_closing():
             global popup_open
             popup_open = False
