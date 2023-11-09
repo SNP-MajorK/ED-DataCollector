@@ -1,0 +1,120 @@
+shieldpatternanalysis;Aberrant Shield Pattern Analysis;Abweichende Schildeinsatz-Analysen;Encoded;4
+compactemissionsdata;Abnormal Compact Emissions Data;Anormale kompakte Emissionsdaten;Encoded;5
+adaptiveencryptors;Adaptive Encryptors Capture;Adaptive Verschlüsselungserfassung;Encoded;5
+bulkscandata;Anomalous Bulk Scan Data;Anormale Massen-Scan-Daten;Encoded;1
+fsdtelemetry;Anomalous FSD Telemetry;Anormale FSA-Telemetrie;Encoded;2
+antimony;Antimony;Antimon;Raw;4
+arsenic;Arsenic;Arsen;Raw;2
+disruptedwakeechoes;Atypical Disrupted Wake Echoes;Atypische FSA-Stör-Aufzeichnungen;Encoded;1
+encryptionarchives;Atypical Encryption Archives;Atypische Verschlüsselungsarchive;Encoded;4
+basicconductors;Basic Conductors;Einfache Leiter;Manufactured;1
+biotechconductors;Biotech Conductors;Biotech-Leiter;Manufactured;5
+boron;Boron;Bor;Raw;3
+cadmium;Cadmium;Kadmium;Raw;3
+carbon;Carbon;Kohlenstoff;Raw;1
+chemicaldistillery;Chemical Distillery;Chemiedestillerie;Manufactured;3
+chemicalmanipulators;Chemical Manipulators;Chemische Manipulatoren;Manufactured;4
+chemicalprocessors;Chemical Processors;Chemische Prozessoren;Manufactured;2
+chemicalstorageunits;Chemical Storage Units;Lagerungseinheiten für Chemiestoffe;Manufactured;1
+chromium;Chromium;Chrom;Raw;2
+scandatabanks;Classified Scan Databanks;Scan-Datenbanken unter Verschluss;Encoded;3
+classifiedscandata;Classified Scan Fragment;Geheimes Scan-Fragment;Encoded;5
+compactcomposites;Compact Composites;Kompaktkomposite;Manufactured;1
+compoundshielding;Compound Shielding;Verbundschilde;Manufactured;4
+conductiveceramics;Conductive Ceramics;Elektrokeramiken;Manufactured;3
+conductivecomponents;Conductive Components;Leitfähige Komponenten;Manufactured;2
+conductivepolymers;Conductive Polymers;Leitfähige Polymere;Manufactured;4
+configurablecomponents;Configurable Components;Konfigurierbare Komponenten;Manufactured;4
+fedcorecomposites;Core Dynamics Composites;Core Dynamics Kompositwerkstoffe;Manufactured;5
+industrialfirmware;Cracked Industrial Firmware;Gecrackte Industrie-Firmware;Encoded;3
+crystalshards;Crystal Shards;Kristallscherben;Manufactured;1
+dataminedwake;Datamined Wake Exceptions;FSA-Daten-Cache-Ausnahmen;Encoded;5
+decodedemissiondata;Decoded Emission Data;Entschlüsselte Emissionsdaten;Encoded;4
+shieldcyclerecordings;Distorted Shield Cycle Recordings;Gestörte Schildzyklus-Aufzeichnungen;Encoded;1
+encodedscandata;Divergent Scan Data;Divergente Scandaten;Encoded;4
+hyperspacetrajectories;Eccentric Hyperspace Trajectories;Exzentrische Hyperraum-Routen;Encoded;4
+electrochemicalarrays;Electrochemical Arrays;Elektrochemische Detektoren;Manufactured;3
+scrambledemissiondata;Exceptional Scrambled Emission Data;Außergewöhnliche verschlüsselte Emissionsdaten;Encoded;1
+exquisitefocuscrystals;Exquisite Focus Crystals;Erlesene Laserkristalle;Manufactured;5
+filamentcomposites;Filament Composites;Filament-Komposite;Manufactured;2
+uncutfocuscrystals;Flawed Focus Crystals;Fehlerhafte Fokuskristalle;Manufactured;2
+focuscrystals;Focus Crystals;Laserkristalle;Manufactured;3
+galvanisingalloys;Galvanising Alloys;Galvanisierende Legierungen;Manufactured;2
+germanium;Germanium;Germanium;Raw;2
+gridresistors;Grid Resistors;Gitterwiderstände;Manufactured;1
+guardian_moduleblueprint;Guardian Module Blueprint Fragment;Guardian-Modulbauplansegment;Encoded;4
+guardian_vesselblueprint;Guardian Vessel Blueprint Fragment;Guardian-Schiffsbauplansegment;Encoded;4
+guardian_weaponblueprint;Guardian Weapon Blueprint Fragment;Guardian-Waffenbauplansegment;Encoded;4
+guardian_powercell;Guardian Power Cell;Guardian-Energiezelle;Manufactured;1
+guardian_powerconduit;Guardian Power Conduit;Guardian-Energieleiter;Manufactured;2
+guardian_techcomponent;Guardian Technology Component;Guardian-Technologiekomponenten;Manufactured;3
+guardian_sentinel_weaponparts;Guardian Sentinel Weapon Parts;Guardian-Wache-Waffenteile;Manufactured;3
+guardian_sentinel_wreckagecomponents;Guardian Wreckage Components;Guardian-Wrackteilkomponenten;Manufactured;1
+heatconductionwiring;Heat Conduction Wiring;Wärmeleitungsverdrahtung;Manufactured;1
+heatdispersionplate;Heat Dispersion Plate;Wärmeverteilungsplatte;Manufactured;2
+heatexchangers;Heat Exchangers;Wärmeaustauscher;Manufactured;3
+heatresistantceramics;Heat Resistant Ceramics;Hitzefeste Keramik;Manufactured;2
+heatvanes;Heat Vanes;Wärmeleitbleche;Manufactured;4
+highdensitycomposites;High Density Composites;Komposite hoher Dichte;Manufactured;3
+hybridcapacitors;Hybrid Capacitors;Hybridkondensatoren;Manufactured;2
+imperialshielding;Imperial Shielding;Imperiale Schilde;Manufactured;5
+improvisedcomponents;Improvised Components;Behelfskomponenten;Manufactured;5
+shieldsoakanalysis;Inconsistent Shield Soak Analysis;Inkonsistente Schildleistungsanalysen;Encoded;2
+iron;Iron;Eisen;Raw;1
+archivedemissiondata;Irregular Emission Data;Irreguläre Emissionsdaten;Encoded;2
+lead;Lead;Blei;Raw;1
+manganese;Manganese;Mangan;Raw;2
+mechanicalcomponents;Mechanical Components;Mechanische Komponenten;Manufactured;3
+mechanicalequipment;Mechanical Equipment;Mechanisches Equipment;Manufactured;2
+mechanicalscrap;Mechanical Scrap;Mechanischer Schrott;Manufactured;1
+mercury;Mercury;Quecksilber;Raw;3
+militarygradealloys;Military Grade Alloys;Militärqualitätslegierungen;Manufactured;5
+militarysupercapacitors;Military Supercapacitors;Militärische Superkondensatoren;Manufactured;5
+consumerfirmware;Modified Consumer Firmware;Modifizierte Consumer-Firmware;Encoded;2
+embeddedfirmware;Modified Embedded Firmware;Modifizierte integrierte Firmware;Encoded;5
+molybdenum;Molybdenum;Molibdän;Raw;3
+nickel;Nickel;Nickel;Raw;1
+niobium;Niobium;Niobium;Raw;3
+symmetrickeys;Open Symmetric Keys;Offene symmetrische Schlüssel;Encoded;3
+ancientbiologicaldata;Pattern Alpha Obelisk Data (Guardian);Alpha-Muster-Obeliskendaten;Encoded;3
+ancientculturaldata;Pattern Beta Obelisk Data (Guardian);Beta-Muster-Obeliskendaten;Encoded;2
+ancientlanguagedata;Pattern Delta Obelisk Data (Guardian);Delta-Muster-Obeliskendaten;Encoded;4
+ancienttechnologicaldata;Pattern Epsilon Obelisk Data (Guardian);Epsilon-Muster-Obeliskendaten;Encoded;4
+shieldfrequencydata;Peculiar Shield Frequency Data;Verdächtige Schildfrequenz-Daten;Encoded;5
+pharmaceuticalisolators;Pharmaceutical Isolators;Pharmazeutische Isolatoren;Manufactured;5
+phasealloys;Phase Alloys;Phasenlegierungen;Manufactured;3
+phosphorus;Phosphorus;Phosphor;Raw;1
+polonium;Polonium;Polonium;Raw;4
+polymercapacitors;Polymer Capacitors;Polymerkondensatoren;Manufactured;4
+precipitatedalloys;Precipitated Alloys;Gehärtete Legierungen;Manufactured;3
+fedproprietarycomposites;Proprietary Composites;Kompositwerkstoffe;Manufactured;4
+protoheatradiators;Proto Heat Radiators;Proto-Wärmestrahler;Manufactured;5
+protolightalloys;Proto Light Alloys;Leichte Legierungen (Proto);Manufactured;4
+protoradiolicalloys;Proto Radiolic Alloys;Radiologische Legierungen (Proto);Manufactured;5
+refinedfocuscrystals;Refined Focus Crystals;Raffinierte Laserkristalle;Manufactured;4
+rhenium;Rhenium;Rhenium;Raw;1
+ruthenium;Ruthenium;Ruthenium;Raw;4
+salvagedalloys;Salvaged Alloys;Geborgene Legierungen;Manufactured;1
+securityfirmware;Security Firmware Patch;Sicherheits-Firmware-Patch;Encoded;4
+selenium;Selenium;Selen;Raw;4
+shieldemitters;Shield Emitters;Schildemitter;Manufactured;2
+shieldingsensors;Shielding Sensors;Schildsensoren;Manufactured;3
+legacyfirmware;Specialised Legacy Firmware;Spezial-Legacy-Firmware;Encoded;1
+wakesolutions;Strange Wake Solutions;Seltsame FSA-Zielorte;Encoded;3
+sulphur;Sulphur;Schwefel;Raw;1
+encryptioncodes;Tagged Encryption Codes;Getaggte Verschlüsselungscodes;Encoded;2
+technetium;Technetium;Technetium;Raw;4
+tellurium;Tellurium;Tellur;Raw;4
+temperedalloys;Tempered Alloys;Vergütete Legierungen;Manufactured;1
+thermicalloys;Thermic Alloys;Thermische Legierungen;Manufactured;4
+tin;Tin;Zinn;Raw;3
+tungsten;Tungsten;Wolfram;Raw;3
+emissiondata;Unexpected Emission Data;Unerwartete Emissionsdaten;Encoded;3
+scanarchives;Unidentified Scan Archives;Unidentifizierte Scan-Archive;Encoded;2
+shielddensityreports;Untypical Shield Scans;Untypische Schildscans;Encoded;3
+encryptedfiles;Unusual Encrypted Files;Ungewöhnliche verschlüsselte Files;Encoded;1
+vanadium;Vanadium;Vanadium;Raw;2
+wornshieldemitters;Worn Shield Emitters;Gebrauchte Schildemitter;Manufactured;1
+yttrium;Yttrium;Yttrium;Raw;4
+zinc;Zinc;Zink;Raw;2
+zirconium;Zirconium;Zirconium;Raw;2
