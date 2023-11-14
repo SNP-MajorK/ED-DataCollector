@@ -20,7 +20,6 @@ from tkinter import messagebox
 from tkinter import ttk
 import customtkinter
 from tkcalendar import DateEntry
-# from CTkTable import *
 from urllib.parse import urlparse
 from winreg import *
 
@@ -30,8 +29,8 @@ import requests
 from PIL import ImageTk, Image, ImageDraw, ImageFont
 from prettytable import PrettyTable
 from requests import post
-import snp_server
-import compass
+import compass, gui_positionen, snp_server
+from compass import compass_gui
 from bio_data import *
 from gui_positionen import load_position, save_position
 
@@ -436,6 +435,10 @@ def new_server_settings():
     except TclError:
         logger('Icon not found', 1)
 
+    if sys.platform.startswith("win"):
+        server_settings.after(200, lambda: server_settings.iconbitmap(img))
+
+
     top_blank = customtkinter.CTkFrame(master=server_settings, bg_color='black', fg_color='black')
     top_blank.pack(fill=X)
 
@@ -523,156 +526,6 @@ def new_server_settings():
                                                             name_entry.get(), path_entry.get()),
                                        font=("Helvetica", 12))
     save_but.pack(pady=10)
-
-
-def server_settings():
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    global path
-    with sqlite3.connect(database) as connection:
-        cursor = connection.cursor()
-        cursor.execute("""SELECT * FROM server""")
-        result = cursor.fetchall()
-        # print(result)
-        if result != []:
-            # print(result[0][1])
-            if result[0][1] != ('' or None):
-                web_hock_user = result[0][1]
-            else:
-                web_hock_user = ''
-            if result[0][0] != ('' or None):
-                webhook_url = result[0][0]
-            else:
-                webhook_url = ''
-            if result[0][2] != ('' or None):
-                eddc_user = result[0][2]
-            else:
-                eddc_user = 'anonym'
-            if result[0][3] != ('' or None):
-                path_new = result[0][3]
-                if path_new:
-                    path = path_new
-            # print(result[0][4])
-            if int(result[0][4]) == 1 or int(result[0][4]) == 0:
-                # print('reset_pos')
-                up_server = int(result[0][4])
-            else:
-                up_server = IntVar()
-        else:
-            web_hock_user = ''
-            webhook_url = ''
-            eddc_user = 'anonym'
-            up_server = IntVar()
-
-    server_settings = Toplevel(root)
-    server_settings.title('Server Einrichtung')
-    server_settings.geometry("400x200")
-    server_settings.minsize(400, 180)
-    server_settings.maxsize(1200, 180)
-    server_settings.after(1, lambda: server_settings.focus_force())
-    try:
-        img = resource_path("eddc.ico")
-        server_settings.iconbitmap(img)
-    except TclError:
-        logger('Icon not found', 1)
-
-    top = Label(server_settings, bg='grey')
-    top.pack(fill=X)
-
-    top_blank = Label(top, bg='black')
-    top_blank.pack(fill=X)
-    headline = Label(top_blank, text='Server Einrichtung', bg='black', fg='white', font=("Helvetica", 11))
-    headline.pack()
-
-    global update_server
-    update_server = IntVar()
-
-    upload_but = Checkbutton(top_blank, text="BGS Upload  ",
-                             variable=update_server,
-                             bg='black',
-                             fg='white',
-                             selectcolor='black',
-                             activebackground='black',
-                             activeforeground='white',
-                             command=upd_server,
-                             font=("Helvetica", 10))
-    upload_but.pack()
-
-    if up_server == 0:
-        upload_but.deselect()
-    else:
-        upload_but.select()
-
-    name_frame = Frame(top_blank, bg='black')
-    name_frame.pack(fill=X)
-
-    name_label = Label(name_frame, text='Name : ', bg='black', fg='white', font=("Helvetica", 11))
-    name_label.grid(column=0, row=0, sticky=W)
-
-    name_entry = Entry(name_frame, width=20, font=("Helvetica", 11))
-    name_entry.insert(0, eddc_user)
-    name_entry.grid(column=1, row=0, sticky=W)
-
-    discord_user = Label(name_frame, text='Discord Bot Name : ', bg='black', fg='white', font=("Helvetica", 11))
-    discord_user.grid(column=0, row=1, sticky=W)
-    discord_user_entry = Entry(name_frame, width=26, font=("Helvetica", 11))
-    discord_user_entry.insert(0, web_hock_user)
-    discord_user_entry.grid(column=1, row=1, sticky=W)
-
-    discord_label = Label(name_frame, text='Discord Webhook URL : ', bg='black', fg='white', font=("Helvetica", 11))
-    discord_label.grid(column=0, row=2, sticky=W)
-    discord_entry = Entry(name_frame, width=26, font=("Helvetica", 11))
-    discord_entry.insert(0, webhook_url)
-    discord_entry.grid(column=1, row=2, sticky=W)
-
-    path_label = Label(name_frame, text='Journal Log Pfad : ', bg='black', fg='white', font=("Helvetica", 11))
-    path_label.grid(column=0, row=3, sticky=W)
-    path_entry = Entry(name_frame, width=26, font=("Helvetica", 11))
-    path_entry.insert(0, path)
-    path_entry.grid(column=1, row=3, sticky=W)
-
-    def save(url, user, eddc_user, path):
-        update_serv = update_server.get()
-        url_is_ok = 1
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            if not url or not user:
-                pass
-            if url:
-                if uri_validator(url):
-                    url_is_ok = 1
-                else:
-                    messagebox.showwarning("Check failed", "URL ist nicht korrekt")
-                    server_settings.focus_force()
-                    url_is_ok = 0
-            cursor.execute("""SELECT * FROM server""")
-            result = cursor.fetchall()
-            if url_is_ok == 1:
-                if eddc_user == '':
-                    eddc_user = 'anonym'
-                if result == []:
-                    cursor.execute("INSERT INTO server VALUES (?, ?, ?, ?, ?)",
-                                   (url, user, eddc_user, path, update_serv))
-                else:
-                    cursor.execute("drop table server")
-                    cursor.execute("""CREATE table IF NOT EXISTS server (
-                                                url TEXT, user TEXT, eddc_user TEXT, path TEXT, upload INTEGER)""")
-                    cursor.execute("INSERT INTO server VALUES (?, ?, ?, ?, ?)",
-                                   (url, user, eddc_user, path, update_serv))
-                connection.commit()
-                server_settings.destroy()
-
-    save_but = Button(top_blank,
-                      text='Speichern',
-                      activebackground='#000050',
-                      activeforeground='white',
-                      bg='black',
-                      fg='white',
-                      command=lambda: save(discord_entry.get(), discord_user_entry.get(),
-                                           name_entry.get(), path_entry.get()),
-                      font=("Helvetica", 10))
-    save_but.pack()
 
 
 def last_tick():
@@ -1758,6 +1611,9 @@ def combat_window(data):
         combat_windows.iconbitmap(img)
     except TclError:
         logger('Icon not found', 1)
+
+    if sys.platform.startswith("win"):
+        combat_windows.after(200, lambda: combat_windows.iconbitmap(img))
 
     headline = Label(combat_windows, text='Bodenkampf erkannt', bg='black', fg='white', font=("Helvetica", 11))
     headline.pack()
@@ -3200,12 +3056,14 @@ def customtable_view():
     tree.maxsize(1200, 600)
     tree.after(100, lambda: tree.focus_force())
     try:
-        img = resource_path("eddc2.ico")
+        img = resource_path("eddc.ico")
         # tree.iconphoto(False, PhotoImage(file=img))
         tree.iconbitmap(img)
     except TclError:
         logger('Icon not found', 1)
 
+    if sys.platform.startswith("win"):
+        tree.after(200, lambda: tree.iconbitmap(img))
     tree.bind("<Configure>", lambda event: save_position(tree, 2))
 
     menu_tree = Menu(tree)
