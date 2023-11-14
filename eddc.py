@@ -10,7 +10,8 @@ import tkinter
 import urllib.request
 import webbrowser
 import math
-from compass import compass_gui
+from babel import numbers
+
 from builtins import print
 from datetime import date, timedelta, datetime
 from pathlib import Path
@@ -30,7 +31,10 @@ from PIL import ImageTk, Image, ImageDraw, ImageFont
 from prettytable import PrettyTable
 from requests import post
 import snp_server
+import compass
 from bio_data import *
+from gui_positionen import load_position, save_position
+
 
 filter_name = ''
 eddc_modul = 1
@@ -62,10 +66,11 @@ docked = ''
 bio_worth = []
 version_number = '0.9.0.0'
 current_version = ('Version ' + str(version_number))
-global status, root_open, popup_open, tree_open
+global status, root_open, popup_open, tree_open, old_view_name
 root_open = False
 popup_open = False
 tree_open = False
+old_view_name = 'old'
 # data_old = StringVar()
 fully = 0
 bgs = PrettyTable(['System', 'Faction', 'Influence'])
@@ -121,12 +126,20 @@ def create_tables():
         cursor = connection.cursor()
 
         cursor.execute("DROP TABLE IF EXISTS odyssey")
+        cursor.execute("DROP TABLE IF EXISTS compare_for_ss")
 
         cursor.execute('''CREATE TABLE IF NOT EXISTS eddc_positions (
                             id INTEGER PRIMARY KEY,
                             x INTEGER,
                             y INTEGER
                         )''')
+
+        cursor.execute("""CREATE TABLE IF NOT EXISTS compare_for_ss 
+                                        (current_system TEXT, 
+                                        planets_with_atmo INTEGER, 
+                                        planets_bio_scaned INTEGER, 
+                                        bios_scaned INTEGER
+                                        )""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS thargoid_war_data 
                                 (date_log date, 
@@ -666,17 +679,41 @@ def last_tick():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    try:
-        response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks", timeout=1)
-        todos = json.loads(response.text)
-    except:
+    url = "https://tick.edcd.io/api/tick"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        # JSON-Daten aus der Antwort laden
+        json_data = response.content
+
+        # Jetzt kannst du mit den JSON-Daten arbeiten, z.B. sie ausdrucken
+        data = read_json(json_data)
+        t_year = (data[:4])
+        t_month = (data[5:7])
+        t_day = (data[8:10])
+        t_hour = str(data[11:13])
+        t_minute = str(data[14:16])
+        tick_time = [t_year, t_month, t_day, t_hour, t_minute]
+        # print(tick_time)
+        return tick_time
+    else:
+        print(f"Fehler beim Abrufen der Daten. Statuscode: {response.status_code}")
+
+    # try:
+    #     pass
+    #     # response = requests.get("https://elitebgelitebgs.app/api/ebgs/v5/ticks", timeout=1)    #
+    #     # print(response)
+    #     # todos = json.loads(response.text)
+    #     # print(todos)
+    # except:
         logger(('Tick Error'),1)
         tick_data = ('[{"_id":"627fe6d6de3f1142b60d6dcd",'
                      '"time":"2022-05-14T16:56:36.000Z",'
                      '"updated_at":"2022-05-14T17:28:54.588Z",'
                      '"__v":0}]')
         todos = json.loads(tick_data)
-        messagebox.showwarning("TICK failed", "No Internet Connection")
+        messagebox.showwarning("TICK failed",
+                               f"Fehler beim Abrufen der Daten. Statuscode: {response.status_code}")
     for d in todos:
         lt_date = d['time']
         t_year = (lt_date[:4])
@@ -685,6 +722,7 @@ def last_tick():
         t_hour = str(lt_date[11:13])
         t_minute = str(lt_date[14:16])
         tick_time = [t_year, t_month, t_day, t_hour, t_minute]
+
         return tick_time
 
 
@@ -710,7 +748,6 @@ def file_names(var):
     tag2 = my_date[2]
     monat2 = my_date[1]
     jahr2 = my_date[0].replace('20', '',1 )
-    # print('Hallo ', tag2, monat2, jahr2)
 
     if var == 0:  # Logs von dem Tag X
         search_date = datetime(int("20" + jahr2), int(monat2), int(tag2))
@@ -778,7 +815,12 @@ def file_names(var):
 
 
 def file_is_last(filename):
-    return 1
+    t1 = get_time()
+    files = file_names(1)
+    if files[-1] != filename:
+        return 1
+    else:
+        return 0
 
 
 def tail_file(file):
@@ -793,12 +835,13 @@ def tail_file(file):
     with open(file, 'r', encoding='UTF8') as datei:
         total_lines = sum(1 for line in datei)
         if total_lines == (line_in_db+1):
+            cmdr = read_cmdr(file)
+            check_cmdr(file, cmdr)
             return
     with open(file, 'r', encoding='UTF8') as datei:
         cmdr = read_cmdr(file)
         check_cmdr(file, cmdr)
         if not cmdr or cmdr == 'UNKNOWN' :
-            # check_logfile_in_DB(file, 'explorer', 'set')
             print('No CMDR ' + file)
             return
         for line_nr, zeile in enumerate(datei):
@@ -856,6 +899,44 @@ def count_lines_efficiently(filename):
     return line_count
 
 
+def check_db_for_ss(current_system):  # Prüfe ob es neue Daten in der Datenbank vorhanden sind
+    current_system = current_system[0]
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        sql = f'''SELECT * from compare_for_ss where current_system = "{current_system}"'''
+        old_data = cursor.execute(sql).fetchall()
+
+        sql1 = f'''SELECT COUNT(BodyName) FROM planet_infos where SystemName = "{current_system}"and landable = 1 
+                    and Atmosphere like "%atmosphere%"'''
+        sql2 = f'''select COUNT(bio_genus) from planet_bio_info where body like "%{current_system}%" 
+                    and bio_genus != ""'''
+        sql3 = f'''select COUNT(body) from temp where body like "%{current_system}%"'''
+
+        select1 = cursor.execute(sql1).fetchone()
+        select2 = cursor.execute(sql2).fetchone()
+        select3 = cursor.execute(sql3).fetchone()
+
+        if not old_data:
+            update_sql = f'''INSERT INTO compare_for_ss VALUES ("{current_system}", {select1[0]}, 
+                                                                    {select2[0]}, {select3[0]} )'''
+            cursor.execute(update_sql)
+            connection.commit()
+            return 0
+
+        #Wenn es in alles drei Tabellen keine neuen Daten gibt
+        if old_data[0][1] == select1[0] and old_data[0][2] == select2[0] and old_data[0][3] == select3[0]:
+            return 1  # Keine neuen Daten vorhanden
+        else:
+            update_sql = f'''UPDATE compare_for_ss SET planets_with_atmo = {select1[0]},
+                                                        planets_bio_scaned =  {select2[0]},
+                                                        bios_scaned = {select3[0]} 
+                                                        where current_system = "{current_system}" '''
+            cursor.execute(update_sql)
+            connection.commit()
+        return 0
+
+
+
 def start_read_logs():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -875,13 +956,16 @@ def start_read_logs():
     else:
         if data_old and data_old != ' ' and check_last(last) == 1 :
             print('USE OLD DATA')
-            # print(data_old)
             return data_old
 
     current_system = get_last_system_in_DB()
     logger((funktion, str(current_system[0])), log_var)
     if current_system == None:
         return
+
+    if check_db_for_ss(current_system) == 1:
+        # print('abkürzung')
+        return data_old
 
     data = get_data_from_DB(last, current_system)
     # print(data)
@@ -2360,7 +2444,6 @@ def read_cmdr(file):
         # print(zeile)
         zeilen = datei.readlines()
         if len(zeilen) == 0:
-            print(file)
             return 'UNKNOWN'
         data = read_json(zeile)
         if data.get('event') == 'Shutdown':
@@ -2489,9 +2572,12 @@ def worth_it(search_data):
     y = 0
     with sqlite3.connect(database) as connection:
         for i in search_data:
-            bio = '%' + i[3] + '%'
+            if view_name == 'system_scanner':
+                bio = i[3]
+            else:
+                bio = i[4]
+            bio = '%' + bio + '%'
             cursor = connection.cursor()
-
             select = cursor.execute("SELECT worth FROM codex_entry WHERE data like ? and region = 'Galactic Centre'",
                                     (bio,)).fetchone()
             if select:
@@ -2589,7 +2675,10 @@ def get_data_from_DB(file, current_system):
                 new.append(i)
     for a in new:  # Damit der zuletzt betretene oder gescannte Trabant im Fokus steht.
         first.append(a)
+    t1 = get_time()
     data = get_biodata_from_planet(cmdr[0], first)
+    t2 = get_time()
+    # print('get_biodata_from_planet ' + str(timedelta.total_seconds(t2 - t1)))
     return data
 
 def missing_bio_test(bio, region):
@@ -3015,15 +3104,8 @@ def reset_pos():
         cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
         cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
         cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
+        cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
         connection.commit()
-        # exit(1)
-        print('Test if windows exists')
-        # try:
-        #     if tree_frame.winfo_exists():
-        #         codex_tree.delete(*codex_tree.get_children())
-        #         tree_frame.destroy()
-        # except NameError:
-        #     print('windows does not exists')
         cursor.execute("SELECT x, y FROM eddc_positions where id = 1")
         position = cursor.fetchone()
         if position:
@@ -3111,22 +3193,8 @@ def customtable_view():
     tree = customtkinter.CTkToplevel()
     tree.title('Display Codex Data')
 
-    def load_position():  # load Window Position if stored else load default
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("SELECT x, y FROM eddc_positions where id = 2")
-            position = cursor.fetchone()
-            if position:
-                x_win = str(position[0])
-                y_win = str(position[1])
-                tree.geometry(f'1200x570+{x_win}+{y_win}')
-            else:
-                tree.geometry(f'1200x570+130+130')
-                cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
-                cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
-                connection.commit()
-
-    load_position()
+    # load_position()
+    load_position(tree, 2, 1200, 570)
 
     tree.minsize(1200, 570)
     tree.maxsize(1200, 600)
@@ -3135,28 +3203,17 @@ def customtable_view():
         img = resource_path("eddc2.ico")
         # tree.iconphoto(False, PhotoImage(file=img))
         tree.iconbitmap(img)
-        print(img)
     except TclError:
         logger('Icon not found', 1)
 
-    def save_position():
-        position = {
-            "x": tree.winfo_x(),
-            "y": tree.winfo_y()
-        }
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("UPDATE eddc_positions SET x = ? , y = ? where id = 2",
-                           (position["x"], position["y"]))
-            connection.commit()
-
-    tree.bind("<Configure>", lambda event: save_position())
+    tree.bind("<Configure>", lambda event: save_position(tree, 2))
 
     menu_tree = Menu(tree)
     tree.config(menu=menu_tree)
     file_menu = Menu(menu_tree, tearoff=False)
     # menu_tree.add_cascade(label="More", menu=file_menu)
     menu_tree.add_cascade(label="Bio Scans", command=lambda: refresh_codex_data('bio_codex'))
+    menu_tree.add_cascade(label="Missing Bio Codex", command=lambda: refresh_codex_data('missing_codex'))
     menu_tree.add_cascade(label="Codex Stars", command=lambda: refresh_codex_data('stellar_codex'))
     menu_tree.add_cascade(label="System Scanner", command=lambda: refresh_codex_data('system_scanner'))
 
@@ -3173,6 +3230,7 @@ def customtable_view():
         filter_region = combo_regions.get()
         filter_cmdr = combo_cmdr.get()
         filter_bdata = combo_bio_data.get()
+        refresh_codex_data(view_name)
 
     def create_button():
         funktion = inspect.stack()[0][3]
@@ -3191,7 +3249,6 @@ def customtable_view():
         # if normal_view != 4:
         for i in select_cmdr:
             cmdrs = cmdrs + [i[0]]
-        print(cmdrs)
         # Combobox Region
         for i in select_region:
             region = region + [i[0]]
@@ -3218,7 +3275,8 @@ def customtable_view():
         combo_bio_data.configure(values=b_data)
         combo_bio_data.pack(side=LEFT, padx=10)
 
-        refresh_button = customtkinter.CTkButton(master=buttons_frame, text='Refresh', command=selected,
+        refresh_button = customtkinter.CTkButton(master=buttons_frame, text='Refresh',
+                                                 command=lambda : refresh_codex_data(view_name),
                                                  width=80, font=("Helvetica", 14))
         refresh_button.pack(side=LEFT, padx=20)
 
@@ -3231,9 +3289,10 @@ def customtable_view():
         begin_time.insert(0, '2014-12-16')
         begin_time.pack(side=LEFT, padx=10)
 
-        label_tag = customtkinter.CTkLabel(master=buttons_frame, text="Ende: ",
+        label_ende = customtkinter.CTkLabel(master=buttons_frame, text="Ende: ",
                                            text_color='white', font=("Helvetica", 14))
-        label_tag.pack(side=LEFT, padx=10)
+        label_ende.pack(side=LEFT, padx=10)
+
         end_time = customtkinter.CTkEntry(master=buttons_frame, width=90, font=("Helvetica", 14))
         end_time.insert(0, str(date.today()))
         end_time.pack(side=LEFT, padx=10)
@@ -3259,7 +3318,7 @@ def customtable_view():
 
     tree_scroll = Scrollbar(tree_frame)
     tree_scroll.pack(side=RIGHT, fill=Y)
-    codex_tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set, selectmode="extended", height=18)
+    codex_tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set, selectmode="extended", height=17)
     tree_scroll.config(command=codex_tree.yview)
 
     # Tabellen Schema
@@ -3399,7 +3458,8 @@ def customtable_view():
         filter_bdata = combo_bio_data.get()
 
         rowdata = get_codex_data(filter_cmdr, filter_region, filter_bdata, 1)
-        main_schema()
+        if old_view_name != 'missing_codex':
+            main_schema()
 
         if backup_row != rowdata:
             backup_row = rowdata
@@ -3414,7 +3474,7 @@ def customtable_view():
         rcd_region = combo_regions.get()
 
         rowdata = read_codex_data(rcd_cmdr, rcd_region)
-        print(rowdata[0])
+        # print(rowdata[0])
         codex_stars_schema()
 
         if backup_row != rowdata:
@@ -3424,13 +3484,19 @@ def customtable_view():
             return 0
 
     def system_scanner():
+        funktion = inspect.stack()[0][3]
+        logger(funktion, log_var)
         global view_name, backup_row
         view_name = 'system_scanner'
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
 
         rowdata = []
+        t1 = get_time()
         rowdata = start_read_logs()
+        t2 = get_time()
+        # print('start_read_logs  ' + str(timedelta.total_seconds(t2 - t1)))
+
         system_scanner_schema()
         if not rowdata:
             rowdata = [('Body', 'Distance', 'Count', 'Genus',
@@ -3444,7 +3510,6 @@ def customtable_view():
     def refresh_combo():
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
-        print(view_name)
         # read_codex_entrys()
         # lang = read_language()
         filter_bio_data = combo_bio_data.get()
@@ -3555,13 +3620,12 @@ def customtable_view():
     data = get_codex_data('', '', '', 0)
     main_schema()
 
-    # data = stellar_data()
-    # codex_stars_schema()
-
     global treeview_count
     treeview_count = 0
     def add_entries(entries):
         global treeview_count
+        treeview_count = 0
+
         for idx, entry in enumerate(entries):
             treeview_count += 1
             new_entry = entry
@@ -3569,6 +3633,12 @@ def customtable_view():
             if entry[1] != '' and view_name == active_view[2]:
                 #active_view = ['bio_codex' ,'stellar_codex', 'system_scanner']
                 tags = ('header',)
+                parent_item = idx
+                codex_tree.insert('', iid=parent_item, index='end' , values=new_entry, tags=tags)
+                if idx == 0:
+                    codex_tree.item(parent_item, open=True)
+                # print('', idx, new_entry, tags)
+
             else:
                 if idx % 2 == 1:
                     if view_name == active_view[2]: #active_view = ['bio_codex' ,'stellar_codex', 'system_scanner']
@@ -3586,18 +3656,32 @@ def customtable_view():
                             tags = ('even',)
                     else:
                         tags = ('even',)
-            codex_tree.insert('', 'end', values=new_entry, tags=tags)
+            if entry[1] == '' and view_name == active_view[2]:
+                # print(codex_tree.get_children())
+                codex_tree.insert(parent=parent_item, index="end",  values=new_entry, tags=tags)
+
+            else:
+                if tags != ('header',):
+                    codex_tree.insert('', 'end', values=new_entry, tags=tags)
 
     codex_tree.tag_configure('odd', background='#569fe3', foreground='white')
     codex_tree.tag_configure('even', background='white', foreground='black')
-    codex_tree.tag_configure('odd_new', background='green', font=('Arial', 9, 'bold'))
-    codex_tree.tag_configure('even_new', background='#65c27e', font=('Arial', 9, 'bold'))
-    codex_tree.tag_configure('header', background='#081152', foreground='#f07b05', font=('Arial', 10))
+    codex_tree.tag_configure('odd_new', background='#29992f', font=('Arial', 9, 'bold'))
+    codex_tree.tag_configure('even_new', background='#65c27e', foreground='black', font=('Arial', 9, 'bold'))
+    codex_tree.tag_configure('header', background='black', foreground='white', font=('Arial', 10))
+    # codex_tree.tag_configure('header', background='grey', foreground='#f07b05', font=('Arial', 10))
 
     add_entries(data)
     refresh_combo()
 
     codex_tree.pack()
+    if view_name == 'bio_codex':
+        global summen_label
+        summe = worth_it(data)
+        summen_text = ('Anzahl Einträge : ' + str(treeview_count) + '     Wertigkeit :  ' + str(
+            f"{summe:,}"))
+        summen_label = customtkinter.CTkLabel(tree_frame, text=summen_text, bg_color='black')
+        summen_label.pack(fill=X, anchor=E)
 
     def selected_record(e):  # Shows Picture of selected Item
         global my_img, my_codex_preview
@@ -3605,7 +3689,7 @@ def customtable_view():
         logger(funktion, log_var)
         selected_tree = codex_tree.focus()
         values = codex_tree.item(selected_tree, 'values')
-        print(values)
+        # print(values)
         tables = [codex_bio_table, codex_stars_table, system_scanner_table]
         for table in tables:
             try:
@@ -3638,7 +3722,7 @@ def customtable_view():
             for c, i in enumerate(active_view):
                 if i == view_name:
                     normal_view = c
-                    print(normal_view, view_name, c)
+                    # print(normal_view, view_name, c)
             (table[normal_view]).add_row(values) #                   table[ 1 = codex_bio_table ]
             root.clipboard_append((table[normal_view]).get_string())
             root.clipboard_append('\n')
@@ -3688,28 +3772,50 @@ def customtable_view():
 
     codex_tree.bind("<ButtonRelease-1>", selected_record)
     def refresh_codex_data(func):
-        funktion = inspect.stack()[0][3]
+        funktion = inspect.stack()[0][3] , func
         logger(funktion, log_var)
-        global view_name
+        global view_name, old_view_name
         view_name = func
         match func:
             case 'stellar_codex':
                 rowdata = stellar_data()
+                summen_label.configure(text='')
             case 'bio_codex':
                 rowdata = codex_data()
             case 'system_scanner':
                 rowdata = system_scanner()
+                summen_label.configure(text='')
+            case 'missing_codex':
+                rowdata = missing_codex()
+                if old_view_name != 'bio_codex':
+                    main_schema()
+                summen_label.configure(text='')
 
-        if rowdata != 0:
-            print('refresh')
+        # codex_tree.config(height=15)
+        if rowdata != 0 or view_name != old_view_name:
             codex_tree.delete(*codex_tree.get_children())
+            old_view_name = view_name
             add_entries(rowdata)
+            match func:
+                case 'stellar_codex':
+                    summen_label.configure(text='')
+                case 'bio_codex':
+                    summe = worth_it(rowdata)
+                    summen_text = ('Anzahl Einträge : ' + str(treeview_count) + '     Wertigkeit :  ' + str(
+                        f"{summe:,}"))
+                    summen_label.configure(text=summen_text)
+                case 'system_scanner':
+                    summen_label.configure(text='')
+            # print('refresh')
+
 
     def tree_loop(x):
+        funktion = inspect.stack()[0][3]
+        logger(funktion, log_var)
         refresh_codex_data(view_name)
-        tree.after(3500, lambda: tree_loop(x))
+        tree.after(x, lambda: tree_loop(10000))
 
-    tree_loop(0)
+    tree_loop(100)
 
     tree.mainloop()
 
@@ -3729,12 +3835,13 @@ def rescan():
     threading.Thread(target=rescan_files).start()
 
 
-def missing_codex(filter_cmdr, filter_region):
+def missing_codex():
     funktion = inspect.stack()[0][3]
     logger(funktion, 1)
-    # global normal_view
-    # normal_view = 1
-
+    filter_cmdr = combo_cmdr.get()
+    filter_region = combo_regions.get()
+    global view_name
+    view_name = 'missing_codex'
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
         cmdrs = cursor.execute("SELECT DISTINCT cmdr FROM codex").fetchall()
@@ -3810,13 +3917,17 @@ def missing_codex(filter_cmdr, filter_region):
             query = f'''SELECT * FROM codex_show WHERE data like "{filter_bdata}" ORDER BY data'''
             select = cursor.execute(query).fetchall()
 
-    print(query)
     lauf = 1
     data = []
     for i in select:
-        data.append((' ', ' ', i[0], i[1], ' ', ' ', ' ', '', i[2]))
+        data.append((' ', ' ', ' ', i[0], i[1], ' ', ' ', ' ', '', i[2]))
         lauf += 1
-    return data
+    global backup_row
+    if backup_row != data:
+        backup_row = data
+        return data
+    else:
+        return 0
 
 
 def get_info_for_bio_scan(data, file): # event: ScanOrganic
@@ -4318,7 +4429,7 @@ def get_codex_data(sf_cmdr, region, bio_data, update):
 
     # # Fall 1 CMDR & REGION & BIO
     if sf_cmdr and region and bio_data:
-        print('filter - 1')
+        # print('filter - 1')
         query = f'''{select}  
                     where cmdr = "{sf_cmdr}" and data like "{bio_data}" and region = "{region}"
                     AND date_log BETWEEN "{b_date}" AND "{e_date}" 
@@ -4326,7 +4437,7 @@ def get_codex_data(sf_cmdr, region, bio_data, update):
 
     # # Fall 2 CMDR & Region
     elif sf_cmdr and region and not bio_data:
-        print('filter - 3')
+        # print('filter - 3')
         query = f'''{select}  
                     where cmdr = "{sf_cmdr}" and region = "{region}"
                     AND date_log BETWEEN "{b_date}" AND "{e_date}" 
@@ -4334,7 +4445,7 @@ def get_codex_data(sf_cmdr, region, bio_data, update):
 
     # # Fall 3 CMDR & Bio
     elif sf_cmdr and not region and bio_data:
-        print('filter - 3')
+        # print('filter - 3')
         query = f'''{select}  
                     where cmdr = "{sf_cmdr}" and data like "{bio_data}" 
                     AND date_log BETWEEN "{b_date}" AND "{e_date}" 
@@ -4342,27 +4453,27 @@ def get_codex_data(sf_cmdr, region, bio_data, update):
 
     # # Fall4 only CMDR
     elif sf_cmdr and not region and not bio_data:
-        print('filter - 4')
+        # print('filter - 4')
         query = f'''{select}  
                     where cmdr = "{sf_cmdr}" AND date_log BETWEEN "{b_date}" AND "{e_date}" 
                     ORDER BY date_log DESC, time_log DESC;'''
     # # Fall 5 only Region
     elif not sf_cmdr and region and not bio_data:
-        print('filter - 5')
+        # print('filter - 5')
         query = f'''{select} 
                     where region = "{region}"
                     AND date_log BETWEEN "{b_date}" AND "{e_date}" 
                     ORDER BY date_log DESC, time_log DESC;'''
     # # Fall 6 only Biodata
     elif not sf_cmdr and not region and bio_data:
-        print('filter - 6')
+        # print('filter - 6')
         query = f'''{select} 
                     where data like "{bio_data}" 
                     AND date_log BETWEEN "{b_date}" AND "{e_date}" 
                     ORDER BY date_log DESC, time_log DESC;'''
     # # Fall 7 Region & Biodata
     elif not sf_cmdr and region and bio_data:
-        print('filter - 1')
+        # print('filter - 1')
         query = f'''{select}  
                     where data like "{bio_data}" and region = "{region}"
                     AND date_log BETWEEN "{b_date}" AND "{e_date}" 
@@ -4405,15 +4516,17 @@ def check_cmdr(journal_file, cmdr):
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
         log_cmdr = cursor.execute("Select CMDR from logfiles where Name = ?", (journal_file,)).fetchall()
-        if log_cmdr:
+        if log_cmdr and log_cmdr[0][0] != 'UNKNOWN':
             if log_cmdr[0][0] != None:
                 return log_cmdr[0][0]
-        select = cursor.execute("Select * from logfiles where Name = ? and CMDR is NULL", (journal_file,)).fetchall()
+        select = cursor.execute("Select * from logfiles where Name = ? and (CMDR is NULL or CMDR = 'UNKNOWN')",
+                                (journal_file,)).fetchall()
 
     if cmdr != '' and select:
         with sqlite3.connect(database) as connection:
             cursor = connection.cursor()
-            cursor.execute("Update logfiles set CMDR = ? where Name = ? and CMDR is NULL", (cmdr, journal_file))
+            cursor.execute("Update logfiles set CMDR = ? where Name = ? and (CMDR is NULL or CMDR = 'UNKNOWN')",
+                           (cmdr, journal_file))
             connection.commit()
         return
     elif cmdr == '':
@@ -5242,7 +5355,6 @@ def show_data_for_system(url):
     print(edsm_systems)
     for edsm_system in edsm_systems:
         new = edsm_system[0].replace(data,'')
-        print(new)
         if '-' not in new:
             if eddc_modul == 7 and new.isnumeric():
                 lower_edsm = str(edsm_system[0]).lower()
@@ -5743,9 +5855,11 @@ def summary():
                         case 'Shutdown':
                             check_logfile_in_DB(filename, 'explorer', 'set')
 
-    day = Tag.get()
-    month = Monat.get()
-    year = Jahr.get()
+    date_get = str(date_entry.get_date())
+    my_date = date_get.split('-')
+    day = my_date[2]
+    month = my_date[1]
+    year = my_date[0].replace('20', '',1 )
     search_date = '20' + year + '-' + month + '-' + day
     text3 = (get_star_data(search_date))
 
@@ -5825,7 +5939,6 @@ def auswertung(eddc_modul):
     else:
         filenames = file_names(1)  # Alle Logfiles
 
-    print(filenames)
     nodata = 0
     nodata_voucher = 0
 
@@ -6151,31 +6264,15 @@ def main():
         if not position:
             cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
             cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
+            cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
+            cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
 
-    def save_position():
-        position = {
-            "x": root.winfo_x(),
-            "y": root.winfo_y()
-        }
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("UPDATE eddc_positions SET x = ? , y = ? where id = 1", (position["x"], position["y"]))
-            connection.commit()
-
-    def load_position():
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("SELECT x, y FROM eddc_positions where id = 1")
-            position = cursor.fetchone()
-            if position:
-                root.geometry("+{}+{}".format(position[0], position[1]))
-
-    load_position()
-    root.bind("<Configure>", lambda event: save_position())
+    load_position(root, 1, 415, 500)
+    root.bind("<Configure>", lambda event: save_position(root, 1))
 
     def on_closing():
         global root_open
-        save_position()
+        save_position(root, 1)
         # for thread in threading.enumerate():
         #     print(thread.name, ' MAIN')
         try:
@@ -6388,6 +6485,7 @@ def main():
     my_folder.pack(fill=X, padx=20)
     myfolder_grid = customtkinter.CTkFrame(master=my_folder, fg_color='black')
     myfolder_grid.grid(sticky=W)
+
 
     label_filter = customtkinter.CTkLabel(master=myfolder_grid, text_color='white',
                                           text="Filter: ", font=("Helvetica", 14))

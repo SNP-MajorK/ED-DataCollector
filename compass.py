@@ -13,13 +13,15 @@ from sys import platform
 global popup_open
 popup_open = False
 
+from gui_positionen import load_position, save_position
+
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
 global path
-# path = ''
+path = ''
 
 database = resource_path("eddc.db")
 db_file = Path(database)
@@ -163,23 +165,7 @@ def create_popup(message, timeout=10000):
     popup.minsize(400, 150)
     popup.maxsize(400, 150)
 
-    def load_position():  # load Window Position if stored else load default
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("SELECT x, y FROM eddc_positions where id = 3")
-            position = cursor.fetchone()
-            if position:
-                x_win = str(position[0])
-                y_win = str(position[1])
-                popup.geometry(f'400x150+{x_win}+{y_win}')
-            else:
-                popup.geometry(f'400x150+130+130')
-                cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
-                cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
-                cursor.execute("INSERT INTO eddc_positions (x, y) VALUES (130, 130)")
-                connection.commit()
-
-    load_position()
+    load_position(popup,3, 400, 150)
 
     try:
         img = resource_path("eddc.ico")
@@ -198,27 +184,16 @@ def create_popup(message, timeout=10000):
                                        command=next_wp, font=("Helvetica", 14))
     save_but.pack(pady=10)
 
-    def save_position():
-        position = {
-            "x": popup.winfo_x(),
-            "y": popup.winfo_y()
-        }
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("UPDATE eddc_positions SET x = ? , y = ? where id = 3",
-                           (position["x"], position["y"]))
-            connection.commit()
-
-    popup.bind("<Configure>", lambda event: save_position())
+    popup.bind("<Configure>", lambda event: save_position(popup, 3))
 
     # Schließe das Popup nach 'timeout' Millisekunden
-    popup.after(5000, lambda: refresh_popup(compas_label))
+    popup.after(1000, lambda: refresh_popup(compas_label))
 
     def on_closing():
         global popup_open
         popup_open = False
         print('popup closing')
-        save_position()
+        save_position(popup, 3)
         popup.destroy()
 
     popup.protocol("WM_DELETE_WINDOW", on_closing)
@@ -316,6 +291,10 @@ def compass_gui():
                     fieldbackground="black"
                     )
     style.map('Treeview', background=[('selected', "#f07b05")])
+    compass_gui.after(200, lambda: compass_gui.focus_force())
+
+    load_position(compass_gui, 4, 735, 320)
+
 
     tree_compass_frame = Frame(compass_gui, bg='black')
     tree_compass_frame.pack(pady=5)
@@ -453,7 +432,6 @@ def compass_gui():
             connection.commit()
             refresh_table()
 
-
     def refresh_labels(latitude, longitude, body_name, waypoint, reached):
         entry_waypoint.delete(0, END)
         entry_waypoint.insert(0, waypoint)
@@ -469,7 +447,6 @@ def compass_gui():
         elif reached == '0':
             check_but_reached.deselect()
 
-
     def selected_record(e):  # Shows Picture of selected Item and store Data in Clipboard
 
         selected_tree = compass_tree.focus()
@@ -478,15 +455,20 @@ def compass_gui():
         if values:
             refresh_labels(values[2], values[3], values[1], values[0], values[4])
 
-    #
     def refresh_table():
         latitude, longitude, radius, body_name, reached = get_status_data()
         rowdata = cord_data(body_name)
         compass_tree.delete(*compass_tree.get_children())
         add_entries(rowdata)
 
+    def on_closing():
+        save_position(compass_gui, 4)
+        compass_gui.destroy()
 
+    compass_gui.protocol("WM_DELETE_WINDOW", on_closing)
     compass_tree.bind("<ButtonRelease-1>", selected_record)
+
+    save_position(compass_gui, 4)
 
     compass_gui.after(1500, refresh_entry)
     compass_gui.mainloop()
