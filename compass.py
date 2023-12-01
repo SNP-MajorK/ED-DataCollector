@@ -282,15 +282,20 @@ def compass_gui():
     else:
         rowdata = []
 
-    style = ttk.Style(compass_gui)
-    style.theme_use('default')
-    style.configure('Treeview',
+    c_style = ttk.Style(compass_gui)
+    c_style.theme_use('default')
+    c_style.configure('Treeview',
                     background="black",
                     foreground="white",
                     rowheight=18,
                     fieldbackground="black"
                     )
-    style.map('Treeview', background=[('selected', "#f07b05")])
+    c_style.configure('my.DateEntry',
+                    fieldbackground='black',
+                    background='black',
+                    foreground='white',
+                    arrowcolor='white')
+    c_style.map('Treeview', background=[('selected', "#f07b05")])
     compass_gui.after(200, lambda: compass_gui.focus_force())
 
     load_position(compass_gui, 4, 735, 320)

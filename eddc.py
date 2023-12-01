@@ -534,33 +534,11 @@ def last_tick():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    url = "https://tick.edcd.io/api/tick"
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        # JSON-Daten aus der Antwort laden
-        json_data = response.content
-
-        # Jetzt kannst du mit den JSON-Daten arbeiten, z.B. sie ausdrucken
-        data = read_json(json_data)
-        t_year = (data[:4])
-        t_month = (data[5:7])
-        t_day = (data[8:10])
-        t_hour = str(data[11:13])
-        t_minute = str(data[14:16])
-        tick_time = [t_year, t_month, t_day, t_hour, t_minute]
-        # print(tick_time)
-        return tick_time
-    else:
-        print(f"Fehler beim Abrufen der Daten. Statuscode: {response.status_code}")
-
-    # try:
-    #     pass
-    #     # response = requests.get("https://elitebgelitebgs.app/api/ebgs/v5/ticks", timeout=1)    #
-    #     # print(response)
-    #     # todos = json.loads(response.text)
-    #     # print(todos)
-    # except:
+    try:
+        response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks", timeout=1)    #
+        # print(response)
+        todos = json.loads(response.text)
+    except:
         logger(('Tick Error'),1)
         tick_data = ('[{"_id":"627fe6d6de3f1142b60d6dcd",'
                      '"time":"2022-05-14T16:56:36.000Z",'
@@ -3645,7 +3623,7 @@ def customtable_view():
     codex_tree.bind("<ButtonRelease-1>", selected_record)
     def refresh_codex_data(func):
         funktion = inspect.stack()[0][3] , func
-        logger(funktion, 2)
+        logger(funktion, log_var)
         global view_name, old_view_name
         view_name = func
         match func:
@@ -3683,12 +3661,11 @@ def customtable_view():
 
     def tree_loop(x):
         funktion = inspect.stack()[0][3]
-        logger(funktion, 2)
+        logger(funktion, log_var)
         refresh_codex_data(view_name)
         tree.after(x, lambda: tree_loop(3000))
 
     tree_loop(3000)
-
     tree.mainloop()
 
 
@@ -4981,6 +4958,18 @@ def check_last_logs(filenames_codex, length):
         return new
 
 
+def check_codex_table():
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+    items = cursor.execute("SELECT * FROM codex").fetchall()
+
+    if not items:
+        print('keine Daten in Codex')
+        return 0
+    else:
+        return 1
+
+
 def read_codex_entrys():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -5015,8 +5004,11 @@ def read_codex_entrys():
 
 def run_once_rce(filenames):
     funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
+    logger(funktion, 2)
     thread_rce = threading.Thread(target=read_codex_entrys, args=())
+
+    if check_codex_table() == 0:
+        filenames = file_names(1)
 
     if len(filenames) > 5:
         logger('start run_once', 2)
@@ -5175,7 +5167,7 @@ def show_data_for_system(url):
 
     count = [('Wolf-Rayet', 0), ('Black Hole', 0), ('super giant', 0)]
     boxel_nr = []
-    print(edsm_systems)
+    # print(edsm_systems)
     for edsm_system in edsm_systems:
         new = edsm_system[0].replace(data,'')
         if '-' not in new:
@@ -5782,6 +5774,7 @@ def auswertung(eddc_modul):
             filenames = file_names(1)  # Alle Logfile werden geladen
             last_log = (len(filenames))
             files = check_last_logs(filenames, last_log)
+            print('files')
             run_once_rce(files)
             # treeview_codex()
         else:
@@ -5893,6 +5886,7 @@ def auswertung(eddc_modul):
             thread_star_systems.start()
         elif eddc_modul == 4:  # Codex Treeview
             status.configure(text='Codex')
+            print('filenames')
             run_once_rce(filenames)
 
         elif eddc_modul == 5:  # Kampfrang
