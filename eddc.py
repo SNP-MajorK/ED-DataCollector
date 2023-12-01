@@ -10,6 +10,7 @@ import tkinter
 import urllib.request
 import webbrowser
 import math
+import fnmatch
 from babel import numbers
 
 from builtins import print
@@ -22,6 +23,7 @@ import customtkinter
 from tkcalendar import DateEntry
 from urllib.parse import urlparse
 from winreg import *
+from itertools import product
 
 import plotly.express as px
 import psycopg2
@@ -681,7 +683,7 @@ def tail_file(file):
     global line_nr
     line_in_db = check_logfile_in_DB(file, 'line', '')
     logger((funktion, file, str(line_in_db)), log_var)
-    is_file = os.path.isfile(file)
+    is_file = Path(file).exists()
     if not is_file:
         messagebox.showwarning("Check failed", "File not found" + file)
         return
@@ -697,6 +699,7 @@ def tail_file(file):
         if not cmdr or cmdr == 'UNKNOWN' :
             print('No CMDR ' + file)
             return
+
         for line_nr, zeile in enumerate(datei):
             if line_nr >= line_in_db: # work
                 data = read_json(zeile)
@@ -789,7 +792,6 @@ def check_db_for_ss(current_system):  # Prüfe ob es neue Daten in der Datenbank
         return 0
 
 
-
 def start_read_logs():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -817,7 +819,7 @@ def start_read_logs():
         return
 
     if check_db_for_ss(current_system) == 1:
-        # print('abkürzung')
+        print('abkürzung', current_system)
         return data_old
 
     data = get_data_from_DB(last, current_system)
@@ -836,6 +838,7 @@ def start_read_logs():
     else:  # Wenn Data ein string ist, setze es auf None
         data = [(current_system[0], 'No', 'Data', '',
                  'System', 'without', 'life', "", "", "")]
+        data_old = data
     return data
 
 
@@ -1927,10 +1930,8 @@ def insert_codex_db(logtime, codex_name, icd_cmdr, codex_entry, category, region
 def read_json(zeile):
     try:
         if zeile == '\n':
-            # logger(('exit - leerzeile'), 2)
             zeile = '{"timestamp": "2022-11-20T18:49:07Z", "event": "Friends", "Status": "Online"}'
-        data = json.loads(zeile)
-        return data
+        return json.loads(zeile)
     except ValueError:
         logger(('read_json', zeile), log_var)
         zeile = '{"timestamp": "2022-11-20T18:49:07Z", "event": "Friends", "Status": "Online"}'
@@ -2861,31 +2862,31 @@ def read_data_from_last_system(file, mission_id):  # NEEDS REVIEW
     starsystem = ''
     go = 0
 
-    with open(file, 'r', encoding='UTF8') as datei:
-        for zeile in datei.readlines():
+    # with open(file, 'r', encoding='UTF8') as datei:
+    #     for zeile in datei.readlines():
+    #         data = read_json(zeile)
+    #         if data.get('event', 0) == 'Commander':
+    #             cmdr = data.get('Name', '0')
+    with open(file, 'r', encoding='UTF8') as datei_2:
+        for zeile in reversed(file):  # Read File line by line reversed!
             data = read_json(zeile)
-            if data.get('event', 0) == 'Commander':
-                cmdr = data.get('Name', '0')
-                with open(file, 'r', encoding='UTF8') as datei_2:
-                    for zeile in datei_2.readlines()[::-1]:  # Read File line by line reversed!
-                        data = read_json(zeile)
-                        if data['event'] == 'MissionAccepted':
-                            mission = data.get('MissionID')
-                            if mission == mission_id:
-                                go = 1
-                        if go == 1:
-                            if data['event'] == 'Docked':
-                                starsystem = data['StarSystem']
-                                return starsystem
-                            if data['event'] == 'Location':
-                                starsystem = data['StarSystem']
-                                return starsystem
-                            if data['event'] == 'Disembark':
-                                starsystem = data['StarSystem']
-                                return starsystem
-                            if data['event'] == 'FSDJump':
-                                starsystem = data['StarSystem']
-                                return starsystem
+            if data['event'] == 'MissionAccepted':
+                mission = data.get('MissionID')
+                if mission == mission_id:
+                    go = 1
+            if go == 1:
+                if data['event'] == 'Docked':
+                    starsystem = data['StarSystem']
+                    return starsystem
+                if data['event'] == 'Location':
+                    starsystem = data['StarSystem']
+                    return starsystem
+                if data['event'] == 'Disembark':
+                    starsystem = data['StarSystem']
+                    return starsystem
+                if data['event'] == 'FSDJump':
+                    starsystem = data['StarSystem']
+                    return starsystem
 
 
 def send_to_discord(content):
@@ -2942,8 +2943,6 @@ def check_last(file):
                                     name = ? """, (file,)).fetchall()
     if last_line_in_db:
         lines_in_file = count_lines_efficiently(file)
-        # print(lines_in_file)
-        # print(str(last_line_in_db[0][0]+1))
 
         if (last_line_in_db[0][0]+1) == lines_in_file:
             return 1
@@ -3167,7 +3166,7 @@ def customtable_view():
                     background="black",
                     foreground="white",
                     rowheight=15,
-                    fieldbackground="white"
+                    fieldbackground="#3d3b3a"
                     )
     style.map('Treeview', background=[('selected', "#f07b05")])
 
@@ -3315,7 +3314,7 @@ def customtable_view():
         filter_cmdr = combo_cmdr.get()
         filter_bdata = combo_bio_data.get()
 
-        rowdata = get_codex_data(filter_cmdr, filter_region, filter_bdata, 1)
+        rowdata = get_codex_data(filter_cmdr, filter_region, filter_bdata)
         if old_view_name != 'missing_codex':
             main_schema()
 
@@ -3475,11 +3474,12 @@ def customtable_view():
             combo_regions.configure(values=regions)
 
     #Daten für die Tabelle
-    data = get_codex_data('', '', '', 0)
+    data = get_codex_data('', '', '')
     main_schema()
 
     global treeview_count
     treeview_count = 0
+
     def add_entries(entries):
         global treeview_count
         treeview_count = 0
@@ -3488,6 +3488,8 @@ def customtable_view():
             treeview_count += 1
             new_entry = entry
             tags = ()
+            if len(entry) < 2:
+                return
             if entry[1] != '' and view_name == active_view[2]:
                 #active_view = ['bio_codex' ,'stellar_codex', 'system_scanner']
                 tags = ('header',)
@@ -3496,7 +3498,6 @@ def customtable_view():
                 if idx == 0:
                     codex_tree.item(parent_item, open=True)
                 # print('', idx, new_entry, tags)
-
             else:
                 if idx % 2 == 1:
                     if view_name == active_view[2]: #active_view = ['bio_codex' ,'stellar_codex', 'system_scanner']
@@ -3524,9 +3525,9 @@ def customtable_view():
 
     codex_tree.tag_configure('odd', background='#569fe3', foreground='white')
     codex_tree.tag_configure('even', background='white', foreground='black')
-    codex_tree.tag_configure('odd_new', background='#29992f', font=('Arial', 9, 'bold'))
-    codex_tree.tag_configure('even_new', background='#65c27e', foreground='black', font=('Arial', 9, 'bold'))
-    codex_tree.tag_configure('header', background='black', foreground='white', font=('Arial', 10))
+    codex_tree.tag_configure('odd_new', background='#7B0037', foreground='white', font=('Arial', 9, 'bold'))
+    codex_tree.tag_configure('even_new', background='#ffbfeb', foreground='black', font=('Arial', 9, 'bold'))
+    codex_tree.tag_configure('header', background='#381f0b', foreground='white', font=('Arial', 10))
     # codex_tree.tag_configure('header', background='grey', foreground='#f07b05', font=('Arial', 10))
 
     add_entries(data)
@@ -3593,14 +3594,34 @@ def customtable_view():
             else:
                 var = str(values[4]).split()
             if view_name == active_view[2]:
-                var = '%' + values[4] + '%'
-                with sqlite3.connect(database) as connection:
-                    cursor = connection.cursor()
-                    select = cursor.execute("SELECT DISTINCT data FROM codex_entry WHERE data like ? ",
-                                            (var,)).fetchall()
-                    if select:
-                        var = str(select[0][0]).split()
-                # print(var)
+                print(values)
+                if values[0] != '':
+                    directory_to_search = 'images/'
+                    body = str(values[4]).split(' ')
+                    partial_filename_to_find = str(body[0]).rstrip()
+                    print(partial_filename_to_find)
+                    def find_file_in_directory(directory, partial_filename):
+                        for root, dirs, files in os.walk(directory):
+                            for file in fnmatch.filter(files, f'*{partial_filename}*'):
+                                return os.path.join(root, file)
+                        return None
+
+                    result = find_file_in_directory(directory_to_search, partial_filename_to_find)
+                    if not result:
+                        return
+                    print(result)
+                    my_img = customtkinter.CTkImage(dark_image=Image.open(resource_path(result)), size=(320, 145))
+                    my_codex_preview = customtkinter.CTkLabel(master=tree, image=my_img, text='')
+                    my_codex_preview.place(x=837, y=400)
+                    return
+                else:
+                    var = '%' + values[4] + '%'
+                    with sqlite3.connect(database) as connection:
+                        cursor = connection.cursor()
+                        select = cursor.execute("SELECT DISTINCT data FROM codex_entry WHERE data like ? ",
+                                                (var,)).fetchall()
+                        if select:
+                            var = str(select[0][0]).split()
             png = ''
             for x, i in enumerate(var):
                 # print(x, len(var))
@@ -3610,18 +3631,11 @@ def customtable_view():
                     png += (var[x] + '_')
             if Path('images/' + png).is_file():
                 photo = "images/" + str(png)
-                file = resource_path(photo)
-                image = Image.open(file)
-                image = image.resize((320, 145))
-                my_img = ImageTk.PhotoImage(image)
-                # print("File exist")
             else:
                 logger("File not found", log_var)
                 logger(png, 2)
-                file = resource_path("images/Kein_Bild.png")
-                image = Image.open(file)
-                image = image.resize((320, 145))
-                my_img = ImageTk.PhotoImage(image)
+                photo = resource_path("images/Kein_Bild.png")
+            my_img = customtkinter.CTkImage(dark_image=Image.open(resource_path(photo)), size=(320, 145))
         else:
             return
         my_codex_preview = customtkinter.CTkLabel(master=tree, image=my_img, text='')
@@ -3631,7 +3645,7 @@ def customtable_view():
     codex_tree.bind("<ButtonRelease-1>", selected_record)
     def refresh_codex_data(func):
         funktion = inspect.stack()[0][3] , func
-        logger(funktion, log_var)
+        logger(funktion, 2)
         global view_name, old_view_name
         view_name = func
         match func:
@@ -3650,7 +3664,7 @@ def customtable_view():
                 summen_label.configure(text='')
 
         # codex_tree.config(height=15)
-        if rowdata != 0 or view_name != old_view_name:
+        if rowdata != 0 or (view_name != old_view_name):
             codex_tree.delete(*codex_tree.get_children())
             old_view_name = view_name
             add_entries(rowdata)
@@ -3669,11 +3683,11 @@ def customtable_view():
 
     def tree_loop(x):
         funktion = inspect.stack()[0][3]
-        logger(funktion, log_var)
+        logger(funktion, 2)
         refresh_codex_data(view_name)
-        tree.after(x, lambda: tree_loop(10000))
+        tree.after(x, lambda: tree_loop(3000))
 
-    tree_loop(100)
+    tree_loop(3000)
 
     tree.mainloop()
 
@@ -3693,87 +3707,69 @@ def rescan():
     threading.Thread(target=rescan_files).start()
 
 
-def missing_codex():
-    funktion = inspect.stack()[0][3]
-    logger(funktion, 1)
-    filter_cmdr = combo_cmdr.get()
-    filter_region = combo_regions.get()
-    global view_name
-    view_name = 'missing_codex'
+def create_codex_show_table():
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
-        cmdrs = cursor.execute("SELECT DISTINCT cmdr FROM codex").fetchall()
         cursor.execute("DROP TABLE IF EXISTS codex_show")
         cursor.execute("""CREATE table IF NOT EXISTS codex_show (
                                 cmdr TEXT,
                                 data TEXT,
                                 region TEXT)
                                 """)
-        connection.commit()
+        cursor.execute("SELECT DISTINCT data FROM codex_entry")
+        all_species = [row[0] for row in cursor.fetchall()]
 
-        bio_names = cursor.execute("SELECT DISTINCT data FROM codex_entry").fetchall()
+        cursor.execute("SELECT DISTINCT cmdr FROM codex")
+        all_names = [row[0] for row in cursor.fetchall()]
+
         regions = RegionMapData.regions
+        filtered_regions = [region for region in regions if region is not None]
 
-        for cmdr in cmdrs:
-            for region in regions:
-                if region is not None:
-                    for bio in bio_names:
-                        cursor.execute("INSERT INTO codex_show VALUES (?, ?, ?)", (cmdr[0], bio[0], region))
-        connection.commit()
+        # Erstelle alle möglichen Kombinationen von Namen, Regionen und Spezies
+        all_combinations = list(product(all_names, all_species, filtered_regions))
+        cursor.execute("SELECT DISTINCT cmdr, data, region FROM codex WHERE codex.codex = 1")
+        existing_data = set(cursor.fetchall())
 
-        # select all Codex Entrys from Codex
-        temp = cursor.execute("SELECT DISTINCT cmdr, data, region FROM codex WHERE codex.codex = 1").fetchall()
-        if temp:
-            del_sql = ''
-            for i in temp:
-                delete_cmdr = str(i[0])
-                delete_bio = str(i[1])
-                delete_region = str(i[2])
-                del_sql = f'''DELETE FROM codex_show WHERE cmdr = "{delete_cmdr}" AND data = "{delete_bio}" AND region = "{delete_region}";\n'''
-                cursor.execute(del_sql)
-            connection.commit()
+        # Finde fehlende Kombinationen
+        missing_combinations = [combo for combo in all_combinations if combo not in existing_data]
+        cursor.executemany("INSERT INTO codex_show VALUES (?, ?, ?)", missing_combinations)
 
-        filter_bio_data = combo_bio_data.get()
-        if filter_bio_data:
-            filter_bdata = '%' + filter_bio_data + '%'
-        else:
-            filter_bdata = ''
 
-        if not filter_cmdr and not filter_region and not filter_bdata:
-            query = f'''SELECT * FROM codex_show ORDER BY data'''
-            select = cursor.execute(query).fetchall()
+def missing_codex():
+    funktion = inspect.stack()[0][3]
+    logger(funktion, 1)
 
-        elif filter_cmdr and filter_region and filter_bdata:
-            query = f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}" 
-            and region = "{filter_region}" and data like "{filter_bdata}" ORDER BY data'''
-            select = cursor.execute(query).fetchall()
+    create_codex_show_table()
+    global view_name
+    view_name = 'missing_codex'
+    filter_cmdr = combo_cmdr.get()
+    filter_region = combo_regions.get()
+    filter_bio_data = combo_bio_data.get()
+    if filter_bio_data:
+        filter_bdata = '%' + filter_bio_data + '%'
+    else:
+        filter_bdata = ''
+    key = (bool(filter_cmdr), bool(filter_region), bool(filter_bdata))
 
-        elif filter_cmdr and filter_region and not filter_bdata:
-            query = f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}" 
-                        and region = "{filter_region}" ORDER BY data'''
-            select = cursor.execute(query).fetchall()
+    conditions = {
+        (False, False, False):  f'''SELECT * FROM codex_show ORDER BY data''',
+        (True, True, True):     f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}" 
+                                    and region = "{filter_region}" and data like "{filter_bdata}" ORDER BY data''',
+        (True, False, False):   f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}" ORDER BY data''',
+        (False, True, False):   f'SELECT * FROM codex_show WHERE region = "{filter_region}" ORDER BY data',
+        (False, False, True):   f'SELECT * FROM codex_show WHERE data like "{filter_bdata}" ORDER BY data',
+        (True, True, False):    f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}" 
+                                    and region = "{filter_region}" ORDER BY data''',
+        (True, False, True):    f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}" 
+                                    and data like "{filter_bdata}" ORDER BY data''',
+        (False, True, True):    f'''SELECT * FROM codex_show WHERE region = "{filter_region}" 
+                                    and data like "{filter_bdata}" ORDER BY data'''
+    }
 
-        elif filter_cmdr and not filter_region and filter_bdata:
-            query = f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}"
-             and data like "{filter_bdata}" ORDER BY data'''
-            select = cursor.execute(query).fetchall()
-
-        elif filter_cmdr and not filter_region and not filter_bdata:
-            query = f'''SELECT * FROM codex_show WHERE cmdr = "{filter_cmdr}" ORDER BY data'''
-            select = cursor.execute(query).fetchall()
-
-        elif not filter_cmdr and filter_region and filter_bdata:
-            query = f'''SELECT * FROM codex_show WHERE 
-            region = "{filter_region}" and data like "{filter_bdata}" ORDER BY data'''
-            select = cursor.execute(query).fetchall()
-
-        elif not filter_cmdr and filter_region and not filter_bdata:
-            query = f'''SELECT * FROM codex_show WHERE region = "{filter_region}" ORDER BY data'''
-            select = cursor.execute(query).fetchall()
-
-        elif not filter_cmdr and not filter_region and filter_bdata:
-            query = f'''SELECT * FROM codex_show WHERE data like "{filter_bdata}" ORDER BY data'''
-            select = cursor.execute(query).fetchall()
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        query = conditions.get(key)
+        select = cursor.execute(query).fetchall()
 
     lauf = 1
     data = []
@@ -4082,9 +4078,9 @@ def insert_star_data_in_db(star_data): # Tabelle star_data mit Daten füllen
                                     (system_address,)).fetchall()
             if not select:
                 cursor.execute("INSERT INTO star_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                               (date_log, time_log, body_id, starsystem, body_name, system_address, 1, distance,
-                                startype, sub_class, mass, radius, age, surface_temp, luminosity, rotation_period,
-                                axis_tilt, discovered, mapped, parents))
+                               (date_log, time_log, body_id, starsystem, body_name, system_address, 1,
+                                distance, startype, sub_class, mass, radius, age, surface_temp, luminosity,
+                                rotation_period, axis_tilt, discovered, mapped, parents))
                 return
 
         select = cursor.execute("""SELECT starsystem, system_address from star_data where system_address = ? 
@@ -4150,23 +4146,16 @@ def set_main_star(data):
     system_address = data.get('SystemAddress')
     body = data.get('SystemAddress')
     body_name = data.get('Body')
-    # if body_id != 0:
-    #     body_name = body_name.replace((starsystem + ' '), '')
-    # else:
-    #     body_name = body_name.replace((starsystem), '')
 
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
-
         select = cursor.execute("""SELECT starsystem, system_address from star_data where system_address = ? """,
                                 (system_address,)).fetchall()
         if not select:
             cursor.execute("""INSERT INTO star_data (date_log, time_log, body_id, starsystem, body_name, 
             system_address, Main) VALUES (?,?,?,?,?,?,?)""",
                 (date_log, time_log, body_id, starsystem, body_name, system_address, 1)).fetchall()
-
             connection.commit()
-
     return (body_id, starsystem, body_name, system_address)
 
 
@@ -4228,10 +4217,10 @@ def get_species_for_planet(body):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-    select = cursor.execute("""SELECT species from temp where body = ?""", (body,)).fetchall()
-
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        select = cursor.execute("""SELECT species from temp where body =?""",
+                                (body,)).fetchall()
     data = []
     for i in select:
         for a in i:
@@ -4261,93 +4250,66 @@ def get_bio_scan_count(bio, body_name):  # Lese in der DB aus wie oft das BIO ge
         return 'Scan complete 3 / 3', 3
 
 
-def get_codex_data(sf_cmdr, region, bio_data, update):
+def get_codex_query(sf_cmdr, region, new_bio_data, b_date, e_date):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    create_tables()
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-    # data = []
-    global b_date, e_date
-    # b_date = '2020-01-01'
-    # e_date = '2023-10-01'
-    b_date = begin_time.get()
-    e_date = end_time.get()
-
-    if bio_data != '':
-        bio_data = '%' + bio_data + '%'
-    if bio_data == '%---------%':
-        bio_data = ''
+    key = (bool(sf_cmdr), bool(region), bool(new_bio_data))
 
     select = f'''SELECT ROW_NUMBER() OVER(ORDER BY date_log DESC, time_log DESC) AS Row,
                     c1.date_log, c1.time_log, c1.cmdr, c1.data, c1.bio_color, 
                     (SELECT worth FROM codex_entry ce WHERE ce.data = c1.data) AS product_price, 
                     c1.systemname, c1.body, c1.region FROM codex c1'''
 
-    # # Fall 1 CMDR & REGION & BIO
-    if sf_cmdr and region and bio_data:
-        # print('filter - 1')
-        query = f'''{select}  
-                    where cmdr = "{sf_cmdr}" and data like "{bio_data}" and region = "{region}"
-                    AND date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
+    conditions = {
+        (True, True, True): f'''{select} 
+                                where cmdr = "{sf_cmdr}" and data like "{new_bio_data}" and region = "{region}" 
+                                AND date_log BETWEEN "{b_date}" AND "{e_date}" 
+                                ORDER BY date_log DESC, time_log DESC;''',
+        (True, True, False): f'''{select}  
+                                where cmdr = "{sf_cmdr}" and region = "{region}" 
+                                AND date_log BETWEEN "{b_date}" AND "{e_date}" 
+                                ORDER BY date_log DESC, time_log DESC;''',
+        (True, False, True): f'''{select} 
+                                where cmdr = "{sf_cmdr}" and data like "{new_bio_data}" 
+                                AND date_log BETWEEN "{b_date}" AND "{e_date}" 
+                                ORDER BY date_log DESC, time_log DESC;''',
+        (True, False, False): f'''{select}
+                                where cmdr = "{sf_cmdr}" AND date_log BETWEEN "{b_date}" AND "{e_date}"
+                                ORDER BY date_log DESC, time_log DESC;''',
+        (False, True, False): f'''{select} where region = "{region}" 
+                                AND date_log BETWEEN "{b_date}" AND "{e_date}" 
+                                ORDER BY date_log DESC, time_log DESC;''',
+        (False, False, True): f'''{select} where data like "{new_bio_data}" 
+                                AND date_log BETWEEN "{b_date}" AND "{e_date}" 
+                                ORDER BY date_log DESC, time_log DESC;''',
+        (False, True, True): f'''{select} where data like "{new_bio_data}" and region = "{region}"
+                                AND date_log BETWEEN "{b_date}" AND "{e_date}" 
+                                ORDER BY date_log DESC, time_log DESC;''',
+        (False, False, False): f'''{select} where date_log BETWEEN "{b_date}" AND "{e_date}" 
+                                ORDER BY date_log DESC, time_log DESC;'''}
+    query = conditions.get(key)
+    return query
 
-    # # Fall 2 CMDR & Region
-    elif sf_cmdr and region and not bio_data:
-        # print('filter - 3')
-        query = f'''{select}  
-                    where cmdr = "{sf_cmdr}" and region = "{region}"
-                    AND date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
+def get_codex_data(sf_cmdr, region, bio_data):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
 
-    # # Fall 3 CMDR & Bio
-    elif sf_cmdr and not region and bio_data:
-        # print('filter - 3')
-        query = f'''{select}  
-                    where cmdr = "{sf_cmdr}" and data like "{bio_data}" 
-                    AND date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
+    b_date = begin_time.get()
+    e_date = end_time.get()
 
-    # # Fall4 only CMDR
-    elif sf_cmdr and not region and not bio_data:
-        # print('filter - 4')
-        query = f'''{select}  
-                    where cmdr = "{sf_cmdr}" AND date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
-    # # Fall 5 only Region
-    elif not sf_cmdr and region and not bio_data:
-        # print('filter - 5')
-        query = f'''{select} 
-                    where region = "{region}"
-                    AND date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
-    # # Fall 6 only Biodata
-    elif not sf_cmdr and not region and bio_data:
-        # print('filter - 6')
-        query = f'''{select} 
-                    where data like "{bio_data}" 
-                    AND date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
-    # # Fall 7 Region & Biodata
-    elif not sf_cmdr and region and bio_data:
-        # print('filter - 1')
-        query = f'''{select}  
-                    where data like "{bio_data}" and region = "{region}"
-                    AND date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
-    # # Fall 8 no Filter
-    elif not sf_cmdr and not region and not bio_data:
-        # print('filter - 8')
-        query = f'''{select}  
-                    where date_log BETWEEN "{b_date}" AND "{e_date}" 
-                    ORDER BY date_log DESC, time_log DESC;'''
+    if bio_data == '%---------%':
+        new_bio_data = ''
+    elif bio_data != '':
+        new_bio_data = '%' + bio_data + '%'
+    else:
+        new_bio_data = ''
 
-    data = cursor.execute(query).fetchall()
+    query = get_codex_query(sf_cmdr, region, new_bio_data, b_date, e_date)
 
-    connection.commit()
-    connection.close()
-    # print(data)
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        data = cursor.execute(query).fetchall()
     return data
 
 
@@ -4420,7 +4382,8 @@ def activ_planet_scan(file):
     logger(funktion, log_var)
 
     with open(file, 'r', encoding='UTF8') as datei:
-        for zeile in datei.readlines()[::-1]:  # Read File line by line reversed!
+        for zeile in reversed(list(datei)):  # Read File line by line reversed using iterator!
+        # for zeile in datei.readlines()[::-1]:  # Read File line by line reversed!
             data = read_json(zeile)
             if data.get('event') == 'SAASignalsFound' \
                     or data.get('event') == "Touchdown" or data.get('event') == 'Disembark':
@@ -4470,9 +4433,16 @@ def get_color_or_distance(bio_name, star, materials):
                 data.append(select[0])
     if data == []:
         return
-    # gcod_time_2 = get_time()
-    # print('get_color_or_distance  ' + str(timedelta.total_seconds(gcod_time_2 - gcod_time_1)))
+
     return distance, data
+
+
+def clean_string(string):
+    string = string.replace(' atmosphere', '')
+    string = string.lower()
+    if 'rich' in string:
+        string = string.replace(' rich', '-rich')
+    return string
 
 
 def select_prediction_db(star_type, planet_type, body_atmos, body_gravity, body_temp, body_pressure,
@@ -4482,15 +4452,10 @@ def select_prediction_db(star_type, planet_type, body_atmos, body_gravity, body_
 
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
-    body_atmos = body_atmos.replace(' atmosphere', '')
-    body_atmos = body_atmos.lower()
-    if 'rich' in body_atmos:
-        body_atmos = body_atmos.replace(' rich', '-rich')
-    planet_type = planet_type.lower()
-    star_type = star_type.lower()
+    body_atmos = clean_string(body_atmos)
+    planet_type = clean_string(planet_type)
+    star_type = clean_string(star_type)
     body_temp = int(body_temp)
-    # print('select Bio_prediction',  planet_type ,body_atmos,
-    #       body_gravity, body_temp, body_pressure, volcanism)
 
     if volcanism == 'Y':
         select_prediction = []

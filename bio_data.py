@@ -133,6 +133,46 @@ def insert_into_db_bio_color(name, distance, criteria, criterium, color):
     connection.commit()
 
 
+def create_table_horizon_materials():
+    if check_table('horizon_materials') == 1:
+        return
+
+    file = resource_path("hor_mats.csv")
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        with open(file, 'r', encoding='UTF8') as datei:
+            for zeile in datei.readlines():
+                zeile = zeile.rstrip('\n')
+                zeile = zeile.split(';')
+                # ['shieldpatternanalysis', 'Aberrant Shield Pattern Analysis', 'Abweichende Schildeinsatz-Analysen', 'Encoded', '4']
+                cursor.execute("""CREATE table IF NOT EXISTS horizon_materials (
+                                Name TEXT,
+                                de TEXT,
+                                en TEXT,
+                                type TEXT,                            
+                                grade INTEGER)""")
+                cursor.execute("INSERT INTO horizon_materials VALUES (?,?,?,?,?)",
+                               (zeile[0], zeile[1], zeile[2], zeile[3], zeile[4]))
+                connection.commit()
+
+
+create_table_horizon_materials()
+
+
+def insert_into_db_bio_color(name, distance, criteria, criterium, color):
+
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        cursor.execute("""CREATE table IF NOT EXISTS Bio_color (
+                        Name TEXT,
+                        Distance INTEGER,
+                        Criteria TEXT,
+                        Criterium TEXT,
+                        COLOR TEXT)""")
+        cursor.execute("INSERT INTO Bio_color VALUES (?,?,?,?,?)", (name, distance, criteria, criterium, color))
+        connection.commit()
+
+
 def create_DB_Bio_prediction():
 
     if check_table('Bio_prediction') == 1:
