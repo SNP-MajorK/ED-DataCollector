@@ -71,7 +71,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.5.2'
+version_number = '0.9.5.3'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -4967,8 +4967,8 @@ def check_cloud_vs_local():
                     "cmdr": str(data[0][2]),
                     "JumpDist": str(data[0][3])
                 }
-                upload_cloud_records(current_data)
-                create_logo(current_data)
+                if upload_cloud_records(current_data) == 1:
+                    create_logo(current_data)
 
         hot_cloud = cursor.execute(f'''SELECT hottest_body from dvrii;''').fetchone()
         hot_local = cursor.execute(f'''SELECT MAX(max_temp) from exploration_records;''').fetchone()
@@ -4995,8 +4995,8 @@ def check_cloud_vs_local():
                         "cmdr": str(data[0][2]),
                         "SurfaceTemperature": str(data[0][3])
                     }
-                    upload_cloud_records(current_data)
-                    create_logo(current_data)
+                    if upload_cloud_records(current_data) == 1:
+                        create_logo(current_data)
 
         bodys_cloud = cursor.execute(f'''SELECT most_bodys from dvrii;''').fetchone()
         bodys_local = cursor.execute(f'''SELECT MAX(max_body_count) from exploration_records;''').fetchone()
@@ -5023,8 +5023,8 @@ def check_cloud_vs_local():
                         "cmdr": str(data[0][2]),
                         "max_body_count": str(data[0][3])
                     }
-                    upload_cloud_records(current_data)
-                    create_logo(current_data)
+                    if upload_cloud_records(current_data) == 1:
+                        create_logo(current_data)
 
         grav_cloud = cursor.execute(f'''SELECT max_gravitation from dvrii;''').fetchone()
         grav_local = cursor.execute(f'''SELECT MAX(max_gravity) from exploration_records;''').fetchone()
@@ -5051,8 +5051,8 @@ def check_cloud_vs_local():
                         "cmdr": str(data[0][2]),
                         "SurfaceGravity": str(data[0][3])
                     }
-                    upload_cloud_records(current_data)
-                    create_logo(current_data)
+                    if upload_cloud_records(current_data) == 1:
+                        create_logo(current_data)
 
 
 def check_max(max_var):
@@ -5238,8 +5238,8 @@ def check_wds():
                         "timestamp": str(datetime.now())[0:19],
                         "white_dwarf": local_wd[0]
                     }
-                    upload_cloud_records(current_data)
-                    create_logo(current_data)
+                    if upload_cloud_records(current_data) == 1:
+                        create_logo(current_data)
 
 
 def get_cloud_data():
@@ -5370,11 +5370,11 @@ def upload_cloud_records(max_var):
         cursor = connection.cursor()
         upload = cursor.execute("""SELECT exp_upload FROM server""").fetchall()
         if upload[0][0] == 0:
-            return
+            return 0
     cmdr = max_var.get("cmdr")
     timestamp = max_var.get("timestamp")
     if timestamp_in_event(timestamp) == 0:
-        return
+        return 0
     print('Folgende Daten werden hochgeladen')
     print(max_var)
     print('')
@@ -5407,7 +5407,7 @@ def upload_cloud_records(max_var):
                           host=snp_server.db_host, port=5432) as psql_conn:
         psql = psql_conn.cursor()
         psql.execute(insert_query)
-        psql_conn.commit()
+        return 1
 
 
 def check_player_death_total():
@@ -5452,8 +5452,8 @@ def check_player_death_total():
                 "timestamp": str(datetime.now())[0:19],
                 "death_counter": result[0][0]
             }
-            upload_cloud_records(current_data)
-            create_logo(current_data)
+            if upload_cloud_records(current_data) == 1:
+                create_logo(current_data)
 
 
 #  Check ob, wir im Tour Datum liegen
@@ -5574,6 +5574,7 @@ def exploration_challenge():
                                     date_log = "{date_log}" and time_log = "{time_log}" 
                                     and cmdr = "{cmdr}" and star_type = "{star_type}"''').fetchall()
                                     if sql_select:
+                                        print(sql_select)
                                         continue
                                     cursor.execute('''INSERT INTO white_dwarfs 
                                     (date_log, time_log, cmdr, star_system, star_type) VALUES(?,?,?,?,?)''',
@@ -5581,7 +5582,7 @@ def exploration_challenge():
                                     connection.commit()
 
                         if data.get('Landable'):
-                            if not data.get('WasDiscovered') :
+                            if not data.get('WasDiscovered'):
                                 if data.get('SurfaceGravity'):
                                     current_data = {
                                         "SurfaceTemperature": round(data.get("SurfaceTemperature"), 2),
@@ -5614,7 +5615,7 @@ def exploration_challenge():
     check_player_death_total()
     check_wds()
     check_cloud_vs_local()
-    set_cloud_records()
+    # set_cloud_records()
 
 
 def get_mats_info(name):
@@ -6794,6 +6795,9 @@ def display_cloud_records():
 
 
 def send_to_discord2(achievement_png):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, 2)
+
     with io.BytesIO() as image_binary:
         achievement_png.save(image_binary, format='PNG')
         image_binary.seek(0)
@@ -6807,16 +6811,14 @@ def send_to_discord2(achievement_png):
         response = webhook.execute()
 
         if response.status_code == 200:
-            print("Bild erfolgreich gesendet")
+            print("Erfolgreich gesendet")
         else:
             print(f"Fehler beim Senden des Bildes: {response.status_code}")
 
 
 def create_logo(max_list):  # Badges für die exploration challenge!!
     funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-    if max_list:
-        return
+    logger(funktion, 1)
     max_font_size_title = 24  # Maximale Schriftgröße für Titel
     cmdr = max_list.get("cmdr")
     pic = 'images/NRNF/pokal_jubel_feuerwerk_2.png'
