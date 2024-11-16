@@ -1,43 +1,40 @@
 # Created by MajorK https://github.com/SNP-MajorK/ED-DataCollector
 
+import fnmatch
 import glob
+import io
+import queue
 import random
 import re
-import io
 import ssl
+import threading
 import time
 import urllib.request
 import webbrowser
-import fnmatch
+from builtins import print
+from datetime import date, timedelta, datetime
+from difflib import get_close_matches
+from itertools import product
+from pathlib import Path
+from tkinter import *
+from tkinter import messagebox
+from tkinter import ttk
+from urllib.parse import urlparse
+from winreg import *
+
 import customtkinter
 import plotly.express as px
 import psycopg2
 import requests
-import compass
-import snp_server
-import threading
-import queue
-import inspect
-import json
-
-from pathlib import Path
-from tkinter import messagebox, END, Tk, Text
-from difflib import get_close_matches
-from discord_webhook import DiscordWebhook
-from builtins import print
-from datetime import date, timedelta, datetime
-from pathlib import Path
-from tkinter import *
-from tkinter import ttk
-from urllib.parse import urlparse
-from tkcalendar import DateEntry
-from winreg import *
-from itertools import product
 from PIL import Image, ImageDraw, ImageFont
+from discord_webhook import DiscordWebhook
 from prettytable import PrettyTable
 from requests import post
-from compass import compass_gui
+from tkcalendar import DateEntry
+
+import snp_server
 from bio_data import *
+from compass import compass_gui
 from gui_positionen import load_position, save_position
 
 # import compass, gui_positionen, snp_server
@@ -71,7 +68,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.5.3'
+version_number = '0.9.5.4'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -159,7 +156,9 @@ def create_tables():
                                         max_distance REAL,
                                         max_gravity REAL,
                                         max_body_count INTEGER,
-                                        max_temp REAL                                                                                
+                                        max_temp REAL,   
+                                        max_radius REAL,
+                                        min_radius REAL                                                                               
                                         )""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS white_dwarfs 
@@ -192,11 +191,15 @@ def create_tables():
                                         most_bodys INTEGER,
                                         death_counter INTEGER,
                                         white_dwarf INTEGER,
-                                        max_gravitation REAL)""")
+                                        max_gravitation REAL,
+                                        max_radius REAL,
+                                        min_radius REAL                                        
+                                        )""")
 
         item = cursor.execute("""SELECT * from DVRII""").fetchall()
         if not item:
-            cursor.execute("""INSERT INTO DVRII VALUES (99999999, 99999999, 99999999, 99999999, 99999999, 99999999)""")
+            cursor.execute("""INSERT INTO DVRII VALUES (99999999, 99999999, 99999999, 99999999, 
+            99999999, 99999999, 99999999, 99999999)""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS player_death 
                                 (date_log date, 
@@ -479,10 +482,12 @@ def new_server_settings():
                 eddc_user = result[0][2]
             else:
                 eddc_user = 'anonym'
-            if result[0][3] != ('' or None):
+            if result[0][3] != '' or result[0][3] is None:
                 path_new = result[0][3]
                 if path_new:
                     path = path_new
+            else:
+                path = log_path
             if int(result[0][4]) == 1 or int(result[0][4]) == 0:
                 up_server = int(result[0][4])
             else:
@@ -656,7 +661,7 @@ def new_server_settings():
                                         text_color='white', font=("Helvetica", 14))
     path_label.grid(column=0, row=4, sticky=W)
     path_entry = customtkinter.CTkEntry(master=name_frame, width=200, font=("Helvetica", 14))
-    path_entry.insert(0, log_path)
+    path_entry.insert(0, path)
     path_entry.grid(column=1, row=4, sticky=W)
 
     # Kompass Overlay Style
@@ -759,7 +764,7 @@ def last_tick():
         response = requests.get("https://elitebgs.app/api/ebgs/v5/ticks", timeout=1)  #
         todos = json.loads(response.text)
     except:
-        logger(('Tick Error'), 1)
+        logger('Tick Error', 1)
         tick_data = ('[{"_id":"627fe6d6de3f1142b60d6dcd",'
                      '"time":"2022-05-14T16:56:36.000Z",'
                      '"updated_at":"2022-05-14T17:28:54.588Z",'
@@ -793,7 +798,7 @@ def file_names(var):
                 global log_path
                 log_path = result[0][3]
 
-    update_eleven = datetime(2022, 3, 14)
+    # update_eleven = datetime(2022, 3, 14)
     date_get = str(date_entry.get_date())
 
     my_date = date_get.split('-')
@@ -917,7 +922,7 @@ def tail_file(file):
             cmdr = read_cmdr(file)
             check_cmdr(file, cmdr)
             if not cmdr or cmdr == 'UNKNOWN':
-                print(f'No CMDR {file}')
+                logger(f'''No CMDR {file}''', 2)
                 return
 
             event = data.get('event')
@@ -968,7 +973,7 @@ data_old = None
 def count_lines_efficiently(filename):
     line_count = 0
     with open(filename, 'r') as file:
-        for line in file:
+        for _ in file:
             line_count += 1
     return line_count
 
@@ -1022,13 +1027,12 @@ def start_read_logs():
     else:
         return
 
-    data = None
     if check_logfile_in_db(last, 'explorer', 'check') != 1:
         check_logfile_in_db(last, '', 'insert')
         tail_file(last)
     else:
         if data_old and data_old != ' ' and check_last(last) == 1:
-            print('USE OLD DATA')
+            logger('USE OLD DATA', 2)
             return data_old
 
     current_system = get_last_system_in_db()
@@ -1041,16 +1045,15 @@ def start_read_logs():
         return data_old
 
     data = get_data_from_DB(last, current_system)
-    # print(data)
 
     logger(last, log_var)
 
     if data is not None:
         data_old = data
-    if data == None and data_old != None:
+    if data is None and data_old is not None:
         data = data_old
 
-    if not isinstance(data, str) and data != None and current_system[0] != None:
+    if not isinstance(data, str) and data is not None and current_system[0] is not None:
         if current_system[0] not in data[0][0]:
             data = None
     else:  # Wenn Data ein string ist, setze es auf None
@@ -1100,7 +1103,6 @@ def star_systems_db():  # Liest alle SystemIDs und Systemnamen im Journal aus um
 def print_influence_db(filter_b):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    data = []
     data_list = []
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
@@ -1128,10 +1130,9 @@ def print_influence_db(filter_b):
                 cursor.execute("""INSERT INTO tmp_filter_inf (SystemName, faction, influence) 
                                     VALUES (?, ?, ?)""", (i[0], i[1], i[2]))
                 connection.commit()
-            filter = cursor.execute("""SELECT * FROM tmp_filter_inf WHERE SystemName LIKE ? OR 
-                                        Faction LIKE ? GROUP BY 1, 2, 3""",
-                                    (filter_b, filter_b)).fetchall()
-            data = filter
+            filter_tmp = cursor.execute("""SELECT * FROM tmp_filter_inf WHERE SystemName LIKE ? OR 
+                                        Faction LIKE ? GROUP BY 1, 2, 3""", (filter_b, filter_b)).fetchall()
+            data = filter_tmp
         else:
             data = data_list
     return data
@@ -1141,7 +1142,7 @@ def einfluss_auslesen(journal_file):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    t1 = get_time()
+    # t1 = get_time()
     line = 0
     with open(journal_file, 'r', encoding='UTF8') as datei:
         for zeile in datei:
@@ -1169,13 +1170,13 @@ def einfluss_auslesen(journal_file):
                         mission_completed(data)
                 case 'Shutdown':
                     check_logfile_in_db(journal_file, 'bgs', 'set')
-    t2 = get_time()
+    # t2 = get_time()
     # print('read all ' + str(journal_file) + '    ' + str(timedelta.total_seconds(t2 - t1)))
 
     # =========================================== End of dateien_einlesen()
 
 
-def get_data_mission_acceppted(mission_id):
+def get_data_mission_accepted(mission_id):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
@@ -1207,7 +1208,7 @@ def mission_completed(data):
                 faction = faction_effects.get('Faction')
                 effects = faction_effects.get('Influence')
                 if effects == []:  # Kein Einfluss im Log, der Einfluss wird der Auftragsannahme gezogen
-                    new_data = get_data_mission_acceppted(mission_id)
+                    new_data = get_data_mission_accepted(mission_id)
                     if new_data:
                         if new_data[4] == faction:
                             voucher_db(timestamp, 'influence', new_data[2], new_data[3], new_data[4], new_data[5])
@@ -1231,7 +1232,7 @@ def mission_failed(data):
     log_time = (log_date(timestamp))
     date_log = (log_time[0] + "-" + log_time[1] + "-" + log_time[2])
     time_log = (log_time[3] + ":" + log_time[4] + ":" + log_time[5])
-    faction = data.get('Faction')
+    # faction = data.get('Faction')
     mission_id = data.get('MissionID')
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
@@ -1279,8 +1280,8 @@ def failed_mission():
         sel = "SELECT mission_id from mission_failed where " + se
         select = cursor.execute(sel).fetchall()
         for i in select:
-            sel = "SELECT system_address, faction, influence from mission_accepted where mission_id = ? "
-            select = cursor.execute(sel, (i[0],)).fetchall()
+            # sel = "SELECT system_address, faction, influence from mission_accepted where mission_id = ? "
+            # select = cursor.execute(sel, (i[0],)).fetchall()
             # influence_db(select[0][0], select[0][1], (int(select[0][2])* -1))
             sel2 = "SELECT date_log, time_log, system, system_address, faction, influence " \
                    "from mission_accepted where mission_id = ? "
@@ -1413,21 +1414,21 @@ def thargoid_war_data(data):
         system_name = data.get('StarSystem')
 
         current_state = war_data.get('CurrentState')
-        next_success_state = war_data.get('NextStateSuccess')
-        next_fail_state = war_data.get('NextStateFailure')
-        success_state = war_data.get('SuccessStateReached')
+        # next_success_state = war_data.get('NextStateSuccess')
+        # next_fail_state = war_data.get('NextStateFailure')
+        # success_state = war_data.get('SuccessStateReached')
         war_progress = war_data.get('WarProgress')
         if war_progress == 0:
             return
         war_progress = war_progress * 100
         insert_war_data(date_log, time_log, system_address, system_name, current_state, war_progress)
-        return (date_log, time_log, system_address, system_name, current_state, war_progress)
+        return date_log, time_log, system_address, system_name, current_state, war_progress
 
 
 def update_thargoid_war():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    result = []
+
     with psycopg2.connect(dbname=snp_server.db_name, user=snp_server.db_user, password=snp_server.db_pass,
                           host=snp_server.db_host, port=5432) as psql_conn:
         psql = psql_conn.cursor()
@@ -1510,8 +1511,8 @@ def auswertung_thargoid_war(b_filter):
                       markers=True)
         fig.show()
     else:
-        eddc_text_box.insert(END, (('Das System ' + b_filter + ' wurde nicht in Datenbank gefunden: \n')))
-        eddc_text_box.insert(END, (('\n')))
+        eddc_text_box.insert(END, ('Das System ' + b_filter + ' wurde nicht in Datenbank gefunden: \n'))
+        eddc_text_box.insert(END, '\n')
 
 
 def multi_sell_exploration_data(journal_file):
@@ -1590,9 +1591,7 @@ def find_last_docked(journal_file, data_found):
         factions = ['---']
         star_systems = ['---']
         system_addresses = ['---']
-        faction = ''
-        star_system = ''
-        system_address = ''
+
         for zeile in datei:
             line += 1
             # data = json.loads(zeile)
@@ -1771,13 +1770,13 @@ def tick_select():
     search_date = datetime(int(jahr2), int(monat2), int(tag2), int(h_tick), int(m_tick))
 
     if tick:  # nach dem Tick
-        tommorow = str(search_date + timedelta(days=1))[0:10]
-        select_tick = '((date_log = "' + date + '" and time_log > "' + tick_time + '") or ' \
-                                                                                   '(date_log = "' + tommorow + '" and time_log < "' + tick_time + '"))'
+        tomorrow = str(search_date + timedelta(days=1))[0:10]
+        select_tick = f'''((date_log = "' + {date} + '" and time_log > "' + {tick_time} + '") or 
+                            (date_log = "' + {tomorrow} + '" and time_log < "' + {tick_time} + '"))'''
     else:  # vor dem Tick
         yesterday = str(search_date - timedelta(days=1))[0:10]
-        select_tick = '((date_log = "' + date + '" and time_log < "' + tick_time + '") or ' \
-                                                                                   '( date_log = "' + yesterday + '" and time_log > "' + tick_time + '"))'
+        select_tick = f'''((date_log = "' + {date} + '" and time_log < "' + {tick_time} + '") or 
+                            ( date_log = "' + {yesterday} + '" and time_log > "' + {tick_time} + '"))'''
     return select_tick
 
 
@@ -1813,7 +1812,10 @@ def print_combat_zone():
     return data
 
 
-def combat_window(data):
+new_data = []
+
+
+def combat_window(root, data):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
@@ -2396,7 +2398,7 @@ def read_log_codex(data, journal_file):
                 lauf = 1
 
         if ' - ' not in codex_entry and lauf == 0:
-            print(codex_entry)
+            logger(codex_entry, 2)
         if lauf == 0 and '- ' in codex_entry:
             tmp = codex_entry.split('-')
             codex_bio = str(tmp[0])
@@ -2661,7 +2663,7 @@ def read_cmdr(file):
 
     cc_cmdr = ""
     with open(file, 'r', encoding='UTF8') as datei:
-        print(file)
+        logger(file, log_var)
         for zeile in datei:
             search_string = '"event":"Commander"'
             if zeile.find(search_string) > -1:
@@ -3420,7 +3422,7 @@ def read_codex_data(rcd_cmdr, rcd_region):  # Data for Codex_stars
             else:
                 selected_value = 'like %' + selected_value + '%'
             part = part + 'codex_entry ' + selected_value + '" and '
-            print(sql_beginn + part + sql_end)
+            logger(sql_beginn + part + sql_end, log_var)
             select = cursor.execute(sql_beginn + part + sql_end).fetchall()
             return select
         select = cursor.execute(sql_beginn + part + sql_end).fetchall()
@@ -3435,7 +3437,6 @@ def custom_table_view():
     global is_custom_table_view_open
 
     if is_custom_table_view_open:
-        print('UPPS')
         return
     is_custom_table_view_open = True
     backup_row = ['']
@@ -3446,8 +3447,9 @@ def custom_table_view():
     tree.title('Display Codex Data')
 
     def on_close():
-        global is_custom_table_view_open
+        global is_custom_table_view_open, aus_var
         is_custom_table_view_open = False
+        aus_var = 0
         tree.destroy()
 
     tree.protocol("WM_DELETE_WINDOW", on_close)
@@ -3845,12 +3847,12 @@ def custom_table_view():
             try:
                 selection_cmdr = cursor.execute(query_cmdr).fetchall()
             except sqlite3.OperationalError:
-                print(query_cmdr)
+                logger(query_cmdr, 2)
 
             try:
                 selection_region = cursor.execute(query_region).fetchall()
             except sqlite3.OperationalError:
-                print(query_region)
+                logger(query_region, 2)
 
             for cmdr in selection_cmdr:
                 cmdrs = cmdrs + [cmdr[0]]
@@ -3878,7 +3880,7 @@ def custom_table_view():
             combo_cmdr.configure(values=cmdrs)
             combo_regions.configure(values=regions)
 
-    #Daten für die Tabelle
+    #  Daten für die Tabelle
     data = get_codex_data('', '', '')
     main_schema()
 
@@ -3893,12 +3895,12 @@ def custom_table_view():
             treeview_count += 1
             new_entry = entry
             tags = ()
+            parent_item = idx
             if len(entry) < 2:
                 return
             if entry[1] != '' and view_name == active_view[2]:
                 # active_view = ['bio_codex' ,'stellar_codex', 'system_scanner']
                 tags = ('header',)
-                parent_item = idx
                 codex_tree.insert('', iid=parent_item, index='end', values=new_entry, tags=tags)
                 if idx == 0:
                     codex_tree.item(parent_item, open=True)
@@ -3922,7 +3924,7 @@ def custom_table_view():
                         tags = ('even',)
             if entry[1] == '' and view_name == active_view[2]:
                 # print(codex_tree.get_children())
-                codex_tree.insert(parent=parent_item, index="end", values=new_entry, tags=tags)
+                codex_tree.insert(parent=str(parent_item), index="end", values=new_entry, tags=tags)
 
             else:
                 if tags != ('header',):
@@ -3951,6 +3953,7 @@ def custom_table_view():
         global my_img, my_codex_preview
         funktion = inspect.stack()[0][3]
         logger(funktion, log_var)
+        active_view = ['bio_codex', 'stellar_codex', 'system_scanner']
         selected_tree = codex_tree.focus()
         values = codex_tree.item(selected_tree, 'values')
         # print(values)
@@ -3982,7 +3985,6 @@ def custom_table_view():
                 values = (values[0], values[1], values[2], values[3], new_value[0], new_value[1],
                           values[6], values[7], values[8], values[9], values[10])
         if values:
-            active_view = ['bio_codex', 'stellar_codex', 'system_scanner']
             for c, i in enumerate(active_view):
                 if i == view_name:
                     normal_view = c
@@ -4603,7 +4605,7 @@ def get_info_scan_planets(data):  # data['event'] == 'FSSBodySignals':
     system_address = data['SystemAddress']
 
     if body_name == 'body_name':
-        print(data)
+        logger(data, 2)
 
     bio_count = 0
     region = (findRegionForBoxel(system_address)['region'][1])
@@ -4738,7 +4740,7 @@ def check_body(body_name):
 
 
 def check_cmdr(journal_file, cmdr):
-    print(journal_file)
+    logger(journal_file, 2)
     funktion = inspect.stack()[0][3] + " " + journal_file + " " + cmdr
     logger(funktion, log_var)
 
@@ -5063,21 +5065,26 @@ def check_max(max_var):
     with sqlite3.connect(database) as cm_connection:
         cm_cursor = cm_connection.cursor()
 
+        timestamp = max_var.get("timestamp")
+        start_time, stop_time = timestamp_in_event(timestamp, 2)
+
+        cmdr = max_var.get("cmdr")
+        icd_log_time = (log_date(timestamp))
+        date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
+        time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+        check_log_time = datetime(int(icd_log_time[0]), int(icd_log_time[1]), int(icd_log_time[2]),
+                                  int(icd_log_time[3]), int(icd_log_time[4]))
+
         if max_var.get('max_body_count'):
-            timestamp = max_var.get("timestamp")
-            cmdr = max_var.get("cmdr")
-            icd_log_time = (log_date(timestamp))
-            date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-            time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
 
             star_system = max_var.get('System')
             body_count = max_var.get("max_body_count")
 
-            max_body_count_sql = '''SELECT max_body_count FROM exploration_records where max_body_count is not NULL'''
+            max_body_count_sql = f'''SELECT max_body_count FROM exploration_records where max_body_count is not NULL'''
             max_body_count_db = cm_cursor.execute(max_body_count_sql).fetchone()
             if max_body_count_db:
                 if max_body_count_db[0] < body_count:
-                    cm_cursor.execute("DELETE from exploration_records where max_body_count is not NULL")
+                    cm_cursor.execute(f'''DELETE from exploration_records where max_body_count is not NULL''')
 
                     cm_cursor.execute('''INSERT INTO exploration_records 
                                             (date_log, time_log, cmdr, system, max_body_count) VALUES (?,?,?,?,?)''',
@@ -5100,10 +5107,7 @@ def check_max(max_var):
                 cm_cursor.execute(set_dvr)
 
         if max_var.get('JumpDist'):
-            timestamp = max_var.get("timestamp")
-            icd_log_time = (log_date(timestamp))
-            date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-            time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+
             cmdr = max_var.get("cmdr")
             star_system = max_var.get("System")
             body_name = max_var.get("BodyName")
@@ -5140,10 +5144,7 @@ def check_max(max_var):
                 # create_logo(max_var)
 
         if max_var.get('SurfaceGravity'):
-            timestamp = max_var.get("timestamp")
-            icd_log_time = (log_date(timestamp))
-            date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-            time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
+
             star_system = max_var.get("System")
             body_name = max_var.get("BodyName")
             gravity = max_var.get('SurfaceGravity')
@@ -5177,11 +5178,6 @@ def check_max(max_var):
                 cm_cursor.execute(set_dvr)
 
         if max_var.get('SurfaceTemperature'):
-
-            timestamp = max_var.get("timestamp")
-            icd_log_time = (log_date(timestamp))
-            date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-            time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
             star_system = max_var.get("System")
             body_name = max_var.get("BodyName")
             temp = max_var.get('SurfaceTemperature')
@@ -5211,6 +5207,43 @@ def check_max(max_var):
                     cm_cursor.execute(set_dvr)
             else:
                 cm_cursor.execute(set_dvr)
+
+        if max_var.get('Radius'):
+            star_system = max_var.get("System")
+            body_name = max_var.get("BodyName")
+            radius = max_var.get('Radius')
+            cmdr = max_var.get("cmdr")
+
+            max_radius_sql = '''SELECT MAX(max_radius) FROM exploration_records where max_radius is not NULL'''
+            max_radius_sql_db = cm_cursor.execute(max_radius_sql).fetchone()
+
+            if max_radius_sql_db:
+                if max_radius_sql_db[0] is None:
+                    cm_cursor.execute('''INSERT INTO exploration_records
+                    (date_log, time_log, cmdr, system, body, max_radius) VALUES (?,?,?,?,?,?)''',
+                                      (date_log, time_log, cmdr, star_system, body_name, radius))
+                elif max_radius_sql_db[0] < radius:
+                    cm_cursor.execute("DELETE from exploration_records where max_radius is not NULL")
+
+                    cm_cursor.execute('''INSERT INTO exploration_records
+                    (date_log, time_log, cmdr, system, body, max_radius) VALUES (?,?,?,?,?,?)''',
+                                      (date_log, time_log, cmdr, star_system, body_name, radius))
+
+            min_radius_sql = '''SELECT MIN(min_radius) FROM exploration_records where min_radius is not NULL'''
+            min_radius_sql_db = cm_cursor.execute(min_radius_sql).fetchone()
+
+            if min_radius_sql_db:
+                if max_radius_sql_db[0] is None:
+                    cm_cursor.execute('''INSERT INTO exploration_records
+                    (date_log, time_log, cmdr, system, body, min_radius) VALUES (?,?,?,?,?,?)''',
+                                      (date_log, time_log, cmdr, star_system, body_name, radius))
+
+                elif min_radius_sql_db[0] > radius:
+                    cm_cursor.execute("DELETE from exploration_records where min_radius is not NULL")
+
+                    cm_cursor.execute('''INSERT INTO exploration_records
+                    (date_log, time_log, cmdr, system, body, min_radius) VALUES (?,?,?,?,?,?)''',
+                                      (date_log, time_log, cmdr, star_system, body_name, radius))
 
 
 def check_wds():
@@ -5281,9 +5314,9 @@ def get_cloud_data():
                 cursor.execute(insert_sql)
                 connection.commit()
 
-            print(f'''Start der Expedition {start_expedition}''')
-            print(f'''Datum von Heute {datetime.now()}''')
-            print(f'''Ende der Expedition {stop_expedition}''')
+            logger(f'''Start der Expedition {start_expedition}''', 2)
+            logger(f'''Datum von Heute {datetime.now()}''', 2)
+            logger(f'''Ende der Expedition {stop_expedition}''', 2)
             if start_expedition < datetime.now() < stop_expedition:
                 print('Auf Tour')
                 return 1
@@ -5294,7 +5327,7 @@ def get_cloud_data():
 
 
 #  Liegt der timestamp in der Zeitspanne eines aktiven Events
-def timestamp_in_event(timestamp):
+def timestamp_in_event(timestamp, var):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
     check_time = log_date(timestamp)
@@ -5315,18 +5348,22 @@ def timestamp_in_event(timestamp):
             stop_time = str(result_date[0][3])
             stop = log_date(str(stop_date) + 'T' + str(stop_time) + 'Z')
             stop_new = datetime(int(stop[0]), int(stop[1]), int(stop[2]), int(stop[3]), int(stop[4]))
-
-            if start_new < check_time_new < stop_new:
-                return 1
-            else:
-                return 0
+            #  Wenn check_time_new im Zeitraum der Expedition liegt return 1 ansonsten return 0
+            if var == 1:
+                if start_new < check_time_new < stop_new:
+                    return 1
+                else:
+                    return 0
+            elif var == 2:
+                return start_new, stop_new
 
 
 def get_cloud_records():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
-    spalten = ['jump_distance', 'hottest_body', 'most_bodys', 'death_counter', 'white_dwarf', 'max_gravitation']
+    spalten = ['jump_distance', 'hottest_body', 'most_bodys', 'death_counter', 'white_dwarf',
+               'max_gravitation', 'max_radius', 'min_radius']
 
     #  Lade immer nur den höchsten Wert herunter und trage diesen in die lokale DB ein.
     for i in spalten:
@@ -5356,8 +5393,8 @@ def set_cloud_records():
         cursor = connection.cursor()
         cursor.execute(f'''DELETE FROM DVRII''')
         cursor.execute(f'''INSERT INTO DVRII (jump_distance, hottest_body, most_bodys, 
-                            death_counter, white_dwarf, max_gravitation) 
-                            VALUES (99999999, 99999999, 99999999, 99999999, 99999999, 99999999)''')
+                            death_counter, white_dwarf, max_gravitation, max_radius, min_radius) 
+                            VALUES (99999999, 99999999, 99999999, 99999999, 99999999, 99999999, 99999999, 99999999)''')
 
         connection.commit()
 
@@ -5373,27 +5410,32 @@ def upload_cloud_records(max_var):
             return 0
     cmdr = max_var.get("cmdr")
     timestamp = max_var.get("timestamp")
-    if timestamp_in_event(timestamp) == 0:
+    if timestamp_in_event(timestamp, 1) == 0:
         return 0
-    print('Folgende Daten werden hochgeladen')
-    print(max_var)
-    print('')
+    logger('Folgende Daten werden hochgeladen', 2)
+    logger(max_var, 2)
+    logger(' ', 2)
     most_bodys = max_var.get("max_body_count")
     jump_distance = max_var.get("JumpDist")
     max_gravitation = max_var.get('SurfaceGravity')
     hottest_body = max_var.get('SurfaceTemperature')
     death_counter = max_var.get('death_counter')
     white_dwarf = max_var.get('white_dwarf')
+    max_radius = max_var.get('max_radius')
+    min_radius = max_var.get('min_radius')
 
     insert_query = f"""
     INSERT INTO DVRII (timestamp, cmdr, jump_distance, hottest_body, most_bodys, 
-    death_counter, white_dwarf, max_gravitation)
+    death_counter, white_dwarf, max_gravitation, max_radius, min_radius)
     VALUES ('{timestamp}', '{cmdr}', {jump_distance if jump_distance is not None else 'NULL'}, 
             {hottest_body if hottest_body is not None else 'NULL'}, 
             {most_bodys if most_bodys is not None else 'NULL'}, 
             {death_counter if death_counter is not None else 'NULL'}, 
             {white_dwarf if white_dwarf is not None else 'NULL'}, 
-            {max_gravitation if max_gravitation is not None else 'NULL'})
+            {max_gravitation if max_gravitation is not None else 'NULL'}
+            {max_radius if max_radius is not None else 'NULL'}
+            {min_radius if min_radius is not None else 'NULL'}
+            )
     ON CONFLICT (cmdr, timestamp)
     DO UPDATE
     SET jump_distance = GREATEST(DVRII.jump_distance, EXCLUDED.jump_distance),
@@ -5401,7 +5443,10 @@ def upload_cloud_records(max_var):
         most_bodys = GREATEST(DVRII.most_bodys, EXCLUDED.most_bodys),
         death_counter = GREATEST(DVRII.death_counter, EXCLUDED.death_counter),
         white_dwarf = GREATEST(DVRII.white_dwarf, EXCLUDED.white_dwarf),
-        max_gravitation = GREATEST(DVRII.max_gravitation, EXCLUDED.max_gravitation);
+        max_gravitation = GREATEST(DVRII.max_gravitation, EXCLUDED.max_gravitation)
+        max_radius = GREATEST(DVRII.max_radius, EXCLUDED.max_radius)
+        min_radius = GREATEST(DVRII.min_radius, EXCLUDED.min_radius)
+        ;
     """
     with psycopg2.connect(dbname=snp_server.db_name, user=snp_server.db_user, password=snp_server.db_pass,
                           host=snp_server.db_host, port=5432) as psql_conn:
@@ -5489,6 +5534,7 @@ def exploration_challenge():
             db_cmdr = user
     t1 = get_time()
     for journal_file in log_files:
+        check_logfile_in_db(journal_file, '', 'insert')
         logger(journal_file, 2)
         cmdr = read_cmdr(journal_file)
         if cmdr != db_cmdr:
@@ -5502,7 +5548,7 @@ def exploration_challenge():
 
                 data = read_json(line)
                 timestamp = data.get("timestamp")
-                if timestamp_in_event(timestamp) == 0:
+                if timestamp_in_event(timestamp, 1) == 0:
                     continue
                 event = data.get('event')
                 match event:
@@ -5574,7 +5620,7 @@ def exploration_challenge():
                                     date_log = "{date_log}" and time_log = "{time_log}" 
                                     and cmdr = "{cmdr}" and star_type = "{star_type}"''').fetchall()
                                     if sql_select:
-                                        print(sql_select)
+                                        logger(sql_select, 2)
                                         continue
                                     cursor.execute('''INSERT INTO white_dwarfs 
                                     (date_log, time_log, cmdr, star_system, star_type) VALUES(?,?,?,?,?)''',
@@ -5586,7 +5632,7 @@ def exploration_challenge():
                                 if data.get('SurfaceGravity'):
                                     current_data = {
                                         "SurfaceTemperature": round(data.get("SurfaceTemperature"), 2),
-                                        "SurfaceGravity": round(data.get("SurfaceGravity") / 10, 2)}
+                                        "SurfaceGravity": round(data.get("SurfaceGravity") / 9.80665, 2)}
 
                                     if current_data.get("SurfaceGravity"):
                                         current_gravity = {
@@ -5607,14 +5653,26 @@ def exploration_challenge():
                                             "BodyName": data.get("BodyName"),
                                             "SurfaceTemperature": round(data.get("SurfaceTemperature"), 2)}
                                         check_max(current_temp)
+
+                                    if data.get("Radius"):
+                                        current_radius = {
+                                            "cmdr": cmdr,
+                                            "timestamp": data.get("timestamp"),
+                                            "System": data.get("StarSystem"),
+                                            "SystemAddress": data.get("SystemAddress"),
+                                            "BodyName": data.get("BodyName"),
+                                            "Radius": round((data.get("Radius") / 1000), 2)}
+                                        print(current_radius)
+                                        check_max(current_radius)
+
             check_logfile_in_db(journal_file, 'exp_line', current_line_nr)
     t2 = get_time()
     logger(('read Files Exploration Challenge ' + str(timedelta.total_seconds(t2 - t1)) + ' sek.'), 1)
-    print('Einlesen Fertig')
+    logger('Einlesen Fertig', 2)
     get_cloud_records()
-    check_player_death_total()
-    check_wds()
-    check_cloud_vs_local()
+    # check_player_death_total()
+    # check_wds()
+    # check_cloud_vs_local()
     # set_cloud_records()
 
 
@@ -5632,7 +5690,7 @@ def get_mats_info(name):
 def mats_in_db(date_log, time_log, name, count):
     name_en, name_de, category, grade = get_mats_info(name)
     if not name_en or not name_de or not category or not grade:
-        print(name, 'not in DB')
+        logger(str(name) + ' not in DB', 2)
         return
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
@@ -6040,7 +6098,7 @@ def menu(var):
             lauf += 1
             if var == i:
                 eddc_modul = lauf
-    print(eddc_modul)
+    # print(eddc_modul)
     auswertung(eddc_modul)
 
 
@@ -6089,7 +6147,7 @@ def check_codex_table():
     items = cursor.execute("SELECT * FROM codex").fetchall()
 
     if not items:
-        print('keine Daten in Codex')
+        logger('keine Daten in Codex', 12)
         return 0
     else:
         return 1
@@ -6160,7 +6218,7 @@ def read_codex_entrys(filenames):
                         try:
                             read_bio_data(data, filename)
                         except TypeError:
-                            print(data)
+                            logger(data, 2)
 
     eddc_text_box.delete('1.0', END)
     position = f'File \t{len(files)} of {len(files)}'
@@ -6194,7 +6252,7 @@ def read_codex_entrys_worker(file_queue, progress_queue):
                         try:
                             read_bio_data(data, filename)
                         except TypeError:
-                            print(data)
+                            logger(data, 2)
 
         count += 1
         progress_queue.put(count)
@@ -6473,9 +6531,10 @@ def get_bio_summary_from_db(search_date):
         # print(i)
         select_worth = cursor.execute("""select distinct(worth) from codex_entry where data =  ?""",
                                       (i[0],)).fetchall()
-        temp = str(select_worth[0][0]).replace(',', '')
+        if select_worth:
+            temp = str(select_worth[0][0]).replace(',', '')
 
-        worth += int(temp)
+            worth += int(temp)
     worth = ((f'{worth:,}').replace(',', '.'))
     text = ('Es wurden ' + str(count) + ' bio. Proben gesammelt')
     text2 = ('Diese sind ' + str(worth) + ' Credits wert')
@@ -6556,7 +6615,7 @@ def get_star_data(search_date):
 
 def check_logfile_in_db(file, state, read_state):
     funktion = inspect.stack()[0][3]
-    logger((funktion, file, state, read_state), 1)
+    logger((funktion, file, state, read_state), log_var)
 
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
@@ -6786,17 +6845,17 @@ def display_cloud_records():
         cursor.execute(insert_query)
         result = cursor.fetchall()
 
-        table = PrettyTable(['Index', 'timestamp', 'cmdr', 'jump_distance' , 'hottest_body',
+        table = PrettyTable(['Index', 'timestamp', 'cmdr', 'jump_distance', 'hottest_body',
                              'most_bodys', 'death_counter', 'max_gravitation', 'white_dwarf'])
         for i in result:
             table.add_row((i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8]))
-        print(table)
+        logger(table, 2)
         table.clear_rows()
 
 
 def send_to_discord2(achievement_png):
     funktion = inspect.stack()[0][3]
-    logger(funktion, 2)
+    logger(funktion, log_var)
 
     with io.BytesIO() as image_binary:
         achievement_png.save(image_binary, format='PNG')
@@ -6811,9 +6870,10 @@ def send_to_discord2(achievement_png):
         response = webhook.execute()
 
         if response.status_code == 200:
-            print("Erfolgreich gesendet")
+
+            logger('Erfolgreich gesendet', 2)
         else:
-            print(f"Fehler beim Senden des Bildes: {response.status_code}")
+            logger(f"Fehler beim Senden des Bildes: {response.status_code}", 2)
 
 
 def create_logo(max_list):  # Badges für die exploration challenge!!
@@ -6960,9 +7020,9 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     start_x_jump = text_box_top_left[0] + (box_width - jump_width) // 2
     d.text((start_x_jump, start_y), jump_text, fill='#f07b05', font=font_cmdr, stroke_width=3, stroke_fill='black')
 
-    # thread_rce = threading.Thread(target=achievement_png.show, args=())
-    # thread_rce.start()
-    send_to_discord2(achievement_png)
+    thread_rce = threading.Thread(target=achievement_png.show, args=())
+    thread_rce.start()
+    # send_to_discord2(achievement_png)
 
 
 def rescan_files():
@@ -7046,7 +7106,7 @@ def set_fully_read(file, state):
 
 def full_scan():
     funktion = inspect.stack()[0][3]
-    logger(funktion, 2)
+    logger(funktion, log_var)
 
     with (sqlite3.connect(database) as connection):
         cursor = connection.cursor()
@@ -7076,7 +7136,7 @@ def full_scan():
                 fully = 0
             else:
                 fully = 0
-        print('done')
+        logger(funktion + ' done', 2)
 
 
 def summary():
@@ -7126,6 +7186,9 @@ def auswertung(eddc_modul):
         return
     else:
         aus_var = 1
+
+    if eddc_modul == 13:
+        aus_var = 0
     create_tables()
     # system.delete(.0, END)
     check_but.configure(text='Auto refresh   ')
@@ -7139,7 +7202,7 @@ def auswertung(eddc_modul):
         aus_var = 0
         return
 
-    if eddc_modul == 11:  # Boxel Analyser
+    if eddc_modul == 11:  # Tages Auswertung
         b_filter = filter_entry.get()
         summary()
         status.configure(text='Summary')
@@ -7157,7 +7220,7 @@ def auswertung(eddc_modul):
         b_filter = filter_entry.get()
         status.configure(text='Compass')
         compass_gui()
-        aus_var = 0
+        aus_var = 1
         return
 
     if eddc_modul == 14:  # exploration_challenge
@@ -7273,7 +7336,7 @@ def auswertung(eddc_modul):
                 eddc_text_box.insert(END, '\n')
                 for i in data:
                     eddc_text_box.insert(END, (
-                                (str(i[0])[0:15]) + '\t\t' + (str(i[1])[0:25]) + '\t\t\t\t' + str(i[2]) + '\n'))
+                            (str(i[0])[0:15]) + '\t\t' + (str(i[1])[0:25]) + '\t\t\t\t' + str(i[2]) + '\n'))
                     bgs.add_row((i[0], i[1], i[2]))
                 nodata = 0
             else:
@@ -7294,7 +7357,7 @@ def auswertung(eddc_modul):
                     mats_auslesen(filename)
                     check_logfile_in_db(filename, 'Mats', 'set')
                 else:
-                    print('no file read')
+                    logger('no file read', 2)
             b_filter = filter_entry.get()
             data = print_engineering_mats()
             summe = 0
@@ -7342,7 +7405,7 @@ def auswertung(eddc_modul):
             thread_star_systems.start()
         elif eddc_modul == 4:  # Codex Treeview
             status.configure(text='Codex')
-            print('filenames')
+            logger('filenames', 2)
             run_once_rce(filenames)
             aus_var = 0
 
@@ -7405,37 +7468,17 @@ def update_db(old_version):
                                     and Planettype = 'rocky ice body' and Athmospere 
                                     like '%thin methane%' and Temp_max = 110""").fetchall()
         if not select:
-            print('UPDATE SQL')
+            logger('UPDATE SQL', 2)
             cursor.execute(insert_sql)
             connection.commit()
 
-    if old_version == '0.9.5.0' or old_version == '0.9.0.0':
+    if old_version == '0.9.5.3':
         with sqlite3.connect(database) as connection:
             cursor = connection.cursor()
-            cursor.execute("ALTER TABLE logfiles ADD expedition INTEGER")
-            cursor.execute("ALTER TABLE logfiles ADD exp_lines INTEGER")
-            connection.commit()
-
-    if old_version == '0.8.0.0' or old_version == '0.8.0.1' or old_version == '0.7.6.2':
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("ALTER TABLE logfiles ADD Mats INTEGER")
-            connection.commit()
-
-    if old_version == '0.7.2.0' or old_version == '0.7.2.1' or old_version == '0.7.2.2':
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("ALTER TABLE logfiles ADD last_line INTEGER")
-            connection.commit()
-
-    if old_version == '0.7.1.3' or old_version == '0.7.1.2':
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("ALTER TABLE logfiles ADD last_line INTEGER")
-            cursor.execute("ALTER TABLE logfiles ADD explorer INTEGER")
-            cursor.execute("ALTER TABLE logfiles ADD bgs INTEGER")
-            cursor.execute("ALTER TABLE logfiles ADD CMDR TEXT")
-            cursor.execute("DROP TABLE planet_infos")
+            cursor.execute("ALTER TABLE exploration_records ADD max_radius float")
+            cursor.execute("ALTER TABLE exploration_records ADD min_radius float")
+            cursor.execute("ALTER TABLE dvrii ADD max_radius REAL")
+            cursor.execute("ALTER TABLE dvrii ADD min_radius REAL")
             connection.commit()
     logger('update DB', 1)
     create_tables()
@@ -7576,7 +7619,7 @@ def main():
         root.destroy()
 
         root_open = False
-        print('root destroy')
+        logger('root destroy', 2)
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -7719,6 +7762,8 @@ def main():
         result = cursor.execute("""SELECT * FROM server""").fetchall()
         if result:
             eddc_user = result[0][2]
+        else:
+            eddc_user = 'anonym'
         if eddc_user != 'anonym':
             content = ('```fix\n Daten von CMDR ' + eddc_user + '``` ```\n' + content + '\n```')
         else:
@@ -7770,7 +7815,7 @@ def main():
             tick_but.configure(text="before Tick")
             tick_var = 0
             tick_false()
-        print(tick_var, check_auto_refresh)
+        logger(str(tick_var) + ' ' + str(check_auto_refresh), 2)
 
     global check_auto_refresh
 
@@ -7860,6 +7905,7 @@ def main():
     settings_menu.add_command(label="Language - English", command=lambda: set_language(2))
     get_cmdr_names()
     root.mainloop()
+
 
 db_version()
 main()

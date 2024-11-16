@@ -15,6 +15,7 @@ from sys import platform
 from gui_positionen import load_position, save_position
 
 # from pathlib import Path
+compas_label, label_one, label_two, label_three, label_zero = '', '', '', '', ''
 
 popup_open = False
 
@@ -451,7 +452,7 @@ def create_popup(message, timeout=10000):
     bg_treeview = customtkinter.CTkImage(dark_image=bg, size=(popup_width, popup_height))
     background_label = customtkinter.CTkLabel(popup, bg_color='black', image=bg_treeview, text='')
     background_label.pack()
-    print(message)
+    # print(message)
 
     def on_closing():
         global popup_open
