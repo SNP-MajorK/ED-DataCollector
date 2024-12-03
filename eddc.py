@@ -67,7 +67,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.6.0'
+version_number = '0.9.6.1'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -4202,8 +4202,12 @@ def get_info_for_bio_scan(data, file):  # event: ScanOrganic
     scantype = data.get('ScanType')  # "ScanType": "Log"; 2x "ScanType":"Sample", "ScanType":"Analyse"
     species = data.get('Species_Localised')  # "Species_Localised": "Fonticulua Campestris",
     variant = data.get('Variant_Localised', ' - ')  # "Variant_Localised": "Fonticulua Campestris - Mauve",
+
     variant = variant.split('-')
-    bio_color = variant[1].replace(' ', '')
+    try:
+        bio_color = variant[1].replace(' ', '')
+    except IndexError:
+        bio_color = ''
     system_address = data.get('SystemAddress')  # "SystemAddress":71235145978
     body = data.get('Body')  # "Body":10
     cmdr = read_cmdr(file)
@@ -4248,9 +4252,13 @@ def get_info_for_bio_scan(data, file):  # event: ScanOrganic
         if count_bios_new:
             count_bios = count_bios_new[0]
         mark_missing = '0'
-        bio_name = species.split(' ')
-        genus = bio_name[0]
-        species_2 = bio_name[1]
+        if species.find(" ") != -1:
+            bio_name = species.split(' ')
+            genus = bio_name[0]
+            species_2 = bio_name[1]
+        else:
+            genus = species
+            species_2 = ''
 
         insert_into_bio_db(body_name, count_bios, genus, species_2, bio_color, mark_missing)
     return timestamp, scantype, species, system_address, body
@@ -7605,6 +7613,9 @@ def set_theme(theme):
         else:
             cursor.execute("INSERT into theme VALUES (?)", (theme,))
         connection.commit()
+
+
+get_latest_version(1)
 
 
 def main():
