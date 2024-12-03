@@ -119,6 +119,7 @@ def get_status_data():
         except:
             latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
             return latitude, longitude, altitude, radius, body_name, reached
+        timestamp = data.get('timestamp')
         latitude = data.get('Latitude')
         longitude = data.get('Longitude')
         altitude = data.get('Altitude')
@@ -129,7 +130,7 @@ def get_status_data():
         reached = 0
         if not body_name:
             latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
-        return latitude, longitude, altitude, radius, body_name, reached
+        return latitude, longitude, altitude, radius, body_name, reached, timestamp
 
 
 def haversine_distance(lat1, lon1, lat2, lon2, radius):
@@ -184,7 +185,7 @@ def berechne_sinkflug(radius, lat1, lon1, lat2, lon2, hoehe_start, hoehe_ziel):
 
 def calculate_course_from_json():
     # Daten aus der status.json
-    latitude, longitude, altitude, radius, body_name, reached = get_status_data()
+    latitude, longitude, altitude, radius, body_name, reached, s_time = get_status_data()
 
     if body_name == ' ':
         return
@@ -255,7 +256,7 @@ def refresh_popup(compas_label):
 
 
 def next_wp():
-    latitude, longitude, altitude, radius, body_name, reached = get_status_data()
+    latitude, longitude, altitude, radius, body_name, reached, s_time = get_status_data()
 
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
@@ -571,7 +572,7 @@ def cord_data(body_name):
 
 
 def compass_gui():
-    latitude, longitude, altitude, radius, body_name, reached = get_status_data()
+    latitude, longitude, altitude, radius, body_name, reached, s_time = get_status_data()
     waypoint = str(get_waypoint(body_name))
     compass_gui = customtkinter.CTkToplevel()
     compass_gui.title('EDDC COMPASS')
@@ -721,7 +722,7 @@ def compass_gui():
         # refresh_table()
 
     def refresh_entry():
-        latitude, longitude, altitude, radius, body_name, reached = get_status_data()
+        latitude, longitude, altitude, radius, body_name, reached, s_time = get_status_data()
         waypoint = get_waypoint(body_name)
         refresh_labels(latitude, longitude, body_name, waypoint, reached)
         refresh_table()
@@ -766,7 +767,7 @@ def compass_gui():
             refresh_labels(values[2], values[3], values[1], values[0], values[4])
 
     def refresh_table():
-        latitude, longitude, altitude, radius, body_name, reached = get_status_data()
+        latitude, longitude, altitude, radius, body_name, reached, s_time = get_status_data()
         rowdata = cord_data(body_name)
         compass_tree.delete(*compass_tree.get_children())
         add_entries(rowdata)
