@@ -7038,8 +7038,8 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     start_x_jump = text_box_top_left[0] + (box_width - jump_width) // 2
     d.text((start_x_jump, start_y), jump_text, fill='#f07b05', font=font_cmdr, stroke_width=3, stroke_fill='black')
 
-    # thread_rce = threading.Thread(target=achievement_png.show, args=())
     # thread_rce.start()
+    # thread_rce = threading.Thread(target=achievement_png.show, args=())
     send_to_discord2(achievement_png)
 
 
