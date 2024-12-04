@@ -67,7 +67,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.6.1'
+version_number = '0.9.6.2'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
