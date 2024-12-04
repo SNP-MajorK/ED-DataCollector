@@ -67,7 +67,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.6.2'
+version_number = '0.9.6.3'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -5654,7 +5654,7 @@ def exploration_challenge():
 
     #  Setze die Tabelle DVRII auf standard Werte damit, wenn der Download nicht funktioniert,
     #  keine falschen Daten einen create Logo auslösen
-    # set_cloud_records()
+    set_cloud_records()
 
 
 def get_mats_info(name):
@@ -6808,7 +6808,7 @@ def processing_cloud_vs_local(local, cloud, data, category, minmax):
     current_data = 1
     if local > 0:
         if minmax == 'MAX':
-            if cloud < local:
+            if cloud < round(local, 3):
                 current_data = {
                     "timestamp": str(data[1]) + 'T' + str(data[2]) + 'Z',
                     "cmdr": str(data[3]),
@@ -6816,7 +6816,7 @@ def processing_cloud_vs_local(local, cloud, data, category, minmax):
                     "MinorMax": minmax
                 }
         elif minmax == 'MIN':
-            if cloud > local:
+            if cloud > round(local, 3):
                 current_data = {
                     "timestamp": str(data[1]) + 'T' + str(data[2]) + 'Z',
                     "cmdr": str(data[3]),
@@ -6856,8 +6856,8 @@ def send_to_discord2(achievement_png):
         image_binary.seek(0)
 
         webhook = DiscordWebhook(
-            url="https://discord.com/api/webhooks/1267488940487610451\
-            /OtpB_6s9hgczC8lQbrRuDsDTlwzRUII4OKD-uYd4vyJc5KxN-me72jdS6ISPpHFYK_lR",
+            url="https://discord.com/api/webhooks/1313791164272607254\
+            /JC7-eO5BpLefQgWewzduuF0glbbgFSO06TZHId0kjPMLfzqdAaWHlDULoltfAtPOJfvr",
             username="ExplorerChallenge")
 
         webhook.add_file(file=image_binary.read(), filename="example.png")
@@ -7038,8 +7038,8 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     start_x_jump = text_box_top_left[0] + (box_width - jump_width) // 2
     d.text((start_x_jump, start_y), jump_text, fill='#f07b05', font=font_cmdr, stroke_width=3, stroke_fill='black')
 
-    # thread_rce.start()
-    # thread_rce = threading.Thread(target=achievement_png.show, args=())
+    thread_rce = threading.Thread(target=achievement_png.show, args=())
+    thread_rce.start()
     send_to_discord2(achievement_png)
 
 
@@ -7571,8 +7571,6 @@ def delete_all_tables():
 
 
 def upd_server():
-    # print('change state')
-    # print(update_server.get())
     upd_srv = update_server.get()
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
@@ -7703,7 +7701,7 @@ def main():
     exploration_menu.add_command(label="Kubus Analyse", command=lambda: menu('cube'))
     exploration_menu.add_command(label="Kompass", command=lambda: menu('compass'))
     exploration_menu.add_command(label="Exploration Challenge", command=exploration_challenge)
-    # exploration_menu.add_command(label="test", command=test)
+    exploration_menu.add_command(label="test", command=test)
     # exploration_menu.add_command(label="Full Scan", command=full_scan)
     exploration_menu.add_command(label="Rescan Codex", command=rescan)
 
