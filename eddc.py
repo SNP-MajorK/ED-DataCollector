@@ -5304,12 +5304,14 @@ def get_cloud_records():
             cursor.execute(insert_sql)
         connection.commit()
 
+        between = between_sql()
+
         max_list = ['jump_distance', 'hottest_body', 'most_bodys', 'death_counter', 'max_gravitation',
                     'white_dwarf', 'max_radius']
         min_list = ['coldest_body', 'min_gravitation', 'min_radius']
 
         for i in max_list:
-            sql = f'''SELECT date_log, time_log, cmdr, MAX({i}) from temp_expedition'''
+            sql = f'''SELECT date_log, time_log, cmdr, MAX({i}) from temp_expedition where {between}'''
             result = cursor.execute(sql).fetchone()
             if result[3]:
                 insert = f'''UPDATE dvrii SET ({i}) = "{result[3]}" '''
@@ -5317,7 +5319,7 @@ def get_cloud_records():
                 connection.commit()
 
         for i in min_list:
-            sql = f'''SELECT date_log, time_log, cmdr, MIN({i}) from temp_expedition'''
+            sql = f'''SELECT date_log, time_log, cmdr, MIN({i}) from temp_expedition where {between}'''
             result = cursor.execute(sql).fetchone()
             if result[3]:
                 insert = f'''UPDATE dvrii SET ({i}) = "{result[3]}" '''
@@ -6796,7 +6798,8 @@ def get_cmdr_names():
 
 
 def test():
-    get_scan_time()
+    # get_scan_time()
+    get_cloud_records()
 
 
 def processing_cloud_vs_local(local, cloud, data, category, minmax):
