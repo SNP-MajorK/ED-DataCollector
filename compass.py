@@ -113,24 +113,29 @@ def resource_path(relative_path):
 
 def get_status_data():
     file = log_path + "\\status.json"
-    with open(file, 'r', encoding='UTF8') as datei:
-        try:
-            data = json.load(datei)
-        except:
-            latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
-            return latitude, longitude, altitude, radius, body_name, reached
-        timestamp = data.get('timestamp')
-        latitude = data.get('Latitude')
-        longitude = data.get('Longitude')
-        altitude = data.get('Altitude')
-        radius = data.get('PlanetRadius')
-        if radius:
-            radius = round(int(data.get('PlanetRadius')) / 1000)
-        body_name = data.get('BodyName')
-        reached = 0
-        if not body_name:
-            latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
-        return latitude, longitude, altitude, radius, body_name, reached, timestamp
+    timestamp = '2020-01-01T19:00:00Z'
+    if os.path.isfile(file):
+        with open(file, 'r', encoding='UTF8') as datei:
+            try:
+                data = json.load(datei)
+            except:
+                latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
+                return latitude, longitude, altitude, radius, body_name, reached
+            timestamp = data.get('timestamp')
+            latitude = data.get('Latitude')
+            longitude = data.get('Longitude')
+            altitude = data.get('Altitude')
+            radius = data.get('PlanetRadius')
+            if radius:
+                radius = round(int(data.get('PlanetRadius')) / 1000)
+            body_name = data.get('BodyName')
+            reached = 0
+            if not body_name:
+                latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
+            return latitude, longitude, altitude, radius, body_name, reached, timestamp
+    else:
+        latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
+    return latitude, longitude, altitude, radius, body_name, reached, timestamp
 
 
 def haversine_distance(lat1, lon1, lat2, lon2, radius):

@@ -22,7 +22,7 @@ from difflib import get_close_matches
 from itertools import product
 from pathlib import Path
 from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from tkinter import ttk
 from urllib.parse import urlparse
 from winreg import *
@@ -40,7 +40,7 @@ from gui_positionen import load_position, save_position
 # from sqlite3 import Connection
 
 filter_name = ''
-eddc_modul = 1
+
 root = ''
 tree = ''
 popup = ''
@@ -67,7 +67,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.6.3'
+version_number = '0.9.6.4'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -113,8 +113,8 @@ def logger(text, schwelle):
 
 
 database = str(resource_path("eddc.db"))
-global log_path
-# path = ''
+if not os.path.exists(database):
+    raise FileNotFoundError(f"Database file not found: {database}")
 db_file = Path(database)
 
 if not db_file.is_file():
@@ -230,7 +230,7 @@ def create_tables():
                                 KillerRank TEXT)""")
 
         cursor.execute("CREATE TABLE IF NOT EXISTS logfiles (Name TEXT, explorer INTEGER, "
-                       "bgs INTEGER, Mats INTEGER, CMDR TEXT, last_line INTEGER, Full_scan_var INTEGER, "
+                       "bgs INTEGER, Mats INTEGER, CMDR TEXT, last_line INTEGER, full_scan_var INTEGER, "
                        "expedition INTEGER, exp_lines INTEGER)")
 
         cursor.execute("""CREATE table IF NOT EXISTS flight_log 
@@ -271,7 +271,8 @@ def create_tables():
                             influence INTEGER, mission_id INTEGER)""")
         cursor.execute("""CREATE table IF NOT EXISTS server (
                             url TEXT, user TEXT, eddc_user TEXT, path TEXT, upload INTEGER, com_style TEXT, 
-                            com_trans REAL, com_back TEXT, com_text TEXT, exp_upload INTEGER, exp_user TEXT)""")
+                            com_trans REAL, com_back TEXT, com_text TEXT, exp_upload INTEGER, exp_user TEXT,
+                            eddc_modul INTEGER, full_scan_var INTEGER)""")
         #
         item = cursor.execute("""SELECT * from server""").fetchall()
         if not item:
@@ -411,32 +412,94 @@ def create_tables():
         create_DB_Bio_color()
 
 
+# Funktion, um die Existenz einer Spalte zu prüfen
+def column_exists(cursor, table_name, column_name):
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = [info[1] for info in cursor.fetchall()]  # Spaltennamen aus der zweiten Spalte (Index 1)
+    return column_name in columns
+
+
+def update_db(old_version):
+    funktion = inspect.stack()[0][3]
+    logger(funktion, log_var)
+
+    insert_sql = """Insert into Bio_prediction VALUES 
+            ('bacterium bullaris', 'm', 'icy body', 0.001, 0.099,0.03,0.6,'thin methane',65.0,110.0,'N')"""
+
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+
+        select = cursor.execute("""SELECT * from Bio_prediction where name = 'bacterium bullaris' and startype = 'm' 
+                                    and Planettype = 'icy body' and Athmospere 
+                                    like '%thin methane%' and Temp_max = 110""").fetchall()
+        if not select:
+            logger('UPDATE SQL', 2)
+            cursor.execute(insert_sql)
+            connection.commit()
+
+        if not column_exists(cursor, 'server', 'eddc_modul'):
+            cursor.execute("ALTER TABLE server ADD eddc_modul INTEGER")
+
+        if not column_exists(cursor, 'server', 'full_scan_var'):
+            cursor.execute("ALTER TABLE server ADD Full_scan_var INTEGER")
+
+        if not column_exists(cursor, 'dvrii', 'min_gravitation'):
+            cursor.execute("ALTER TABLE dvrii ADD min_gravitation REAL")
+
+        if not column_exists(cursor, 'dvrii', 'coldest_body'):
+            cursor.execute("ALTER TABLE dvrii ADD coldest_body REAL")
+
+        if not column_exists(cursor, 'dvrii', 'max_radius'):
+            cursor.execute("ALTER TABLE dvrii ADD max_radius REAL")
+
+        if not column_exists(cursor, 'dvrii', 'min_radius'):
+            cursor.execute("ALTER TABLE dvrii ADD min_radius REAL")
+
+        if not column_exists(cursor, 'star_data', 'cmdr'):
+            cursor.execute("ALTER TABLE star_data ADD cmdr TEXT")
+
+        if not column_exists(cursor, 'planet_infos', 'cmdr'):
+            cursor.execute("ALTER TABLE planet_infos ADD cmdr TEXT")
+        connection.commit()
+    logger('update DB', 1)
+
+
 create_tables()
+update_db('0.0.0.0')
+global log_path
 
 with sqlite3.connect(database) as connection:
     cursor = connection.cursor()
     cursor.execute("""CREATE table IF NOT EXISTS server (
                         url TEXT, user TEXT, eddc_user TEXT, path TEXT, upload INTEGER, com_style TEXT, 
-                        com_trans REAL, com_back TEXT, com_text TEXT, exp_upload INTEGER, exp_user TEXT)""")
+                        com_trans REAL, com_back TEXT, com_text TEXT, exp_upload INTEGER, exp_user TEXT,
+                        eddc_modul INTEGER, full_scan_var INTEGER)""")
 
-    cursor.execute("""SELECT * FROM server""")
+    cursor.execute("""SELECT url, user, eddc_user, path, eddc_modul FROM server""")
     result = cursor.fetchall()
     if result:
         webhook_url = result[0][0]
         web_hock_user = result[0][1]
         eddc_user = result[0][2]
         log_path = result[0][3]
+        eddc_modul = result[0][4]
+        if eddc_modul is None:
+            eddc_modul = 1
+    else:
+        eddc_modul = 1
 
 if log_path is None:
     # Set Program Path Data to random used Windows temp folder.
     with OpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders") as key:
-        value = QueryValueEx(key, '{4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4}')
-    # path = value[0] + '\\Frontier Developments\\Test'
-    # path = value[0] + '\\Frontier Developments\\Franky'
-    # path = value[0] + '\\Frontier Developments\\Bernd'
-    log_path = value[0] + '\\Frontier Developments\\Elite Dangerous\\'
+        try:
+            value = QueryValueEx(key, '{4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4}')
+        except FileNotFoundError:
+            value = ['C:\\Users']
 
-print(log_path)
+    log_path = value[0] + '\\Frontier Developments\\Elite Dangerous\\'
+    if not os.path.exists(log_path):
+        print(f"Path not found: {log_path}")
+        log_path = filedialog.askdirectory(title="Wähle ein Verzeichnis")
 
 
 def uri_validator(x):
@@ -541,6 +604,11 @@ def new_server_settings():
                 exp_user = result[0][10]
             else:
                 exp_user = 'anonym'
+            if result[0][11] != ('' or None):
+                full_scan_var = result[0][10]
+            else:
+                full_scan_var = 0
+
         else:
             web_hock_user = ''
             webhook_url = ''
@@ -552,6 +620,7 @@ def new_server_settings():
             com_text = 'white'
             exp_upload = 0
             exp_user = 'anonym'
+            full_scan_var = 0
 
     server_settings = customtkinter.CTkToplevel()
     server_settings.title('Server Einrichtung')
@@ -757,16 +826,17 @@ def new_server_settings():
                 if result == []:
                     cursor.execute("INSERT INTO server VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                    (url, user, eddc_user, path, update_serv, com_style,
-                                    com_trans, com_back, com_text, update_exp_upload, exp_user))
+                                    com_trans, com_back, com_text, update_exp_upload, exp_user, eddc_modul, full_scan_var))
                 else:
                     cursor.execute("drop table server")
                     cursor.execute("""CREATE table IF NOT EXISTS server (
                                         url TEXT, user TEXT, eddc_user TEXT, path TEXT, upload INTEGER, com_style TEXT, 
-                                        com_trans REAL, com_back TEXT, com_text TEXT, 
-                                        exp_upload INTEGER, exp_user TEXT)""")
-                    cursor.execute("INSERT INTO server VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                        com_trans REAL, com_back TEXT, com_text TEXT, exp_upload INTEGER, exp_user TEXT, 
+                                        eddc_modul INTEGER, full_scan_var INTEGER )""")
+                    cursor.execute("INSERT INTO server VALUES (?, ?, ?, ?, ?, "
+                                   "                                ?, ?, ?, ?, ?, ?, ?, ?)",
                                    (url, user, eddc_user, path, update_serv, com_style, com_trans,
-                                    com_back, com_text, update_exp_upload, exp_user))
+                                    com_back, com_text, update_exp_upload, exp_user, eddc_modul, full_scan_var))
                 connection.commit()
                 server_settings.after(200, server_settings.destroy)
 
@@ -2141,7 +2211,7 @@ def threading_auto():
     start_auto = threading.Thread(target=auto_refresh)
 
     var_code = [7, 8, 4, 13]
-    if eddc_modul in var_code:
+    if eddc_modul in var_code and check_auto_refresh.get() != 0:
         logger('Ignore Auto Refresh', 2)
         return
 
@@ -5034,6 +5104,21 @@ def check_cloud_vs_local():
             if upload_cloud_records(current_data) == 1:
                 create_logo(current_data)
 
+        deaths_cloud = cursor.execute(f'''SELECT death_counter from dvrii''').fetchone()
+        deaths_local = cursor.execute(f'''SELECT COUNT(*) FROM player_death where {between}''').fetchone()
+
+        deaths_cloud = get_value_or_default(deaths_cloud, 0)
+        deaths_local = get_value_or_default(deaths_local, 0)
+
+        if deaths_cloud < deaths_local:
+            current_data = {
+                "timestamp": str(data[1]) + 'T' + str(data[2]) + 'Z',
+                "cmdr": str(data[3]),
+                "death_counter": deaths_local
+            }
+            if upload_cloud_records(current_data) == 1:
+                create_logo(current_data)
+
         processing_challenge_data('hottest_body', 'MAX',
                                   'Temperature', cmdr, 'SurfaceTemperature')
 
@@ -5524,7 +5609,8 @@ def exploration_challenge():
     logger(funktion, log_var)
 
     global eddc_modul, status
-    eddc_modul = 14
+    eddc_modul = set_modul_level(14)
+
     status.configure(text='Challenge')
 
     #  Suche die Logs von gestern heute und morgen
@@ -6072,14 +6158,15 @@ def menu(var):
 
     # Filter.delete(0, END)
     if var == menu_var[1]:
-        eddc_modul = 1
+        eddc_modul = set_modul_level(1)
+
     else:
         lauf = -1
         for i in menu_var:
             lauf += 1
             if var == i:
-                eddc_modul = lauf
-    # print(eddc_modul)
+                eddc_modul = set_modul_level(lauf)
+
     auswertung(eddc_modul)
 
 
@@ -6090,7 +6177,7 @@ def select_last_log_file():
     connection = sqlite3.connect(database)
     cursor = connection.cursor()
     cursor.execute("CREATE TABLE IF NOT EXISTS logfiles (Name TEXT, explorer INTEGER, "
-                   "bgs INTEGER, Mats INTEGER, CMDR TEXT, last_line INTEGER, Full_scan_var INTEGER, "
+                   "bgs INTEGER, Mats INTEGER, CMDR TEXT, last_line INTEGER, full_scan_var INTEGER, "
                    "expedition INTEGER, exp_lines INTEGER)")
     item = cursor.execute("SELECT Name FROM logfiles", ()).fetchall()
     if item:
@@ -6600,7 +6687,7 @@ def check_logfile_in_db(file, state, read_state):
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
         cursor.execute("CREATE TABLE IF NOT EXISTS logfiles (Name TEXT, explorer INTEGER, "
-                       "bgs INTEGER, Mats INTEGER, CMDR TEXT, last_line INTEGER, Full_scan_var INTEGER,"
+                       "bgs INTEGER, Mats INTEGER, CMDR TEXT, last_line INTEGER, full_scan_var INTEGER,"
                        "expedition INTEGER, exp_lines INTEGER)")
         sql = f'''Select * from logfiles where Name = "{file}" and CMDR is NULL'''
         select = cursor.execute(sql).fetchall()
@@ -6792,14 +6879,14 @@ def get_cmdr_names():
             global cmdr_lauf
             cmdr_lauf = 1
             log_files = file_names(5)
-            for journal_file in log_files:
-                check_logfile_in_db(journal_file, '', 'insert')
-            get_cmdr_names()
+            if log_files:
+                for journal_file in log_files:
+                    check_logfile_in_db(journal_file, '', 'insert')
+                get_cmdr_names()
 
 
 def test():
-    # get_scan_time()
-    get_cloud_records()
+    pass
 
 
 def processing_cloud_vs_local(local, cloud, data, category, minmax):
@@ -7038,8 +7125,8 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     start_x_jump = text_box_top_left[0] + (box_width - jump_width) // 2
     d.text((start_x_jump, start_y), jump_text, fill='#f07b05', font=font_cmdr, stroke_width=3, stroke_fill='black')
 
-    thread_rce = threading.Thread(target=achievement_png.show, args=())
-    thread_rce.start()
+    # thread_rce = threading.Thread(target=achievement_png.show, args=())
+    # thread_rce.start()
     send_to_discord2(achievement_png)
 
 
@@ -7133,7 +7220,7 @@ def full_scan():
     with (sqlite3.connect(database) as connection):
         cursor = connection.cursor()
         select = cursor.execute("select Name from logfiles where explorer is NULL").fetchall()
-        full_scan_var = cursor.execute("select Full_scan_var from server").fetchall()
+        full_scan_var = cursor.execute("select full_scan_var from server").fetchall()
 
     eddc_text_box.delete(1.0, END)
     eddc_text_box.insert(INSERT, 'Auswertung läuft von ' + str(full_scan_var[0][0]) + ' Dateien')
@@ -7430,6 +7517,7 @@ def auswertung(eddc_modul):
             eddc_text_box.insert(END, ('───────────────────────────\n'))
             thread_star_systems = threading.Thread(target=star_systems_db, args=())
             thread_star_systems.start()
+
         elif eddc_modul == 4:  # Codex Treeview
             status.configure(text='Codex')
             logger('filenames', 2)
@@ -7479,56 +7567,6 @@ def set_language_db(var):
             cursor.execute("UPDATE lan_db SET lang = ?", (var,))
             connection.commit()
     return var
-
-
-# Funktion, um die Existenz einer Spalte zu prüfen
-def column_exists(cursor, table_name, column_name):
-    cursor.execute(f"PRAGMA table_info({table_name})")
-    columns = [info[1] for info in cursor.fetchall()]  # Spaltennamen aus der zweiten Spalte (Index 1)
-    return column_name in columns
-
-
-def update_db(old_version):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    insert_sql = """Insert into Bio_prediction VALUES 
-            ('bacterium bullaris', 'm', 'icy body', 0.001, 0.099,0.03,0.6,'thin methane',65.0,110.0,'N')"""
-
-    with sqlite3.connect(database) as connection:
-        cursor = connection.cursor()
-
-        select = cursor.execute("""SELECT * from Bio_prediction where name = 'bacterium bullaris' and startype = 'm' 
-                                    and Planettype = 'icy body' and Athmospere 
-                                    like '%thin methane%' and Temp_max = 110""").fetchall()
-        if not select:
-            logger('UPDATE SQL', 2)
-            cursor.execute(insert_sql)
-            connection.commit()
-
-        if not column_exists(cursor, 'server', 'Full_scan_var'):
-            cursor.execute("ALTER TABLE server ADD Full_scan_var INTEGER")
-
-        if not column_exists(cursor, 'dvrii', 'min_gravitation'):
-            cursor.execute("ALTER TABLE dvrii ADD min_gravitation REAL")
-
-        if not column_exists(cursor, 'dvrii', 'coldest_body'):
-            cursor.execute("ALTER TABLE dvrii ADD coldest_body REAL")
-
-        if not column_exists(cursor, 'dvrii', 'max_radius'):
-            cursor.execute("ALTER TABLE dvrii ADD max_radius REAL")
-
-        if not column_exists(cursor, 'dvrii', 'min_radius'):
-            cursor.execute("ALTER TABLE dvrii ADD min_radius REAL")
-
-        if not column_exists(cursor, 'star_data', 'cmdr'):
-            cursor.execute("ALTER TABLE star_data ADD cmdr TEXT")
-
-        if not column_exists(cursor, 'planet_infos', 'cmdr'):
-            cursor.execute("ALTER TABLE planet_infos ADD cmdr TEXT")
-        connection.commit()
-    logger('update DB', 1)
-    create_tables()
 
 
 def db_version():  # Programmstand und DB Stand werden miteinander verglichen
@@ -7619,6 +7657,15 @@ def set_theme(theme):
 get_latest_version(1)
 
 
+def set_modul_level(var):
+    sql_modul = f'''UPDATE server SET eddc_modul = {var}'''
+    with sqlite3.connect(database) as connection:
+        cursor = connection.cursor()
+        cursor.execute(sql_modul)
+        connection.commit()
+        return var
+
+
 def main():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -7701,7 +7748,7 @@ def main():
     exploration_menu.add_command(label="Kubus Analyse", command=lambda: menu('cube'))
     exploration_menu.add_command(label="Kompass", command=lambda: menu('compass'))
     exploration_menu.add_command(label="Exploration Challenge", command=exploration_challenge)
-    exploration_menu.add_command(label="test", command=test)
+    # exploration_menu.add_command(label="test", command=test)
     # exploration_menu.add_command(label="Full Scan", command=full_scan)
     exploration_menu.add_command(label="Rescan Codex", command=rescan)
 
@@ -7925,7 +7972,13 @@ def main():
                                       width=50, height=35)
     discord.grid(column=2, row=0, sticky=W, padx=10)
 
-    status = customtkinter.CTkLabel(master=bottom_grid, text='BGS Mode', width=60,
+    status__auswahl = ['', 'BGS Mode', 'Odyssey MATS', 'MATS Mode', 'Codex', 'Combat Rank', 'Thargoids',
+                       'Boxel Analyse', 'Kubus Analyse', 'Thargoid-War', 'Test', 'Summary', 'War Progress',
+                       'Compass', 'Challenge', ]
+
+    status_text = status__auswahl[eddc_modul]
+
+    status = customtkinter.CTkLabel(master=bottom_grid, text=status_text, width=60,
                                     text_color='white', font=("Helvetica", 14), )
     status.grid(column=3, row=0, sticky=W, padx=10)
 
