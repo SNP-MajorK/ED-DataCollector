@@ -119,8 +119,8 @@ def get_status_data():
             try:
                 data = json.load(datei)
             except:
-                latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
-                return latitude, longitude, altitude, radius, body_name, reached
+                latitude, longitude, altitude, radius, body_name, reached, timestamp = ' ', ' ', 0, ' ', ' ', 0, ''
+                return latitude, longitude, altitude, radius, body_name, reached, timestamp
             timestamp = data.get('timestamp')
             latitude = data.get('Latitude')
             longitude = data.get('Longitude')
@@ -131,10 +131,10 @@ def get_status_data():
             body_name = data.get('BodyName')
             reached = 0
             if not body_name:
-                latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
+                latitude, longitude, altitude, radius, body_name, reached, timestamp = ' ', ' ', 0, ' ', ' ', 0, ''
             return latitude, longitude, altitude, radius, body_name, reached, timestamp
     else:
-        latitude, longitude, altitude, radius, body_name, reached = ' ', ' ', 0, ' ', ' ', 0
+        latitude, longitude, altitude, radius, body_name, reached, timestamp = ' ', ' ', 0, ' ', ' ', 0, ''
     return latitude, longitude, altitude, radius, body_name, reached, timestamp
 
 

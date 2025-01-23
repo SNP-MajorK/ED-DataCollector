@@ -67,7 +67,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.6.4'
+version_number = '0.9.6.5'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -441,7 +441,7 @@ def update_db(old_version):
             cursor.execute("ALTER TABLE server ADD eddc_modul INTEGER")
 
         if not column_exists(cursor, 'server', 'full_scan_var'):
-            cursor.execute("ALTER TABLE server ADD Full_scan_var INTEGER")
+            cursor.execute("ALTER TABLE server ADD full_scan_var INTEGER")
 
         if not column_exists(cursor, 'dvrii', 'min_gravitation'):
             cursor.execute("ALTER TABLE dvrii ADD min_gravitation REAL")
@@ -6648,7 +6648,7 @@ def get_star_data(search_date):
                                                 and date_log = ?""", (search_date,)).fetchall()
 
         if select_terra[0][0] >= 1:
-            text.append('- ' + str(select_terra[0][0]) + ' terraformirbare Trabanten')
+            text.append('- ' + str(select_terra[0][0]) + ' terraformierbare Trabanten')
 
         for i in planettype:
             sql = "select count(systemid) from planet_infos where PlanetType = '" \
@@ -6662,7 +6662,7 @@ def get_star_data(search_date):
                         i = 'Gas Riese der Klasse V'
                 if i == 'Water world':
                     if select_water[0][0] > 1:
-                        i = 'Wasser Welten'
+                        i = 'Wasserwelten'
                     else:
                         i = 'Wasser Welt'
                 if i == 'Ammonia world':
@@ -6672,9 +6672,9 @@ def get_star_data(search_date):
                         i = 'Ammoniak Welt'
                 if i == 'Earthlike body':
                     if select_water[0][0] > 1:
-                        i = 'Erdaehnliche Welten'
+                        i = 'erdaehnliche Welten'
                     else:
-                        i = 'Erdaehnliche Welt'
+                        i = 'erdaehnliche Welt'
                 text.append('- ' + str(select_water[0][0]) + ' ' + i)
         # print(text)
         return text
