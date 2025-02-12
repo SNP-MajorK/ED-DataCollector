@@ -113,13 +113,14 @@ def resource_path(relative_path):
 
 def get_status_data():
     file = log_path + "\\status.json"
-    timestamp = '2020-01-01T19:00:00Z'
+    fake_timestamp = '2020-01-01T19:00:00Z'
     if os.path.isfile(file):
-        with open(file, 'r', encoding='UTF8') as datei:
+        with (open(file, 'r', encoding='UTF8') as datei):
             try:
                 data = json.load(datei)
             except:
-                latitude, longitude, altitude, radius, body_name, reached, timestamp = ' ', ' ', 0, ' ', ' ', 0, ''
+                latitude, longitude, altitude, radius, body_name, reached, timestamp = [' ', ' ', 0, ' ', ' ', 0,
+                                                                                        fake_timestamp]
                 return latitude, longitude, altitude, radius, body_name, reached, timestamp
             timestamp = data.get('timestamp')
             latitude = data.get('Latitude')
@@ -131,10 +132,12 @@ def get_status_data():
             body_name = data.get('BodyName')
             reached = 0
             if not body_name:
-                latitude, longitude, altitude, radius, body_name, reached, timestamp = ' ', ' ', 0, ' ', ' ', 0, ''
+                latitude, longitude, altitude, radius, body_name, reached, timestamp = [' ', ' ', 0, ' ', ' ', 0,
+                                                                                        fake_timestamp]
             return latitude, longitude, altitude, radius, body_name, reached, timestamp
     else:
-        latitude, longitude, altitude, radius, body_name, reached, timestamp = ' ', ' ', 0, ' ', ' ', 0, ''
+        latitude, longitude, altitude, radius, body_name, reached, timestamp = [' ', ' ', 0, ' ', ' ', 0,
+                                                                                        fake_timestamp]
     return latitude, longitude, altitude, radius, body_name, reached, timestamp
 
 

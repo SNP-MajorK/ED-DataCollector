@@ -67,7 +67,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.6.5'
+version_number = '0.9.7.0'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -826,7 +826,8 @@ def new_server_settings():
                 if result == []:
                     cursor.execute("INSERT INTO server VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                    (url, user, eddc_user, path, update_serv, com_style,
-                                    com_trans, com_back, com_text, update_exp_upload, exp_user, eddc_modul, full_scan_var))
+                                    com_trans, com_back, com_text, update_exp_upload, exp_user, eddc_modul,
+                                    full_scan_var))
                 else:
                     cursor.execute("drop table server")
                     cursor.execute("""CREATE table IF NOT EXISTS server (
@@ -1159,6 +1160,7 @@ def start_read_logs():
 
 
 def log_date(timestamp):
+    #  timestamp = "2024-02-06T19:23:08Z
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
 
@@ -1171,7 +1173,7 @@ def log_date(timestamp):
     log_seconds = (timestamp[17:19])
     # print(log_seconds)
     log_time = [log_year, log_month, log_day, log_hour, log_minute, log_seconds]
-    # print(log_time)
+    #  log_time = [2024, 02, 06, 19, 23, 08]
     return log_time
 
 
@@ -2434,12 +2436,10 @@ def read_log_codex(data, journal_file):
                     'Roseum Bioluminescent Anemone', 'Biolumineszente Prasinum-Anemone',
                     'Solid Mineral Spheres', 'Lindigoticum Silicate Crystals',
                     'Cobalteum Rhizome Pod', 'Albidum Silicate Crystals', 'Crystals', 'tree'
-                                                                                      'Roseum Ice Crystals', 'Crystals',
-                    'Tubers', 'Brain Tree',
+                    'Roseum Ice Crystals', 'Crystals', 'Tubers', 'Brain Tree',
                     'Hirnbaum', 'kugeln', 'Metallkristalle', 'Kristallscherben', 'Silikatkristalle'
-                                                                                 'Kugelmolluske', 'Eiskristalle',
-                    'Stielbaum', 'Anemone', 'Stielhülse', 'scherben'
-                                                          'Borkenhügel', 'Silikatkristalle', 'Leerenherz', 'hülse',
+                    'Kugelmolluske', 'Eiskristalle', 'Stielbaum', 'Anemone', 'Stielhülse', 'scherben'
+                    'Borkenhügel', 'Silikatkristalle', 'Leerenherz', 'hülse',
                     'Silikatkristalle', 'Windenknollen',
                     'molluske', 'Amphorenpflanze', 'kugeln', 'Kalkplatten', 'bäume', 'Aster']
         for i in not_bios:
@@ -2528,77 +2528,61 @@ def new_bio_color(biodata, systemname, body):
 def get_body_from_sc(rlc_log_time, system_address, journal_file):
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    rlc_log_time = rlc_log_time.split('T')
-
-    rlc_log_date = rlc_log_time[0]
-    rlc_log_date = rlc_log_date.split('-')
-
-    rlc_log_time = rlc_log_time[1]
-    rlc_log_time = rlc_log_time.replace('Z', '')
-    rlc_log_time = rlc_log_time.split(':')
     new = []
     disembark = []
     location = []
 
-    date_codex = datetime(int(rlc_log_date[0]), int(rlc_log_date[1]), int(rlc_log_date[2]),
-                          int(rlc_log_time[0]), int(rlc_log_time[1]), int(rlc_log_time[2]))
+    log_time = log_date(rlc_log_time)
+
+    date_codex = datetime(int(log_time[0]), int(log_time[1]), int(log_time[2]),
+                          int(log_time[3]), int(log_time[4]), int(log_time[5]))
+
     with open(journal_file, 'r', encoding='UTF8') as datei:
         for zeile in datei:
             data = read_json(zeile)
             event = data.get('event')
             if event == 'SupercruiseExit':
-                log_time = data.get('timestamp')
-                log_time = log_time.split('T')
-                log_date = log_time[0]
-                log_date = log_date.split('-')
-                log_time = log_time[1]
-                log_time = log_time.replace('Z', '')
-                log_time = log_time.split(':')
-                date_disembark = datetime(int(log_date[0]), int(log_date[1]), int(log_date[2]),
-                                          int(log_time[0]), int(log_time[1]), int(log_time[2]))
-                if date_disembark < date_codex:
+                log_timestamp = data.get('timestamp')
+                log_time = log_date(log_timestamp)
+
+                date_sc_exit = datetime(int(log_time[0]), int(log_time[1]), int(log_time[2]),
+                                        int(log_time[3]), int(log_time[4]), int(log_time[5]))
+                if date_sc_exit < date_codex:
                     system_name = data.get('StarSystem')
                     body_name = data.get('Body')
                     body_name = body_name.replace(system_name, '')
                     new.append(body_name)
             if event == 'Disembark':
-                log_time = data.get('timestamp')
-                log_time = log_time.split('T')
-                log_date = log_time[0]
-                log_date = log_date.split('-')
-                log_time = log_time[1]
-                log_time = log_time.replace('Z', '')
-                log_time = log_time.split(':')
-                date_disembark = datetime(int(log_date[0]), int(log_date[1]), int(log_date[2]),
-                                          int(log_time[0]), int(log_time[1]), int(log_time[2]))
+                log_timestamp = data.get('timestamp')
+                log_time = log_date(log_timestamp)
+
+                date_disembark = datetime(int(log_time[0]), int(log_time[1]), int(log_time[2]),
+                                          int(log_time[3]), int(log_time[4]), int(log_time[5]))
+
                 if date_disembark < date_codex:
                     system_name = data.get('StarSystem')
                     body_name = data.get('Body')
                     body_name = body_name.replace(system_name, '')
                     disembark.append(body_name)
             if event == 'Location':
-                log_time = data.get('timestamp')
-                log_time = log_time.split('T')
-                log_date = log_time[0]
-                log_date = log_date.split('-')
-                log_time = log_time[1]
-                log_time = log_time.replace('Z', '')
-                log_time = log_time.split(':')
-                date_disembark = datetime(int(log_date[0]), int(log_date[1]), int(log_date[2]),
-                                          int(log_time[0]), int(log_time[1]), int(log_time[2]))
-                if date_disembark < date_codex:
+                log_timestamp = data.get('timestamp')
+                log_time = log_date(log_timestamp)
+
+                date_location = datetime(int(log_time[0]), int(log_time[1]), int(log_time[2]),
+                                         int(log_time[3]), int(log_time[4]), int(log_time[5]))
+                if date_location < date_codex:
                     system_name = data.get('StarSystem')
                     body_name = data.get('Body')
                     body_name = body_name.replace(system_name, '')
                     location.append(body_name)
     if new != []:
-        return (new[-1], system_name)
+        return new[-1], system_name
     else:
         if disembark != []:
-            return (disembark[-1], system_name)
+            return disembark[-1], system_name
         else:
             if location != []:
-                return (location[-1], system_name)
+                return location[-1], system_name
 
 
 def get_system_data(system_address, body_id):
@@ -2650,8 +2634,8 @@ def read_body_info(file, system_address, body_id):
 
 
 def read_bio_data(data, journal_file):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
+    current_function_name = "read_bio_data"
+    logger(current_function_name, log_var)
 
     biodata = (data.get('Species_Localised'))
     system_address_bio = data.get('SystemAddress')
@@ -2675,7 +2659,6 @@ def read_bio_data(data, journal_file):
         rbd_system = system_infos[0]
         body = system_infos[1]
     except TypeError:
-        system_infos = get_system_data(system_address_bio, body_id)
         rbd_system = system_infos[0]
         body = system_infos[1]
     color = data.get('Variant_Localised')
@@ -2683,6 +2666,7 @@ def read_bio_data(data, journal_file):
         bio_color = color.replace(biodata, '')
         bio_color = bio_color.replace(' - ', '')
     else:
+        #  Wenn keine Farbinfos vorhanden sind, suche in den Codex Daten nach der Farbe!
         bio_color = new_bio_color(biodata, rbd_system, body)
     # bio_color = ''
 
@@ -4169,6 +4153,12 @@ def custom_table_view():
 def rescan():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
+
+    antwort = messagebox.askyesno("Bestätigung", "Willst du wirklich fortfahren?")
+    if not antwort:  # Wenn der Benutzer "nein" klickt
+        print('nein')
+        return
+
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
         cursor.execute("DROP TABLE IF EXISTS codex")
@@ -4272,12 +4262,14 @@ def get_info_for_bio_scan(data, file):  # event: ScanOrganic
     scantype = data.get('ScanType')  # "ScanType": "Log"; 2x "ScanType":"Sample", "ScanType":"Analyse"
     species = data.get('Species_Localised')  # "Species_Localised": "Fonticulua Campestris",
     variant = data.get('Variant_Localised', ' - ')  # "Variant_Localised": "Fonticulua Campestris - Mauve",
-
-    variant = variant.split('-')
-    try:
-        bio_color = variant[1].replace(' ', '')
-    except IndexError:
-        bio_color = ''
+    if variant:
+        variant = variant.split('-')
+        try:
+            bio_color = variant[1].replace(' ', '')
+        except IndexError:
+            bio_color = ''
+        else:
+            bio_color = ''
     system_address = data.get('SystemAddress')  # "SystemAddress":71235145978
     body = data.get('Body')  # "Body":10
     cmdr = read_cmdr(file)
@@ -4285,7 +4277,7 @@ def get_info_for_bio_scan(data, file):  # event: ScanOrganic
     body_name = get_body(system_address, body)
     latitude, longitude, altitude, radius, body_name_2, reached, s_time = get_status_data()
     timestamp_1 = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
-    timestamp_2 = datetime.strptime(s_time, "%Y-%m-%dT%H:%M:%SZ")
+    timestamp_2 = datetime.strptime(s_time, "%Y-%m-%dT%H:%M:%SZ")  # Zeit aus der status.json
 
     # Zeitdifferenz berechnen
     difference = abs(timestamp_1 - timestamp_2)
@@ -4293,7 +4285,9 @@ def get_info_for_bio_scan(data, file):  # event: ScanOrganic
     # Grenze festlegen (z. B. 10 Sekunden)
     threshold = timedelta(seconds=10)
 
-    if difference > threshold:
+    if difference > threshold:  # Wenn der Abstand der Zeit zwischen status.json und Journal.log
+        # zu weit auseinander liegt, können die koordinaten aus der status.json nicht übernommen werden,
+        # da sie nicht live aus gelesen wurden!
         latitude, longitude = '', ''
     if system_address == 0 or body == 0:
         return
@@ -5015,7 +5009,6 @@ def select_prediction_db(star_type, planet_type, body_atmos, body_gravity, body_
 
 
 def between_sql():
-
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
         timestamp = "2024-07-23T19:06:17Z"
@@ -5024,9 +5017,21 @@ def between_sql():
         start_time = str(start_exp).split(' ')[1]
         stop_date = str(stop_exp).split(' ')[0]
         stop_time = str(stop_exp).split(' ')[1]
+        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+        stop_date_obj = datetime.strptime(stop_date, '%Y-%m-%d').date()
+        heute = date.today()
 
-        between_sql = f''' (date_log = "{start_date}" and time_log > "{start_time}" or date_log > "{start_date}") 
-                and (date_log = "{stop_date}" and time_log < "{stop_time}" or date_log < "{stop_date}")'''
+        # Überprüfung, ob 'heute' zwischen 'start_date' und 'stop_date' liegt
+        if start_date_obj <= heute <= stop_date_obj:
+            between_sql = f''' (date_log = "{start_date}" and time_log > "{start_time}" or date_log > "{start_date}") 
+                    and (date_log = "{stop_date}" and time_log < "{stop_time}" or date_log < "{stop_date}")'''
+        else:
+            print("Das heutige Datum liegt außerhalb des Bereichs.")
+            get_cloud_data()
+            start_date = '1900-01-01'
+            stop_date = '1900-12-31'
+            between_sql = f''' (date_log = "{start_date}" and time_log > "{start_time}" or date_log > "{start_date}") 
+                        and (date_log = "{stop_date}" and time_log < "{stop_time}" or date_log < "{stop_date}")'''
     return between_sql
 
 
@@ -5237,7 +5242,10 @@ def check_wds():
         else:
             db_cmdr = upload[0][0]
 
-        check_lokal_wd = f'''select COUNT(DISTINCT(star_type)) from white_dwarfs where cmdr = "{db_cmdr}"'''
+        between = between_sql()
+
+        check_lokal_wd = f'''select COUNT(DISTINCT(star_type)) from white_dwarfs 
+                                where cmdr = "{db_cmdr}" and {between}'''
         local_wd = cm_cursor.execute(check_lokal_wd).fetchone()
         if local_wd:
             check_cloud_wd = f'''select white_dwarf from dvrii'''
@@ -5495,21 +5503,8 @@ def upload_cloud_records(max_var):
 def check_player_death_total():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    #  Start und Enddatum der Expedition ermitteln
-    with psycopg2.connect(dbname=snp_server.db_name, user=snp_server.db_user, password=snp_server.db_pass,
-                          host=snp_server.db_host, port=5432) as psql_conn:
-        psql = psql_conn.cursor()
-        p_select = f'''SELECT * FROM expeditions where name = \'DVRII_NRNF\''''
-        psql.execute(p_select)
-        result = psql.fetchall()
-        start_expedition = (result[0][2])
-        stop_expedition = (result[0][3])
 
-        start_expedition = (log_date(str(start_expedition)))
-        start_expedition = (start_expedition[0] + "-" + start_expedition[1] + "-" + start_expedition[2])
-
-        stop_expedition = (log_date(str(stop_expedition)))
-        stop_expedition = (stop_expedition[0] + "-" + stop_expedition[1] + "-" + stop_expedition[2])
+    between = between_sql()
 
     with sqlite3.connect(database) as connection_sql:
         cursor = connection_sql.cursor()
@@ -5522,8 +5517,7 @@ def check_player_death_total():
     #  Wie oft ist der Spieler auf der Expedition gestorben
     with sqlite3.connect(database) as connection:
         cursor = connection.cursor()
-        select_sql = f'''SELECT Count(*) from player_death where cmdr = "{db_cmdr}" and date_log
-        BETWEEN "{start_expedition}" and "{stop_expedition}"'''
+        select_sql = f'''SELECT Count(*) from player_death where cmdr = "{db_cmdr}" and {between}'''
         result = cursor.execute(select_sql).fetchall()
 
         dvrii_select = f'''SELECT death_counter from dvrii'''
@@ -5536,6 +5530,7 @@ def check_player_death_total():
                 "timestamp": str(datetime.now())[0:19],
                 "death_counter": result[0][0]
             }
+            # print(current_data)
             if upload_cloud_records(current_data) == 1:
                 create_logo(current_data)
 
@@ -5544,6 +5539,7 @@ def check_player_death_total():
 get_cloud_data()
 
 
+#  Funktion um die Zeit zwischen den Scans zu ermitteln. Nicht aktiv!
 def get_scan_time():
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
@@ -5728,8 +5724,8 @@ def exploration_challenge():
 
             check_logfile_in_db(journal_file, 'exp_line', current_line_nr)
     t2 = get_time()
-    logger(('read Files Exploration Challenge ' + str(timedelta.total_seconds(t2 - t1)) + ' sek.'), 1)
-    logger('Einlesen Fertig', 2)
+    # logger(('read Files Exploration Challenge ' + str(timedelta.total_seconds(t2 - t1)) + ' sek.'), 1)
+    # logger('Einlesen Fertig', 2)
 
     get_cloud_records()
     # t3 = get_time()
@@ -6886,7 +6882,7 @@ def get_cmdr_names():
 
 
 def test():
-    pass
+    check_player_death_total()
 
 
 def processing_cloud_vs_local(local, cloud, data, category, minmax):
@@ -7335,7 +7331,6 @@ def auswertung(eddc_modul):
     if eddc_modul == 14:  # exploration_challenge
         b_filter = filter_entry.get()
         status.configure(text='Challenge')
-        print('exploration_challenge')
         exploration_challenge()
         aus_var = 0
         return
