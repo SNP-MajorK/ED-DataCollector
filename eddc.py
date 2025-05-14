@@ -11,10 +11,12 @@ import threading
 import time as t
 import urllib.request
 import webbrowser
+import socket
 import customtkinter
-import plotly.express as px
+# import plotly.express as px
 import psycopg2
 import requests
+from db_viewer import *
 import snp_server
 from builtins import print
 from datetime import datetime, date, time, timedelta
@@ -26,7 +28,6 @@ from tkinter import messagebox, filedialog
 from tkinter import ttk
 from urllib.parse import urlparse
 from winreg import *
-from queue import Queue
 from PIL import Image, ImageDraw, ImageFont
 from discord_webhook import DiscordWebhook
 from prettytable import PrettyTable
@@ -35,9 +36,6 @@ from tkcalendar import DateEntry
 from bio_data import *
 from compass import compass_gui, get_status_data
 from gui_positionen import load_position, save_position
-
-# import compass, gui_positionen, snp_server
-# from sqlite3 import Connection
 
 filter_name = ''
 
@@ -67,7 +65,7 @@ t_minute = 'Tick Minute'
 inf_data = ''
 docked = ''
 bio_worth = []
-version_number = '0.9.7.0'
+version_number = '0.9.7.1'
 current_version = ('Version ' + str(version_number))
 global status  # popup_open, tree_open, old_view_name
 root_open = False
@@ -604,10 +602,10 @@ def new_server_settings():
                 exp_user = result[0][10]
             else:
                 exp_user = 'anonym'
-            if result[0][11] != ('' or None):
-                full_scan_var = result[0][10]
+            if result[0][12] != ('' or None):
+                full_scan_var = result[0][12]
             else:
-                full_scan_var = 0
+                full_scan_var = 10
 
         else:
             web_hock_user = ''
@@ -862,12 +860,12 @@ def last_tick():
     except:
         logger('Tick Error', 1)
         tick_data = ('[{"_id":"627fe6d6de3f1142b60d6dcd",'
-                     '"time":"2022-05-14T16:56:36.000Z",'
+                     '"time":"2022-01-01T00:00:00.000Z",'
                      '"updated_at":"2022-05-14T17:28:54.588Z",'
                      '"__v":0}]')
         todos = json.loads(tick_data)
-        messagebox.showwarning("TICK failed",
-                               f"Fehler beim Abrufen der Daten.")
+        # messagebox.showwarning("TICK failed",
+        #                        f"Fehler beim Abrufen der Daten.")
     for d in todos:
         lt_date = d.get('time')
         t_year = (lt_date[:4])
@@ -1209,6 +1207,7 @@ def print_influence_db(filter_b):
         sql = 'SELECT DISTINCT(SystemName), faction FROM influence_db where ' \
               'voucher_type = "influence" and ' + se + ' order by 1'
         new_data = cursor.execute(sql).fetchall()
+        # print(sql)
         for i in new_data:
             sql = f'''SELECT SUM(amount) FROM influence_db where voucher_type = "influence" and 
             SystemName = "{str(i[0])}" and faction = "{str(i[1])}" and {se}'''
@@ -1870,12 +1869,12 @@ def tick_select():
 
     if tick:  # nach dem Tick
         tomorrow = str(search_date + timedelta(days=1))[0:10]
-        select_tick = f'''((date_log = "' + {date} + '" and time_log > "' + {tick_time} + '") or 
-                            (date_log = "' + {tomorrow} + '" and time_log < "' + {tick_time} + '"))'''
+        select_tick = f'''((date_log = "{date}" and time_log > "{tick_time}") or 
+                            (date_log = "{tomorrow}" and time_log < "{tick_time}"))'''
     else:  # vor dem Tick
         yesterday = str(search_date - timedelta(days=1))[0:10]
-        select_tick = f'''((date_log = "' + {date} + '" and time_log < "' + {tick_time} + '") or 
-                            ( date_log = "' + {yesterday} + '" and time_log > "' + {tick_time} + '"))'''
+        select_tick = f'''((date_log = "{date}" and time_log < "{tick_time}") or 
+                            ( date_log = "{yesterday}" and time_log > "{tick_time}"))'''
     return select_tick
 
 
@@ -2436,10 +2435,12 @@ def read_log_codex(data, journal_file):
                     'Roseum Bioluminescent Anemone', 'Biolumineszente Prasinum-Anemone',
                     'Solid Mineral Spheres', 'Lindigoticum Silicate Crystals',
                     'Cobalteum Rhizome Pod', 'Albidum Silicate Crystals', 'Crystals', 'tree'
-                    'Roseum Ice Crystals', 'Crystals', 'Tubers', 'Brain Tree',
+                                                                                      'Roseum Ice Crystals', 'Crystals',
+                    'Tubers', 'Brain Tree',
                     'Hirnbaum', 'kugeln', 'Metallkristalle', 'Kristallscherben', 'Silikatkristalle'
-                    'Kugelmolluske', 'Eiskristalle', 'Stielbaum', 'Anemone', 'Stielhülse', 'scherben'
-                    'Borkenhügel', 'Silikatkristalle', 'Leerenherz', 'hülse',
+                                                                                 'Kugelmolluske', 'Eiskristalle',
+                    'Stielbaum', 'Anemone', 'Stielhülse', 'scherben'
+                                                          'Borkenhügel', 'Silikatkristalle', 'Leerenherz', 'hülse',
                     'Silikatkristalle', 'Windenknollen',
                     'molluske', 'Amphorenpflanze', 'kugeln', 'Kalkplatten', 'bäume', 'Aster']
         for i in not_bios:
@@ -5072,7 +5073,7 @@ def check_cloud_vs_local():
         between = between_sql()
 
         jump_cloud = cursor.execute(f'''SELECT jump_distance from dvrii''').fetchone()
-        jump_local = cursor.execute(f'''SELECT MAX(max_distance) from exploration_records 
+        jump_local = cursor.execute(f'''SELECT  (max_distance) from exploration_records 
                                                     where {between}''').fetchone()
         jump_cloud = get_value_or_default(jump_cloud, 1)
         jump_local = get_value_or_default(jump_local)
@@ -5300,9 +5301,9 @@ def get_cloud_data():
                 cursor.execute(insert_sql)
                 connection.commit()
 
-            logger(f'''Start der Expedition {start_expedition}''', 2)
-            logger(f'''Datum von Heute {datetime.now()}''', 2)
-            logger(f'''Ende der Expedition {stop_expedition}''', 2)
+            # logger(f'''Start der Expedition {start_expedition}''', 2)
+            # logger(f'''Datum von Heute {datetime.now()}''', 2)
+            # logger(f'''Ende der Expedition {stop_expedition}''', 2)
             if start_expedition < datetime.now() < stop_expedition:
                 logger('Auf Tour', 2)
                 return 1
@@ -5855,291 +5856,6 @@ def print_engi_stuff_db(filter_b):
         ody_select = cursor.execute("SELECT * FROM odyssey ORDER BY Count DESC").fetchall()
     # print(ody_select)
     return ody_select
-
-
-def war_cargo(data, file):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    if data.get('event') == 'MissionAccepted':
-        mission_id = data.get('MissionID')
-        cargo_count = data.get('Count')
-        destination = data.get('DestinationSystem')
-        system_name = read_data_from_last_system(file, mission_id)
-        update_cargo_db("", "", mission_id, cargo_count, system_name, 0)
-        return ("", "", mission_id, cargo_count, system_name, 0)
-    if data.get('event') == 'MissionCompleted':
-        logtime = data.get('timestamp')
-        icd_log_time = (log_date(logtime))
-        date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-        time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
-        mission_id = data.get('MissionID')
-        update_cargo_db(date_log, time_log, mission_id, "", "", 1)
-        return (date_log, time_log, mission_id, "", "", 1)
-
-
-def update_cargo_db(date_log, time_log, mission_id, cargo_count, destination, completed):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-    cursor.execute("""CREATE table IF NOT EXISTS cargomissions 
-                        (date_log date, 
-                        time_log timestamp, 
-                        missionID INTEGER, 
-                        cargocount INTEGER,
-                        completed INTEGER,
-                        system TEXT 
-                        )""")
-
-    select = cursor.execute("SELECT * from cargomissions where missionID = ?", (mission_id,)).fetchall()
-    if select == []:
-        cursor.execute("INSERT INTO cargomissions VALUES (?,?,?,?,?,?)",
-                       ("", "", mission_id, cargo_count, completed, destination))
-        connection.commit()
-
-    if completed == 1:
-        cursor.execute("""UPDATE cargomissions set date_log = ?, time_log = ?, 
-                       completed = ? where missionID = ? """,
-                       (date_log, time_log, completed, mission_id))
-        connection.commit()
-
-
-def read_passengers(data, file):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    if data.get('event') == 'MissionAccepted':
-        mission_id = data.get('MissionID')
-        passengercount = data.get('PassengerCount')
-        faction = data.get('Faction')
-        system_name = read_data_from_last_system(file, mission_id)
-        if system_name == '':
-            logger((funktion, data), 1)
-        update_pass_db("", "", mission_id, passengercount, system_name, 0)
-        return ("", "", mission_id, passengercount, system_name, 0)
-    if data.get('event') == 'MissionCompleted':
-        logtime = data.get('timestamp')
-        icd_log_time = (log_date(logtime))
-        date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-        time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
-        mission_id = data.get('MissionID')
-        update_pass_db(date_log, time_log, mission_id, 0, "", 1)
-        return (date_log, time_log, mission_id, 0, "", 1)
-
-
-def update_pass_db(date_log, time_log, mission_id, passengercount, system_name, completed):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-    cursor.execute("""CREATE table IF NOT EXISTS passengermissions 
-                        (date_log date, 
-                        time_log timestamp, 
-                        missionID INTEGER, 
-                        passengercount INTEGER, 
-                        completed INTEGER, 
-                        system TEXT)""")
-
-    select = cursor.execute("SELECT * from passengermissions where missionID = ?", (mission_id,)).fetchall()
-    if select == []:
-        cursor.execute("INSERT INTO passengermissions VALUES (?,?,?,?,?,?)",
-                       ("", "", mission_id, passengercount, completed, system_name))
-        connection.commit()
-
-    if completed == 1:
-        cursor.execute("""UPDATE passengermissions set date_log = ?, time_log = ?,
-                       completed = ? where missionID =?""",
-                       (date_log, time_log, completed, mission_id))
-        connection.commit()
-
-
-def war_rescue(data, file):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    if data.get('event') == 'MissionAccepted':
-        mission_id = data.get('MissionID')
-        cargo_count = data.get('Count')
-        system_name = read_data_from_last_system(file, mission_id)
-        update_rescue_db("", "", mission_id, cargo_count, 0, system_name)
-        return ("", "", mission_id, cargo_count, 0, system_name)
-    if data.get('event') == 'MissionCompleted':
-        logtime = data.get('timestamp')
-        icd_log_time = (log_date(logtime))
-        date_log = (icd_log_time[0] + "-" + icd_log_time[1] + "-" + icd_log_time[2])
-        time_log = (icd_log_time[3] + ":" + icd_log_time[4] + ":" + icd_log_time[5])
-        mission_id = data.get('MissionID')
-        update_rescue_db(date_log, time_log, mission_id, "", 1, "")
-        return (date_log, time_log, mission_id, "", 1, "")
-
-
-def update_rescue_db(date_log, time_log, mission_id, cargo_count, completed, system_name):
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-
-    # print(date_log, time_log, mission_id, cargo_count, completed, system_name)
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-    cursor.execute("""CREATE table IF NOT EXISTS rescuemissions 
-                        (date_log date, 
-                        time_log timestamp, 
-                        missionID INTEGER, 
-                        cargocount INTEGER,
-                        completed INTEGER,
-                        system TEXT 
-                        )""")
-
-    select = cursor.execute("SELECT * from rescuemissions where missionID = ?", (mission_id,)).fetchall()
-    if select == []:
-        cursor.execute("INSERT INTO rescuemissions VALUES (?,?,?,?,?,?)",
-                       ("", "", mission_id, cargo_count, completed, system_name))
-        connection.commit()
-
-    if completed == 1:
-        cursor.execute("""UPDATE rescuemissions set date_log = ?, time_log = ?, 
-                       completed = ? where missionID = ? """,
-                       (date_log, time_log, completed, mission_id))
-        connection.commit()
-
-
-def ausgabe_pass():
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-    global eddc_text_box
-
-    connection = sqlite3.connect(database)
-    cursor = connection.cursor()
-
-    cursor.execute("""CREATE table IF NOT EXISTS rescuemissions 
-                        (date_log date, 
-                        time_log timestamp, 
-                        missionID INTEGER, 
-                        cargocount INTEGER,
-                        completed INTEGER,
-                        system TEXT 
-                        )""")
-
-    cursor.execute("""CREATE table IF NOT EXISTS cargomissions 
-                         (date_log date, 
-                         time_log timestamp, 
-                         missionID INTEGER, 
-                         cargocount INTEGER,
-                         completed INTEGER, 
-                         system TEXT 
-                         )""")
-
-    cursor.execute("""CREATE table IF NOT EXISTS passengermissions 
-                        (date_log date, 
-                        time_log timestamp, 
-                        missionID INTEGER, 
-                        passengercount INTEGER, 
-                        completed INTEGER, 
-                        system TEXT)""")
-
-    date_get = str(date_entry.get_date())
-
-    my_date = date_get.split('-')
-    tag = my_date[2]
-    monat = my_date[1]
-    jahr = my_date[0]
-
-    # tag = Tag.get()
-    # monat = Monat.get()
-    # jahr = '20' + Jahr.get()
-    date_ed = jahr + '-' + monat + '-' + tag
-
-    select_pass = cursor.execute("SELECT DISTINCT system from passengermissions where date_log = ? and completed = 1",
-                                 (date_ed,)).fetchall()
-    select_cargo = cursor.execute("SELECT DISTINCT system from cargomissions where date_log = ? and completed = 1",
-                                  (date_ed,)).fetchall()
-    select_rescue = cursor.execute("SELECT DISTINCT system from rescuemissions where date_log = ? and completed = 1",
-                                   (date_ed,)).fetchall()
-
-    summe_cargo = []
-    eddc_text_box.delete('1.0', END)
-    for i in select_cargo:
-        system_se = i[0]
-        anzahl = cursor.execute("SELECT SUM(cargocount) from cargomissions where system = ? and date_log = ?",
-                                (system_se, date_ed)).fetchone()
-        summe_cargo.append((system_se, anzahl[0]))
-
-    eddc_text_box.insert(END, (('Cargo transfered \t \t \t \n')))
-    eddc_text_box.insert(END, ('\n'))
-    gesamt_cargo = 0
-    if summe_cargo != []:
-        for i in summe_cargo:
-            eddc_text_box.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
-            tw_cargo_table.add_row((i[0], i[1]))
-            gesamt_cargo += int(i[1])
-    eddc_text_box.insert(END, ('─────────────────────────────\n'))
-    eddc_text_box.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt_cargo)) + 't \n'))
-    eddc_text_box.insert(END, ('\n'))
-
-    summe_rescue = []
-    for i in select_rescue:
-        system_se = i[0]
-        anzahl = cursor.execute("SELECT SUM(cargocount) from rescuemissions where system = ? and date_log = ?",
-                                (system_se, date_ed)).fetchone()
-        summe_rescue.append((system_se, anzahl[0]))
-
-    eddc_text_box.insert(END, (('Escape Pods rescued \t \t \t \n')))
-    eddc_text_box.insert(END, ('\n'))
-    gesamt_rescue = 0
-    if summe_rescue:
-        for i in summe_rescue:
-            eddc_text_box.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + 't \n')))
-            tw_rescue_table.add_row((i[0], i[1]))
-            gesamt_rescue += int(i[1])
-    eddc_text_box.insert(END, ('─────────────────────────────\n'))
-    eddc_text_box.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt_rescue)) + 't \n'))
-    eddc_text_box.insert(END, ('\n'))
-
-    summe_pass = []
-    for i in select_pass:
-        system_se = i[0]
-        anzahl = cursor.execute("SELECT SUM(passengercount) from passengermissions where system = ? and date_log = ?",
-                                (system_se, date_ed)).fetchone()
-        summe_pass.append((system_se, anzahl[0]))
-
-    eddc_text_box.insert(END, (('Passengers rescued \t \t \t \n')))
-    eddc_text_box.insert(END, ('\n'))
-    gesamt = 0
-    if summe_pass != []:
-        for i in summe_pass:
-            eddc_text_box.insert(END, (((str(i[0])) + '\t \t \t \t' + (str(i[1])) + ' \n')))
-            tw_pass_table.add_row((i[0], i[1]))
-            gesamt += int(i[1])
-    eddc_text_box.insert(END, ('─────────────────────────────\n'))
-    eddc_text_box.insert(END, ('Insgesamt \t \t \t \t' + (str(gesamt)) + ' \n'))
-
-
-def war():
-    funktion = inspect.stack()[0][3]
-    logger(funktion, log_var)
-    try:
-        tw_pass_table.clear_rows()
-        tw_cargo_table.clear_rows()
-        tw_rescue_table.clear_rows()
-    except AttributeError:
-        logger('NoData in tw rows', 2)
-
-    files = file_names(3)
-    # print(files)
-    if files is not None:
-        for journal_file in files:
-            with open(journal_file, 'r', encoding='UTF8') as datei:
-                for zeile in datei:
-                    data = read_json(zeile)
-                    if 'Mission_TW_Rescue' in data.get('Name', 'Kein'):
-                        war_rescue(data, journal_file)
-                    elif 'Mission_TW_Passenger' in data.get('Name', 'Kein'):
-                        read_passengers(data, journal_file)
-                    elif 'Mission_TW_Collect' in data.get('Name', 'Kein'):
-                        war_cargo(data, journal_file)
-    ausgabe_pass()
 
 
 def menu(var):
@@ -6881,8 +6597,67 @@ def get_cmdr_names():
                 get_cmdr_names()
 
 
-def test():
-    check_player_death_total()
+def is_flask_running(host="127.0.0.1", port=5000):
+    """Prüft, ob Flask auf dem angegebenen Port bereits läuft."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        return sock.connect_ex((host, port)) == 0
+
+
+def web_db_viewer():
+    if not is_flask_running():
+        print("Starte Flask-Server...")
+        test_thread = threading.Thread(target=app.run, kwargs={'host': '127.0.0.1', 'port': 5000, 'threaded': True})
+        test_thread.daemon = True  # Beendet Flask beim Schließen von Tkinter
+        test_thread.start()
+    else:
+        print("Flask läuft bereits!")
+    url = "http://127.0.0.1:5000"
+    webbrowser.open(url)
+
+
+def test_run():
+    liste = ['min_gravitation']
+    for i in liste:
+        sort = 'DESC'
+        if i == 'min_gravitation' or i == 'coldest_body' or i == 'min_radius':
+            sort = 'ASC'
+        x = 1
+        while x != 2:
+            with psycopg2.connect(dbname=snp_server.db_name, user=snp_server.db_user, password=snp_server.db_pass,
+                                  host=snp_server.db_host, port=5432) as psql_conn:
+                psql = psql_conn.cursor()
+                # if x == 1:
+                #     zeitraum = f'''timestamp  < '2025-03-03 20:30:00' and timestamp > '2025-02-03 20:30:00' and'''
+                #     monat = 'Februar 2025'
+                # elif x == 2:
+                #     zeitraum = f'''timestamp  < '2025-02-03 20:30:00' and timestamp > '2025-01-03 20:30:00' and'''
+                #     monat = 'Januar 2025'
+                # elif x == 3:
+                #     zeitraum = f'''timestamp  < '2025-01-03 20:30:00' and timestamp > '2024-12-03 20:30:00' and'''
+                #     monat = 'Dezember 2024'
+                # elif x == 4:
+                #     zeitraum = f'''timestamp  < '2024-12-03 20:30:00' and timestamp > '2024-11-03 20:30:00' and'''
+                #     monat = 'November 2024'
+                # elif x == 5:
+                zeitraum = f''' '''
+                monat = 'Gesamt Sieger'
+
+                select = f'''SELECT timestamp, cmdr, {i} FROM DVRII where {zeitraum}                            
+                            {i} is not NULL  order by {i} {sort} LIMIT 1;;'''
+                psql.execute(select)
+                result = psql.fetchone()
+                print(result, i)
+                max_list = {
+                    "timestamp": monat,
+                    "cmdr": result[1],
+                    "text": i,
+                    "data": result[2]
+
+                }
+                create_logo(max_list)
+                t.sleep(0.5)
+                x += 1
+    pass
 
 
 def processing_cloud_vs_local(local, cloud, data, category, minmax):
@@ -6956,96 +6731,153 @@ def send_to_discord2(achievement_png):
 def create_logo(max_list):  # Badges für die exploration challenge!!
     funktion = inspect.stack()[0][3]
     logger(funktion, log_var)
-    max_font_size_title = 24  # Maximale Schriftgröße für Titel
+    max_font_size_title = 18  # Maximale Schriftgröße für Titel
     cmdr = max_list.get("cmdr")
     pic = 'images/NRNF/pokal_jubel_feuerwerk_2.png'
 
     # Zeilenabstand
     line_spacing = 7
-    max_font_cmdr = 20
+    max_font_cmdr = 17
     zusatz = ''
     data = ''
     text = ' '
 
-    if max_list.get('max_body_count'):
-        pic = 'images/NRNF/pokal_sternenkarte.png'
-        data = max_list.get("max_body_count")
-        text = 'Meisten Körper'
-        zusatz = ''
-        max_font_size_title = 26  # Maximale Schriftgröße für Titel
+    logo_timestamp = str(max_list.get("timestamp"))
 
-    elif max_list.get('JumpDist'):
-        pic = 'images/NRNF/pokal_hyperraumsprung.png'
-        data = max_list.get("JumpDist")
-        text = 'Weitester Sprung'
-        zusatz = 'LJ'
-        max_font_size_title = 26  # Maximale Schriftgröße für Titel
+    if max_list.get('data'):
+        data = max_list.get("data")
+        text = max_list.get("text")
+        logo = ['images/NRNF/pokal_sternenkarte.png', 'images/NRNF/pokal_hyperraumsprung.png',
+                'images/NRNF/pokal_hotsurface.png', 'images/NRNF/pokal_eiskalt.png',
+                'images/NRNF/pokal_jubel_feuerwerk_1.png', 'images/NRNF/pokal_low_gravitation.png',
+                'images/NRNF/pokal_planet_gross.png', 'images/NRNF/pokal_planet_klein.png',
+                'images/NRNF/pokal_high_g.png', 'images/NRNF/pokal_jubel_feuerwerk_2.png', ]
 
-    elif max_list.get('MAX_Temperature'):
-        pic = 'images/NRNF/pokal_hotsurface.png'
-        text = 'Heißeste Oberfläche'
-        data = round(float(max_list.get("MAX_Temperature")), 3)
-        zusatz = '°K'
-        max_font_size_title = 22  # Maximale Schriftgröße für Titel
+        if text == 'jump_distance':
+            data = str(data)[:-1]
+            data = data.replace('.', ',')
+            data += ' LJ'
+            text = 'Weitester Sprung'
+            pic = logo[1]
 
-    elif max_list.get('MIN_Temperature'):
-        pic = 'images/NRNF/pokal_eiskalt.png'
-        text = 'Kälteste Oberfläche'
-        data = round(float(max_list.get("MIN_Temperature")), 3)
-        zusatz = '°K'
-        max_font_size_title = 21  # Maximale Schriftgröße für Titel
+        elif text == 'hottest_body':
+            data = str(round(float(data), 3)) + ' °K'
+            text = 'Heißeste Oberfläche  '
+            pic = logo[2]
 
-    elif max_list.get('MAX_Gravity'):
-        pic = 'images/NRNF/pokal_jubel_feuerwerk_1.png'
-        text = 'Höchste Gravitation'
-        data = round(float(max_list.get("MAX_Gravity")), 3)
-        zusatz = 'G'
-        max_font_size_title = 23  # Maximale Schriftgröße für Titel
+        elif text == 'coldest_body':
+            data = str(round(float(data), 3)) + ' °K'
+            text = 'Kälteste Oberfläche  '
+            pic = logo[3]
 
-    elif max_list.get('MIN_Gravity'):
-        pic = 'images/NRNF/pokal_low_gravitation.png'
-        text = 'Niedrigste Gravitation'
-        data = round(float(max_list.get("MIN_Gravity")), 3)
-        zusatz = 'G'
-        max_font_size_title = 22  # Maximale Schriftgröße für Titel
+        elif text == 'most_bodys':
+            data = str(data)
+            text = 'Meisten Körper  '
+            pic = logo[4]
 
-    elif max_list.get('MAX_radius'):
-        pic = 'images/NRNF/pokal_planet_gross.png'
-        text = 'Größter Radius'
-        data = round(float(max_list.get("MAX_radius") / 1000), 2)
-        zusatz = ' KM'
-        max_font_size_title = 23  # Maximale Schriftgröße für Titel
+        elif text == 'min_gravitation':
+            data = str(data) + ' G'
+            text = 'Niedrigste Gravitation  '
+            pic = logo[5]
 
-    elif max_list.get('MIN_radius'):
-        pic = 'images/NRNF/pokal_planet_klein.png'
-        text = 'kleinster Radius'
-        data = round(float(max_list.get("MIN_radius") / 1000), 2)
-        zusatz = ' KM'
-        max_font_size_title = 23  # Maximale Schriftgröße für Titel
+        elif text == 'max_gravitation':
+            data = str(round(float(data), 3)) + ' G'
+            text = 'Höchste Gravitation  '
+            pic = logo[8]
 
-    elif max_list.get('death_counter'):
-        pic = 'images/NRNF/pokal_deathcounter.png'
-        data = max_list.get("death_counter")
-        text = 'Die meisten Rebuys?'
-        max_font_size_title = 22  # Maximale Schriftgröße für Titel
+        elif text == 'min_radius':
+            data = str(round(float(data / 1000), 2)) + ' KM'
+            text = 'Kleinster Radius '
+            pic = logo[7]
 
-    elif max_list.get('killer'):
-        pic = 'images/NRNF/pokal_killedbysciencekeeper.png'
-        text = 'R. I. P.'
-        data = str(max_list.get("timestamp"))[:10]
-        zusatz = ''
-        line_spacing = 8
-        max_font_size_title = 26  # Maximale Schriftgröße für Titel
+        elif text == 'max_radius':
+            data = str(round(float(data / 1000), 2)) + ' KM'
+            text = 'Größter Radius  '
+            pic = logo[6]
 
-    elif max_list.get('white_dwarf'):
-        pic = 'images/NRNF/pokal_jubel_feuerwerk_2.png'
-        wd = max_list.get("white_dwarf")
-        text = cmdr
-        cmdr = f'''hat {wd} unterschiedliche'''
-        data = 'Weiße Zwerge gefunden'
-        zusatz = ''
-        max_font_size_title = 22  # Maximale Schriftgröße für Titel
-        max_font_cmdr = 18
+        # print(pic)
+        # zusatz = 'LJ'
+        max_font_size_title = 17  # Maximale Schriftgröße für Titel
+    else:
+        if max_list.get('max_body_count'):
+            pic = 'images/NRNF/pokal_sternenkarte.png'
+            data = max_list.get("max_body_count")
+            text = 'Meisten Körper'
+            zusatz = ''
+            max_font_size_title = 26  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('JumpDist'):
+            pic = 'images/NRNF/pokal_hyperraumsprung.png'
+            data = max_list.get("JumpDist")
+            text = 'Weitester Sprung'
+            zusatz = 'LJ'
+            max_font_size_title = 26  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('MAX_Temperature'):
+            pic = 'images/NRNF/pokal_hotsurface.png'
+            text = 'Heißeste Oberfläche'
+            data = round(float(max_list.get("MAX_Temperature")), 3)
+            zusatz = '°K'
+            max_font_size_title = 22  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('MIN_Temperature'):
+            pic = 'images/NRNF/pokal_eiskalt.png'
+            text = 'Kälteste Oberfläche'
+            data = round(float(max_list.get("MIN_Temperature")), 3)
+            zusatz = '°K'
+            max_font_size_title = 21  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('MAX_Gravity'):
+            pic = 'images/NRNF/pokal_jubel_feuerwerk_1.png'
+            text = 'Höchste Gravitation'
+            data = round(float(max_list.get("MAX_Gravity")), 3)
+            zusatz = 'G'
+            max_font_size_title = 23  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('MIN_Gravity'):
+            pic = 'images/NRNF/pokal_low_gravitation.png'
+            text = 'Niedrigste Gravitation'
+            data = round(float(max_list.get("MIN_Gravity")), 3)
+            zusatz = 'G'
+            max_font_size_title = 22  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('MAX_radius'):
+            pic = 'images/NRNF/pokal_planet_gross.png'
+            text = 'Größter Radius'
+            data = round(float(max_list.get("MAX_radius") / 1000), 2)
+            zusatz = ' KM'
+            max_font_size_title = 23  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('MIN_radius'):
+            pic = 'images/NRNF/pokal_planet_klein.png'
+            text = 'kleinster Radius'
+            data = round(float(max_list.get("MIN_radius") / 1000), 2)
+            zusatz = ' KM'
+            max_font_size_title = 23  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('death_counter'):
+            pic = 'images/NRNF/pokal_deathcounter.png'
+            data = max_list.get("death_counter")
+            text = 'Die meisten Rebuys?'
+            max_font_size_title = 22  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('killer'):
+            pic = 'images/NRNF/pokal_killedbysciencekeeper.png'
+            text = 'R. I. P.'
+            data = str(max_list.get("timestamp"))[:10]
+            zusatz = ''
+            line_spacing = 8
+            max_font_size_title = 26  # Maximale Schriftgröße für Titel
+
+        elif max_list.get('white_dwarf'):
+            pic = 'images/NRNF/pokal_jubel_feuerwerk_2.png'
+            wd = max_list.get("white_dwarf")
+            text = cmdr
+            cmdr = f'''hat {wd} unterschiedliche'''
+            data = 'Weiße Zwerge gefunden'
+            zusatz = ''
+            max_font_size_title = 22  # Maximale Schriftgröße für Titel
+            max_font_cmdr = 18
 
     font = ImageFont.truetype('arial.ttf', size=25)
 
@@ -7058,7 +6890,7 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     d = ImageDraw.Draw(achievement_png)
 
     # Definiere das Textfeld (oben links und unten rechts)
-    text_box_top_left = (240, 850)
+    text_box_top_left = (240, 825)
     text_box_bottom_right = (425, 910)
 
     # Berechne die Breite und Höhe des Textfeldes
@@ -7082,6 +6914,7 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
 
     # Schriftgrößen für Titel und Cmdr
     font_title = ImageFont.truetype('arial.ttf', size=max_font_size_title)
+    font_timestamp = ImageFont.truetype('arial.ttf', size=18)
     font_cmdr = ImageFont.truetype('arial.ttf', size=max_font_cmdr)
 
     # Versuche, die Titelgröße maximal zu halten, während die Cmdr-Größe dynamisch verkleinert wird
@@ -7097,10 +6930,13 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     start_y = text_box_top_left[1] + (box_height - total_height) // 2
     title = text
 
-    # Zeichne die erste Zeile (Titel) zentriert
-    title_width = d.textbbox((0, 0), title, font=font_title)[2] - d.textbbox((0, 0), title, font=font_title)[0]
-    start_x_title = text_box_top_left[0] + (box_width - title_width) // 2
-    d.text((start_x_title, start_y), title, fill='#f07b05', font=font_title, stroke_width=3, stroke_fill='black')
+    # Zeichne die zweite Zeile (Timestamp)
+    logo_width = d.textbbox((0, 0),
+                            logo_timestamp,
+                            font=font_timestamp)[2] - d.textbbox((0, 0), logo_timestamp, font=font_timestamp)[0]
+
+    start_x_logo = text_box_top_left[0] + (box_width - logo_width) // 2
+    d.text((start_x_logo, start_y), logo_timestamp, fill='#f07b05', font=font_timestamp, stroke_width=3, stroke_fill='black')
 
     # Aktualisiere die Y-Position für die nächste Zeile
     start_y += (d.textbbox((0, 0), title, font=font_title)[3] - d.textbbox((0, 0), title, font=font_title)[
@@ -7112,6 +6948,15 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     d.text((start_x_cmdr, start_y), cmdr, fill='#f07b05', font=font_cmdr, stroke_width=3, stroke_fill='black')
 
     # Aktualisiere die Y-Position für die nächste Zeile
+    start_y += (d.textbbox((0, 0), title, font=font_title)[3] - d.textbbox((0, 0), title, font=font_title)[
+        1]) + line_spacing
+
+    # Zeichne die erste Zeile (Titel) zentriert
+    title_width = d.textbbox((0, 0), title, font=font_title)[2] - d.textbbox((0, 0), title, font=font_title)[0]
+    start_x_title = text_box_top_left[0] + (box_width - title_width) // 2
+    d.text((start_x_title, start_y), title, fill='#f07b05', font=font_title, stroke_width=3, stroke_fill='black')
+
+    # Aktualisiere die Y-Position für die nächste Zeile
     start_y += (d.textbbox((0, 0), cmdr, font=font_cmdr)[3] - d.textbbox((0, 0), cmdr, font=font_cmdr)[
         1]) + line_spacing
 
@@ -7120,10 +6965,10 @@ def create_logo(max_list):  # Badges für die exploration challenge!!
     jump_width = d.textbbox((0, 0), jump_text, font=font_cmdr)[2] - d.textbbox((0, 0), jump_text, font=font_cmdr)[0]
     start_x_jump = text_box_top_left[0] + (box_width - jump_width) // 2
     d.text((start_x_jump, start_y), jump_text, fill='#f07b05', font=font_cmdr, stroke_width=3, stroke_fill='black')
-
     # thread_rce = threading.Thread(target=achievement_png.show, args=())
     # thread_rce.start()
     send_to_discord2(achievement_png)
+
 
 
 def rescan_files():
@@ -7228,6 +7073,8 @@ def full_scan():
         length = (len(select) - 1)
         logger((select[length][0], 2), 2)
         while length != 0 and counter != full_scan_var[0][0]:
+            eddc_text_box.insert(INSERT, '\n')
+            eddc_text_box.insert(INSERT, 'Auswertung läuft von ' + str(select[length][0]))
             length = (len(select) - counter)
             counter += 1
             with open(select[length][0], 'r', encoding='UTF8') as datei:
@@ -7327,13 +7174,13 @@ def auswertung(eddc_modul):
         compass_gui()
         aus_var = 1
         return
-
-    if eddc_modul == 14:  # exploration_challenge
-        b_filter = filter_entry.get()
-        status.configure(text='Challenge')
-        exploration_challenge()
-        aus_var = 0
-        return
+    #
+    # if eddc_modul == 14:  # exploration_challenge
+    #     b_filter = filter_entry.get()
+    #     status.configure(text='Challenge')
+    #     exploration_challenge()
+    #     aus_var = 0
+    #     return
 
     if eddc_modul == 15:  # get_cmdr_names
         get_cmdr_names()
@@ -7473,8 +7320,8 @@ def auswertung(eddc_modul):
             eddc_text_box.delete(.0, END)
 
             lang = read_language()
-            eddc_text_box.insert(END, (('Name			Type		Grade	Count\n')))
-            eddc_text_box.insert(END, ('────────────────────────────────────────\n'))
+            eddc_text_box.insert(END, 'Name			Type		Grade	Count\n')
+            eddc_text_box.insert(END, '────────────────────────────────────────\n')
             for i in data:
                 if lang == 'english':
                     name = str(i[1])
@@ -7730,8 +7577,8 @@ def main():
     file_menu.add_command(label="Odyssey", command=lambda: menu('ody_mats'))
     file_menu.add_command(label="Combat Rank", command=lambda: menu('combat'))
     file_menu.add_command(label="Thargoids", command=lambda: menu('thargoid'))
-    file_menu.add_command(label="Beitrag zum Krieg", command=lambda: menu('war'))
-    file_menu.add_command(label="War Progress", command=lambda: menu('war_progress'))
+    # file_menu.add_command(label="Beitrag zum Krieg", command=lambda: menu('war'))
+    # file_menu.add_command(label="War Progress", command=lambda: menu('war_progress'))
     file_menu.bind_all("<Control-q>", lambda e: menu('CODEX'))
     file_menu.add_command(label="Exit", command=root.quit)
 
@@ -7742,8 +7589,9 @@ def main():
     exploration_menu.add_command(label="Boxel Analyse", command=lambda: menu('boxel'))
     exploration_menu.add_command(label="Kubus Analyse", command=lambda: menu('cube'))
     exploration_menu.add_command(label="Kompass", command=lambda: menu('compass'))
-    exploration_menu.add_command(label="Exploration Challenge", command=exploration_challenge)
-    # exploration_menu.add_command(label="test", command=test)
+    # exploration_menu.add_command(label="Exploration Challenge", command=exploration_challenge)
+    exploration_menu.add_command(label="DB Viewer", command=web_db_viewer)
+    # exploration_menu.add_command(label="test", command=test_run)
     # exploration_menu.add_command(label="Full Scan", command=full_scan)
     exploration_menu.add_command(label="Rescan Codex", command=rescan)
 
